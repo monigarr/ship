@@ -332,6 +332,32 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 
 ---
 
+ISSUE found during first git add, git commit to local gfa2_wk4_prd1_monigarr branch.
+
+ERROR: Empty tests detected!
+========================================
+
+The following tests have only TODO comments and will SILENTLY PASS:
+
+  2 empty tests in autosave-race-conditions.spec.ts
+  2 empty tests in critical-blockers.spec.ts
+  2 empty tests in session-timeout.spec.ts
+
+FIX: Convert empty tests to test.fixme():
+
+  // WRONG - silently passes
+  test('my test', async ({ page }) => {
+    // TODO: implement
+  });
+
+  // RIGHT - shows as 'fixme' in report
+  test.fixme('my test', async ({ page }) => {
+    // TODO: implement
+  });
+
+husky - pre-commit script failed (code 1)
+
+
 ## Orientation Completion Sign-Off
 
 - [X] All Phase 1 items completed.
