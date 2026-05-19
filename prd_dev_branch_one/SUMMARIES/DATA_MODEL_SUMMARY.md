@@ -1,0 +1,113 @@
+### 2.2 Unified document model behavior
+
+- Status: [X] Complete
+- Prompt: Understand the unified document model: how does one table serve docs, issues, projects, and sprints?
+- Findings:
+  - The core pattern is one `documents` table plus `document_type` to distinguish entities (`wiki`, `issue`, `program`, `project`, `sprint`), so docs/issues/projects/sprints share storage and CRUD shape.
+  - Shared columns (`title`, `content`, timestamps, visibility, etc.) provide common behavior; type-specific details are in `properties` JSONB (for example issue state/priority, project ICE fields, sprint week metadata).
+  - Cross-entity relationships are handled in `document_associations` (`relationship_type` = `program`/`project`/`sprint`/`parent`), which lets one model represent many graph structures without extra entity tables.
+  - API behavior confirms the model: routes query `documents` filtered by `document_type` and join `document_associations` for grouping/linking instead of switching base tables.
+- Evidence (table definitions, query examples):
+  - `ship/api/src/db/schema.sql`
+    - `CREATE TYPE document_type AS ENUM (...)`
+    - `CREATE TABLE documents (...)`
+    - `CREATE TABLE document_associations (...)`
+  - `ship/api/src/routes/documents.ts`
+    - `GET /api/documents` queries `FROM documents` with optional `document_type` filtering.
+  - `ship/api/src/routes/issues.ts`
+    - `GET /api/issues` uses `FROM documents d ... WHERE d.document_type = 'issue'` plus `document_associations` filters for program/sprint/parent.
+  - `ship/api/src/routes/projects.ts`
+    - `GET /api/projects` uses `FROM documents d ... WHERE d.document_type = 'project'` and association joins for program/week/issue rollups.
+  - `ship/api/src/routes/programs.ts`
+    - `GET /api/programs` uses `FROM documents d ... WHERE d.document_type = 'program'` and association-based counts.
+  - `ship/api/src/routes/weeks.ts`
+    - Week endpoints query `documents` with `document_type = 'sprint'` and traverse `document_associations`.
+  - `ship/docs/document-model-conventions.md`
+    - Declares "Everything is a document with properties" and documents `parent_id` vs `document_associations`.
+- Open Questions:
+  - Should parent/child hierarchy be standardized on only `parent_id` or only `relationship_type='parent'` to avoid dual semantics?
+  - Should critical type-specific `properties` fields get DB-level constraints (not only TypeScript/runtime checks)?
+  - Should terminology be standardized further (`sprint` internal vs `week` user-facing) in API docs and code comments?
+- Next Actions:
+  - Add a concise "query cookbook" for each `document_type` + association pattern.
+  - Add integration tests enforcing association writes through `document_associations` only.
+  - Document and enforce the canonical parent-model rule.
+
+### 2.3 `document_type` discriminator usage
+
+- Status: [X] Complete
+- Prompt: What is the `document_type` discriminator? How is it used in queries?
+- Findings:
+  - `document_type` is a Postgres enum column on `documents` that acts as the type discriminator for the unified model (for example: `wiki`, `issue`, `program`, `project`, `sprint`, `person`, `weekly_plan`, `weekly_retro`, `standup`, `weekly_review`).
+  - Instead of separate base tables per entity type, most API queries use `documents` as the base table and scope behavior with `WHERE ... document_type = '<type>'`.
+  - The generic documents listing supports dynamic type filtering (optional `type` query param), while type-specific endpoints hard-code type predicates (`issue`, `project`, `program`, `sprint`, etc.).
+  - Relationship traversal is layered on top of the discriminator: queries first constrain by `document_type`, then join/filter through `document_associations` (`program`, `project`, `sprint`, `parent`) for hierarchy and rollups.
+  - Operationally, this means one storage model with type-driven query predicates; type-specific fields stay in `properties` JSONB and do not require separate entity tables.
+- Evidence (SQL/query builder snippets):
+  - `ship/api/src/db/schema.sql`
+    - `CREATE TYPE document_type AS ENUM ('wiki', 'issue', 'program', 'project', 'sprint', 'person', 'weekly_plan', 'weekly_retro', 'standup', 'weekly_review');`
+    - `document_type document_type NOT NULL DEFAULT 'wiki',`
+    - `CREATE INDEX IF NOT EXISTS idx_documents_document_type ON documents(document_type);`
+  - `ship/api/src/routes/documents.ts` (`GET /api/documents`)
+    - `FROM documents WHERE workspace_id = $1`
+    - optional filter: `query += \` AND document_type = $${params.length + 1}\`;`
+  - `ship/api/src/routes/issues.ts`
+    - `FROM documents d ... WHERE d.workspace_id = $1 AND d.document_type = 'issue'`
+    - plus association filters via `EXISTS (SELECT 1 FROM document_associations da ...)`
+  - `ship/api/src/routes/projects.ts`
+    - `FROM documents d ... WHERE d.workspace_id = $1 AND d.document_type = 'project'`
+    - association joins: `LEFT JOIN document_associations ... relationship_type = 'program'`
+  - `ship/api/src/routes/programs.ts`
+    - `FROM documents d ... WHERE d.workspace_id = $1 AND d.document_type = 'program'`
+    - program sprint query constrains `WHERE d.document_type = 'sprint'` after association join.
+- Open Questions:
+  - Should all client-facing filters standardize on `type` vs `document_type` param naming to avoid API ambiguity?
+  - Should we add partial indexes for high-volume subtype predicates beyond `idx_documents_document_type` (for example workspace+type+deleted_at patterns)?
+  - Should type transitions (for example conversion flows) have stricter guardrails/tests to prevent invalid `properties` payloads for the new `document_type`?
+- Next Actions:
+  - Add endpoint-level integration tests asserting each list/detail route enforces its `document_type` predicate.
+  - Add a short doc page of canonical query templates: generic (`/api/documents`) vs type-specific (`/api/issues`, `/api/projects`, `/api/programs`, `/api/weeks`).
+  - Evaluate index usage with `EXPLAIN ANALYZE` on common `workspace_id + document_type` query paths and document tuning decisions.
+
+### 2.4 Document relationship handling
+
+- Status: [X] Complete
+- Prompt: How does the application handle document relationships (linking, parent-child, project membership)?
+- Findings:
+  - Relationship handling is split between two mechanisms: `documents.parent_id` for strict tree hierarchy and `document_associations` for typed graph links (`program`, `project`, `sprint`, `parent`).
+  - Parent-child containment at the table level is enforced by `documents.parent_id` with a self-reference check (`documents_no_self_parent`) and a trigger/function (`prevent_circular_parent`) that rejects cycles.
+  - Cross-document membership and linking are normalized in `document_associations` with `UNIQUE (document_id, related_id, relationship_type)` and `CHECK (document_id != related_id)`, preventing duplicate edges and self-links.
+  - Project/program/sprint membership for issues and sprints is read and written through `document_associations` in API routes (for example, issue `belongs_to`, project `program_id`, sprint-to-project linkage), not legacy columns.
+  - The generic document endpoints support both models: direct hierarchy via `parent_id` and graph edges via `belongs_to` mapped to `document_associations`; update flows remove/reinsert or diff associations depending on route.
+  - Additional explicit link graph exists in `document_links` (source/target pairs) for backlink-style document linking, separate from typed membership associations.
+- Evidence (relationship tables/fields, query paths):
+  - `ship/api/src/db/schema.sql`
+    - `documents.parent_id UUID REFERENCES documents(id) ON DELETE CASCADE`
+    - `CONSTRAINT documents_no_self_parent CHECK (id != parent_id)`
+    - `prevent_circular_parent()` + `prevent_circular_parent_trigger`
+    - `CREATE TYPE relationship_type AS ENUM ('parent', 'project', 'sprint', 'program')`
+    - `CREATE TABLE document_associations (...)` with `unique_association` and `no_self_reference`
+    - `CREATE TABLE document_links (source_id, target_id, UNIQUE(source_id, target_id))`
+  - `ship/api/src/routes/issues.ts`
+    - filters by membership with `EXISTS (SELECT 1 FROM document_associations ... relationship_type='program'|'sprint')`
+    - parent/sub-issue logic via `relationship_type='parent'`
+    - create/update/bulk update insert/delete association rows for `belongs_to`, `project`, `sprint`
+  - `ship/api/src/routes/projects.ts`
+    - program membership via `document_associations ... relationship_type='program'`
+    - project issue/week listings join on `relationship_type='project'`
+    - sprint creation writes project/program associations into `document_associations`
+  - `ship/api/src/routes/programs.ts`
+    - program-scoped issues/projects/sprints resolved by joins on `document_associations ... relationship_type='program'`
+    - merge flow reparents program membership by updating `document_associations.related_id` and reparents tree children by updating `documents.parent_id`
+  - `ship/api/src/routes/documents.ts`
+    - create/update supports `parent_id` and `belongs_to`
+    - `program_id`/`sprint_id` are translated to `document_associations` for backward compatibility
+    - visibility cascade uses recursive traversal over `parent_id`, showing tree behavior remains active
+- Open Questions:
+  - For issue parentage, should `relationship_type='parent'` become canonical, or should all parent-child semantics converge on `documents.parent_id` to avoid dual representations?
+  - Should referential/type guards be added so `relationship_type='project'` can only target `document_type='project'` (and similarly for `program`/`sprint`) at DB level?
+  - Should `document_links` and `document_associations` be consolidated conceptually (or documented as separate intentional layers: backlinks vs typed membership)?
+- Next Actions:
+  - Add integration tests that assert relationship writes are mirrored correctly for each route (`issues`, `projects`, `documents`) and prevent stale dual-parent states.
+  - Add DB-level guardrails (trigger or deferred constraint) that validate association target type by `relationship_type`.
+  - Publish a short relationship decision record clarifying canonical use: when to use `parent_id`, when to use `document_associations`, and when to use `document_links`.

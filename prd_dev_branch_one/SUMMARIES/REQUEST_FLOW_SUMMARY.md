@@ -1,0 +1,96 @@
+### 3.1 Trace one action end-to-end
+
+- Status: [X] Complete
+- Prompt: Pick one user action (for example, creating an issue) and trace it from the React component through the API route to the database query and back.
+- Findings:
+  - Chosen action: **Create a new issue** from the Issues page.
+  - UI trigger path: `IssuesPage` renders `IssuesList` with `showCreateButton={true}` and passes `onCreateIssue={createIssue}` from `useIssues()`.
+  - Click path: `IssuesList` `handleCreateIssue()` calls either `onCreateIssue()` (page mode) or `useCreateIssue().mutateAsync(...)` (self-fetch mode), then navigates to `/documents/{issue.id}` on success.
+  - Frontend API call: `useCreateIssue` -> `createIssueApi` -> `apiPost('/api/issues', apiData)`, where `apiData` includes `title` (default `Untitled`) and optional `belongs_to`.
+  - Transport/security layer: `apiPost` uses `fetchWithCsrf`, which fetches/reuses CSRF token from `/api/csrf-token`, sends credentials/cookies, and retries once on CSRF 403.
+  - API route path: Express mounts `issuesRoutes` at `/api/issues`; `POST /` is protected by `conditionalCsrf` and `authMiddleware`.
+  - Request validation: `createIssueSchema` (zod) validates `title`, `state`, `priority`, `assignee_id`, and `belongs_to` before DB writes.
+  - DB write path: route starts transaction, acquires workspace-scoped advisory lock (`pg_advisory_xact_lock`) to serialize ticket number generation, selects `MAX(ticket_number)+1`, inserts into `documents`, then inserts each relationship into `document_associations`.
+  - Response path back: API commits transaction, resolves association display data via `getBelongsToAssociations(newIssueId)`, returns `201` JSON with `id`, `ticket_number`, `display_id`, and `belongs_to`.
+  - Frontend state return: `useCreateIssue` replaces optimistic item in React Query cache and invalidates `issueKeys.lists()`, then `IssuesList` navigates to created document route.
+- Evidence (component, route, service/repo, SQL path):
+  - Component/UI trigger:
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\pages\Issues.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\IssuesList.tsx` (`handleCreateIssue`, create button, navigation)
+  - Frontend data/service layer:
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\hooks\useIssuesQuery.ts` (`createIssueApi`, `useCreateIssue`)
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\lib\api.ts` (`apiPost`, CSRF flow)
+  - API route + middleware mount:
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\app.ts` (`app.use('/api/issues', conditionalCsrf, issuesRoutes)`)
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\issues.ts` (`router.post('/', authMiddleware, ...)`)
+  - SQL path in `POST /api/issues`:
+    - `SELECT pg_advisory_xact_lock($1)`
+    - `SELECT COALESCE(MAX(ticket_number), 0) + 1 ... FROM documents WHERE workspace_id = $1 AND document_type = 'issue'`
+    - `INSERT INTO documents (workspace_id, document_type, title, properties, ticket_number, created_by) VALUES (...) RETURNING *`
+    - `INSERT INTO document_associations (document_id, related_id, relationship_type) VALUES (...) ON CONFLICT ... DO NOTHING`
+- Open Questions:
+  - `IssuesContext` is marked deprecated in favor of unified document hooks; should this create flow be refactored to only use unified hooks to reduce dual-path complexity?
+  - In `useCreateIssue` optimistic data sets `priority: 'none'`, while API defaults to `'medium'`; should optimistic defaults match server defaults to prevent UI flicker/mismatch?
+- Next Actions:
+  - Add this same trace pattern for one update path (e.g., status change) to cover PATCH + history logging and potential 409 cascade warnings.
+  - Add a short sequence diagram in this file for onboarding clarity (UI -> hook -> API -> SQL -> response -> cache -> navigation).
+
+### 3.2 Middleware chain
+
+- Status: [X] Complete
+- Prompt: Identify the middleware chain: what runs before every API request?
+- Findings:
+  - Global chain for all `/api/*` routes in `createApp(...)` runs in this order: `helmet` -> `apiLimiter` (mounted at `/api/`) -> `cors` -> `express.json` -> `express.urlencoded` -> `cookieParser` -> `express-session`.
+  - For production deployments, an additional pre-chain proxy-normalization middleware runs first (after `trust proxy`) to force `x-forwarded-proto=https` when requests arrive through CloudFront.
+  - After global middleware, request flow branches by route mount:
+    - **CSRF-protected mounts**: most state-changing API routers are mounted as `app.use('/api/<resource>', conditionalCsrf, <routes>)`.
+    - **No-CSRF exceptions**: `GET /api/csrf-token`, `/api/search`, `/api/activity`, `/api/dashboard`, `/api/claude`, CAIA OAuth callbacks, and the public feedback router.
+    - **Auth middleware is route-level, not app-global**: protected handlers invoke `authMiddleware` inside route files (e.g., `issues` `POST /`), so auth runs on protected endpoints but not literally every API route.
+  - Practical “before every API request” answer: every `/api/*` request always passes the global Express chain (security headers, rate limit, parsing, cookies, session); then route-specific middleware (`conditionalCsrf`, `authMiddleware`, role checks) applies depending on endpoint.
+- Evidence (server bootstrap, middleware registration):
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\app.ts`
+    - Global middleware registration: `helmet`, `/api/` `apiLimiter`, `cors`, body parsers, cookie parser, session.
+    - Route mount policy showing where `conditionalCsrf` is and is not applied.
+    - Production-only CloudFront/proxy normalization middleware.
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\middleware\auth.ts`
+    - `authMiddleware` behavior (Bearer token path vs session cookie path, timeout checks, membership checks), confirming authentication is enforced at protected route level.
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\issues.ts`
+    - `router.post('/', authMiddleware, ...)` confirms route-level auth application after app-level middleware chain.
+- Open Questions:
+  - Should a top-level `app.use('/api', authMiddleware)` be introduced for stronger default-deny posture, with explicit public-route allowlisting?
+  - Should CSRF policy be centralized in a dedicated middleware map to reduce the risk of future route mounts accidentally skipping protection?
+- Next Actions:
+  - Build a route inventory table (`path`, `method`, `global chain`, `csrf?`, `auth?`, `role check?`) to validate consistency and spot policy drift.
+  - Add an automated test that asserts critical mutating endpoints return 403 without CSRF (session auth path) and 401/403 when auth is missing or invalid.
+
+### 3.3 Authentication behavior
+
+- Status: [X] Complete
+- Prompt: How does authentication work? What happens to an unauthenticated request?
+- Findings:
+  - Authentication supports two modes in `authMiddleware`: Bearer API token auth (checks `Authorization: Bearer <token>`) and session-cookie auth (checks `session_id` cookie).
+  - API token path:
+    - Middleware hashes token (`sha256`), looks up `api_tokens` + user join, rejects revoked/expired tokens, updates `last_used_at`, and attaches `req.userId`, `req.workspaceId`, `req.isSuperAdmin`, `req.isApiToken = true`.
+  - Session path:
+    - Middleware reads `session_id` cookie, loads session + user from DB, enforces both inactivity timeout (`SESSION_TIMEOUT_MS`, 15 min) and absolute timeout (`ABSOLUTE_SESSION_TIMEOUT_MS`, 12 hr), verifies workspace membership for non-super-admin users, updates `last_activity`, and attaches request auth context.
+  - Login flow (`POST /api/auth/login`):
+    - Validates credentials (bcrypt), chooses current workspace, prevents fixation by deleting old session, creates cryptographically random session ID, stores session row, and returns hardened `session_id` cookie (`httpOnly`, `sameSite: 'strict'`, `secure` in production).
+  - Unauthenticated request behavior on protected endpoints:
+    - Missing cookie and no Bearer token -> `401` JSON with `code: UNAUTHORIZED`, `message: "No session found"`.
+    - Invalid/expired Bearer token -> `401` JSON with `code: UNAUTHORIZED`, `message: "Invalid or expired API token"`.
+    - Invalid session ID -> `401` JSON with `code: UNAUTHORIZED`, `message: "Invalid session"`.
+    - Expired session (absolute or inactivity) -> `401` JSON with `code: SESSION_EXPIRED` and session deleted.
+    - Valid session but membership revoked -> `403` JSON with `code: FORBIDDEN`, `message: "Access to this workspace has been revoked"`.
+- Evidence (auth middleware/routes, sample response):
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\middleware\auth.ts`
+    - Dual auth logic (Bearer vs cookie), session timeout checks, workspace membership authorization, and sample unauthorized/forbidden response bodies.
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\auth.ts`
+    - Login implementation, secure session creation, cookie policy, and authenticated routes (`/me`, `/session`, `/logout`, `/extend-session`) guarded by `authMiddleware`.
+  - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\issues.ts`
+    - Protected API endpoints (`router.get(...)`, `router.post(...)`, etc.) consistently requiring `authMiddleware`.
+- Open Questions:
+  - Should `authMiddleware` standardize all protected-route error shapes (some routes return `{ error: ... }` while middleware returns `{ success: false, error: { ... } }`) to simplify frontend error handling?
+  - Should API token auth also enforce token scopes/permissions beyond workspace binding for finer-grained least-privilege access?
+- Next Actions:
+  - Add integration tests that assert exact 401/403 responses for: missing cookie, invalid session, expired session, revoked workspace membership, and invalid Bearer token.
+  - Document “public vs protected endpoints” in one canonical API auth matrix to prevent accidental exposure as routes evolve.

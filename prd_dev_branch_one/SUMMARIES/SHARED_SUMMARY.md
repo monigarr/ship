@@ -1,0 +1,89 @@
+# Shared Package Summary
+
+- Status: [X] Complete
+- Prompt: Read the `shared/` package. What types are defined? How are they used across the frontend and backend?  Generate your high level summary report in prd_dev_branch_one/SUMMARIES/SHARED_SUMMARY.md file with the following template: @CODEBASE_ORIENTATION_CHECKLIST.md (52-57)  
+
+- Findings:
+  - `ship/shared` is a TypeScript workspace package (`@ship/shared`) that centralizes shared contracts and constants, then re-exports them from `src/index.ts` and `src/types/index.ts`.
+  - Defined type modules:
+    - `src/types/user.ts`: `User`.
+    - `src/types/workspace.ts`: `Workspace`, `WorkspaceMembership`, `WorkspaceInvite`, `AuditLog`, `WorkspaceWithRole`, `MemberWithUser`.
+    - `src/types/api.ts`: `ApiResponse<T>`, `ApiError`.
+    - `src/types/document.ts`: document domain contracts and unions, including:
+      - enums/unions: `DocumentVisibility`, `BelongsToType`, `DocumentType`, `IssueState`, `IssuePriority`, `IssueSource`, `AccountabilityType`, `WeekStatus`, `ICEScore`, `ApprovalState`.
+      - association and warning types: `BelongsTo`, `IncompleteChild`, `CascadeWarning`.
+      - property interfaces: `IssueProperties`, `ProgramProperties`, `ProjectProperties`, `WeekProperties`, `PersonProperties`, `WikiProperties`, `WeeklyPlanProperties`, `WeeklyRetroProperties`, `StandupProperties`, `WeeklyReviewProperties`, and union `DocumentProperties`.
+      - base and typed document interfaces: `Document`, `WikiDocument`, `IssueDocument`, `ProgramDocument`, `ProjectDocument`, `WeekDocument`, `PersonDocument`, `WeeklyPlanDocument`, `WeeklyRetroDocument`, `StandupDocument`, `WeeklyReviewDocument`.
+      - shared helpers/constants: `DEFAULT_PROJECT_PROPERTIES`, `computeICEScore(...)`.
+    - `src/types/auth.ts`: intentionally empty/deprecated (comment states auth types now live locally in `api/` and `web/`).
+  - Shared non-type constants in `src/constants.ts`: `HTTP_STATUS`, `ERROR_CODES`, `SESSION_TIMEOUT_MS`, `ABSOLUTE_SESSION_TIMEOUT_MS`.
+  - Frontend usage (`ship/web`): imports from `@ship/shared` in 13 source files. Main use patterns:
+    - UI state/type safety for document workflows (`DocumentType`, `IssueState`, `IssuePriority`, `DocumentVisibility`) in context menus and editor-side logic.
+    - Relationship and warning modeling (`BelongsTo`, `BelongsToType`, `CascadeWarning`, `IncompleteChild`) in issue hooks/components.
+    - Approval workflow typing (`ApprovalTracking`) in sidebars and approval UI.
+    - Shared business logic/timing reuse (`computeICEScore`, session timeout constants) for project scoring and session warning UX.
+  - Backend usage (`ship/api`): imports from `@ship/shared` in 13 files (routes, middleware, service, collaboration, test). Main use patterns:
+    - Response/error normalization (`HTTP_STATUS`, `ERROR_CODES`) across auth/admin/workspace/token routes and auth middleware.
+    - Security/session policy alignment (`SESSION_TIMEOUT_MS`, `ABSOLUTE_SESSION_TIMEOUT_MS`) in auth routes, middleware, collaboration expiry checks, and auth tests.
+    - Domain logic reuse (`DEFAULT_PROJECT_PROPERTIES`, `computeICEScore`) in project routes.
+    - Accountability typing (`AccountabilityType`) in `services/accountability.ts`.
+  - Cross-package integration mechanics:
+    - `web` depends on `@ship/shared` via workspace dependency and TypeScript project reference (`../shared`).
+    - `api` resolves `@ship/shared` to `../shared/dist` via `tsconfig` paths, so backend builds rely on compiled shared artifacts (`pnpm build:shared`).
+  - High-level conclusion: the package is primarily used as a shared domain contract surface for document/workflow/session semantics and to prevent drift between web and api behavior; several exported DTO-style types (`User`, `Workspace*`, `ApiResponse`, `ApiError`, typed `Document*` variants) are currently defined for consistency but are not widely imported directly by runtime source files.
+
+- Evidence (type files and import references):
+  - Shared package exports/types:
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\index.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\index.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\user.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\workspace.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\api.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\auth.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\types\document.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\src\constants.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\shared\package.json`
+  - Frontend import references (`@ship/shared`):
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\lib\contextMenuActions.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\hooks\useSessionTimeout.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\hooks\useProjectsQuery.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\hooks\useIssuesQuery.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\ui\MultiAssociationChips.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\sidebars\WeekSidebar.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\sidebars\PropertiesPanel.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\sidebars\ProjectSidebar.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\sidebars\IssueSidebar.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\document-tabs\ProjectDetailsTab.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\UnifiedEditor.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\IssuesList.tsx`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\src\components\ApprovalButton.tsx`
+  - Backend import references (`@ship/shared`):
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\services\accountability.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\workspaces.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\setup.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\projects.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\invites.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\dashboard.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\caia-auth.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\auth.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\api-tokens.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\routes\admin.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\middleware\auth.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\collaboration\index.ts`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\src\__tests__\auth.test.ts`
+  - Cross-package resolution/build wiring:
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\tsconfig.json`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\tsconfig.json`
+    - `d:\GFA_Cohort_5\Week_Four\ship\web\package.json`
+    - `d:\GFA_Cohort_5\Week_Four\ship\api\package.json`
+    - `d:\GFA_Cohort_5\Week_Four\ship\package.json`
+
+- Open Questions:
+  - Should `src/types/auth.ts` be removed entirely (or reintroduced as canonical shared auth contracts) to avoid confusion from an empty exported module?
+  - Should API/web response envelopes progressively adopt `ApiResponse` and shared `User`/`Workspace*` DTOs to reduce duplicate local interfaces and improve contract consistency?
+  - Should backend ICE calculations be fully centralized on `computeICEScore` (instead of occasional inline multiplication) for single-source business logic?
+
+- Next Actions:
+  - Decide whether `auth.ts` remains a placeholder or is deleted/replaced with explicit shared auth contracts.
+  - Audit local duplicate interfaces in `api/` and `web/` and migrate low-risk areas to shared DTOs where contracts are stable.
+  - Add a lightweight contract test or type-check gate ensuring key shared constants/types (`ERROR_CODES`, session timeout values, `BelongsTo`, `ApprovalTracking`) stay aligned with consuming packages.
