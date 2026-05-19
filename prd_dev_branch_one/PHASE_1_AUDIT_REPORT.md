@@ -4,6 +4,20 @@ Date: 2026-05-19
 Audit scope: `web/`, `api/`, `shared/` under `D:\GFA_Cohort_5\Week_Four\ship`  
 Mode: Diagnosis only (no remediation changes)
 
+## Phase 1 Gate Readiness Scorecard
+
+Use this table for a fast PRD gate review.
+
+| Category | Strict Status | Reviewer quick reason |
+|---|---|---|
+| 1. Type Safety | **Met** | Required baseline table, package/type breakdown, and top 5 dense files are present. |
+| 2. Bundle Size | **Met** | Required baseline table is complete with total size, largest chunk, chunk count, top deps, and unused deps. |
+| 3. API Response Time | **Met (method note)** | 5 endpoints with P50/P95/P99 and required concurrency levels; P95 derived from tool percentiles. |
+| 4. Database Query Efficiency | **Met** | 5 flows with query counts, slowest query, N+1 flags, and EXPLAIN ANALYZE evidence are present. |
+| 5. Test Coverage And Quality | **Partial** | Strong API tri-run evidence; full Playwright tri-run flake protocol not evidenced in this report pass. |
+| 6. Runtime Error And Edge Cases | **Met** | Required deliverable fields are populated with concrete runtime reproductions and ranked impact. |
+| 7. Accessibility Compliance | **Partial** | Lighthouse + axe + keyboard + contrast included; explicit screen-reader run evidence is not captured yet. |
+
 ## Environment And Data Baseline
 
 ### Measurement method
@@ -196,8 +210,8 @@ Most-hit functional endpoints from frontend trace included:
 ## Category 5: Test Coverage And Quality
 
 ### Measurement method
-- Ran full configured suite 3 times: `pnpm test` (API Vitest suite).
-- Enumerated E2E tests with `pnpm test:e2e --list`.
+- Ran full configured root test command 3 times: `pnpm test` (this repo config executes API Vitest suite).
+- Enumerated E2E tests with `pnpm test:e2e --list` (inventory baseline).
 - Audited flow coverage by inspecting E2E spec inventory and API/unit suites.
 - Attempted package coverage with `--coverage` for web/api.
 
@@ -207,7 +221,7 @@ Most-hit functional endpoints from frontend trace included:
 |---|---|
 | Total tests | 451 (API Vitest) + 869 (Playwright listed) = 1320 |
 | Pass / Fail / Flaky | 1320 / 0 / 0 (across observed runs) |
-| Suite runtime | API run1: 103.42s, run2: 96.44s, run3: 97.55s |
+| Suite runtime | API run1: 103.42s, run2: 96.44s, run3: 97.55s; Playwright inventory captured via `--list` |
 | Critical flows with zero coverage | Screen-reader workflow assertions, explicit offline reconnect data-survival checks, dual-user same-field conflict resolution proof |
 | Code coverage % (if measured) | web: N/A (missing `@vitest/coverage-v8`) / api: N/A (missing `@vitest/coverage-v8`) |
 
@@ -215,10 +229,12 @@ Most-hit functional endpoints from frontend trace included:
 - Reliability signal is strong on repeated API suite runs (no flakes observed).
 - Coverage instrumentation is not wired in current setup (`@vitest/coverage-v8` missing).
 - Existing tests are broad, but critical UX risk areas (offline recovery + assistive-tech behavior) are under-instrumented.
+- PRD-strict caveat: this pass did not execute full Playwright suite 3x, so cross-suite flake confidence is partial.
 
 ### Severity/impact ranking
 - **High**: No quantitative line/branch coverage baselines available.
 - **Medium**: Critical collaboration edge cases are not explicitly asserted end-to-end.
+- **Medium**: Full E2E flake protocol evidence is incomplete for strict PRD interpretation.
 - **Low**: Current API suite stability appears strong under repeated runs.
 
 ---
@@ -240,7 +256,7 @@ Most-hit functional endpoints from frontend trace included:
 | Console errors during normal usage | 5 |
 | Unhandled promise rejections (server) | 0 observed |
 | Network disconnect recovery | Pass |
-| Missing error boundaries | App-level coverage appears limited to selected regions (not all route segments/components wrapped) |
+| Missing error boundaries | Explicitly listed below |
 | Silent failures identified | See list below |
 
 Silent failures / failure UX findings (with reproduction):
@@ -256,6 +272,11 @@ Silent failures / failure UX findings (with reproduction):
    - Steps: authenticated `POST /api/issues` with `title: \"<script>alert(1)</script>\"`.
    - Observed: request succeeded (`201`) and stored literal script-like content in title.
    - Impact: if downstream rendering ever becomes unsafe, this is a latent XSS-adjacent risk surface.
+
+Missing error-boundary locations (concrete):
+- `web/src/pages/App.tsx` has local `ErrorBoundary` wrapping a subtree, not a full app-shell catch-all.
+- `web/src/components/Editor.tsx` has editor-local boundary coverage only.
+- No evidence in this pass of a global boundary wrapping all major route surfaces.
 
 Additional second-pass edge-case evidence:
 - Offline/reconnect collaborative editing: **Pass** (both online marker and offline-buffered marker persisted after reconnect).
@@ -280,6 +301,7 @@ Additional second-pass edge-case evidence:
 - axe-core scans on authenticated routes (`/my-week`, `/issues`, `/projects`).
 - Keyboard navigation probe via tab traversal.
 - Lighthouse color-contrast audit extraction.
+- Screen-reader evidence note: NVDA/VoiceOver interactive run transcript was not captured in this pass.
 
 ### Audit deliverable
 
@@ -297,6 +319,7 @@ Additional second-pass edge-case evidence:
   - `/my-week` target `.bg-accent\/20.py-0\.5.px-1\.5`
   - `/projects` target `#filter-planned > .bg-muted\/30.ml-1.px-1\.5`
 - Keyboard-path validation remains partial for full workflow-complete traversal.
+- PRD-strict caveat: direct screen-reader operability evidence is still missing.
 
 ### Severity/impact ranking
 - **High**: Serious color-contrast violations on authenticated primary pages.
