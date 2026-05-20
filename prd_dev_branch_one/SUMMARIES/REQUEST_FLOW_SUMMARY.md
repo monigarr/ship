@@ -1,4 +1,6 @@
-### 3.1 Trace one action end-to-end
+# Request flow summary
+
+## 3.1 Trace one action end-to-end
 
 - Status: [X] Complete
 - Prompt: Pick one user action (for example, creating an issue) and trace it from the React component through the API route to the database query and back.
@@ -35,7 +37,7 @@
   - Add this same trace pattern for one update path (e.g., status change) to cover PATCH + history logging and potential 409 cascade warnings.
   - Add a short sequence diagram in this file for onboarding clarity (UI -> hook -> API -> SQL -> response -> cache -> navigation).
 
-### 3.2 Middleware chain
+## 3.2 Middleware chain
 
 - Status: [X] Complete
 - Prompt: Identify the middleware chain: what runs before every API request?
@@ -63,7 +65,7 @@
   - Build a route inventory table (`path`, `method`, `global chain`, `csrf?`, `auth?`, `role check?`) to validate consistency and spot policy drift.
   - Add an automated test that asserts critical mutating endpoints return 403 without CSRF (session auth path) and 401/403 when auth is missing or invalid.
 
-### 3.3 Authentication behavior
+## 3.3 Authentication behavior
 
 - Status: [X] Complete
 - Prompt: How does authentication work? What happens to an unauthenticated request?

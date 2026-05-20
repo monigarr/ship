@@ -62,7 +62,7 @@ shared/ (@ship/shared)          <-- contract hub: types, enums, constants
 
 ---
 
-## Real-Time Collaboration
+## Real-time collaboration
 
 - **Two WebSocket channels:**
   - `/collaboration/*` — Yjs CRDT document sync (rich-text editor)
@@ -97,7 +97,7 @@ Exports used by both `web/` and `api/`:
 
 ---
 
-## Build & Deploy
+## Build and deploy
 
 - **Local dev:** `pnpm dev` (or `pnpm dev:raw` on Windows) — runs API + web + Postgres via docker-compose
 - **Docker:**
@@ -173,7 +173,7 @@ Exports used by both `web/` and `api/`:
 
 ## Windows Dev Note
 
-The `pnpm dev` script calls `./scripts/dev.sh` which requires Bash. On Windows either:
+The `pnpm dev` script calls `./scripts/dev.sh`, which requires Bash. On Windows either:
 - Use `pnpm dev:raw` directly, or
 - Set pnpm to use Git Bash: `pnpm config set script-shell "C:\\Program Files\\Git\\bin\\bash.exe"`
 

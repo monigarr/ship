@@ -15,33 +15,29 @@ Use this document before auditing. Complete every section to build a full-system
 
 ## Phase 1: First Contact
 
-## 1. Repository Overview
+### 1. Repository overview
 
 ### 1.1 Clone and run locally
 
 - Status: [X] Complete
-- Prompt: 
-Clone the repo and get it running locally. Document every step, including anything that was not in the README.
-
-- Prompt: 
-create a new local dev branch named gfa2_wk4_prd1_monigarr
+- Prompt: Clone the repo, get it running locally, and document every step (including anything missing from README). Create a local dev branch named `gfa2_wk4_prd1_monigarr`.
 
 - Findings: 
-README install steps created pnpm windows shell update message. After update the pnpm dev command created a windows shell mismatch with git bash.
+README install steps produced a pnpm Windows shell update message. After the update, the `pnpm dev` command created a Windows shell mismatch with Git Bash.
 
 - Evidence (commands, logs, files): 
 /prd_dev_branch_one/PROMPTS.md
 
 - Open Questions: 
-Do we want to update README install to include git bash and windows dev environ instructions?
+Do we want to update README install steps to include Git Bash and Windows development environment instructions?
 
 - Next Actions: 
-ask & verify if this is within scope for any current or future PRD work? Review the Open PRs on origin at https://github.com/US-Department-of-the-Treasury/ship/pulls   Added findings to PROMPTS.md
+Ask and verify whether this is within scope for any current or future PRD work. Review the open PRs on origin at https://github.com/US-Department-of-the-Treasury/ship/pulls. Added findings to PROMPTS.md.
 
 ### 1.2 Read `docs/` and summarize architecture decisions
 
 - Status: [X] Complete
-- Prompt: Review every file in /docs, /docs/solutions/, docs/integration-issues, docs/patterns, docs/performance-issues and provide a draft high level summary of all of the key architectural decisions here.
+- Prompt: Review every file in `/docs`, `/docs/solutions/`, `docs/integration-issues`, `docs/patterns`, and `docs/performance-issues`, and provide a draft high-level summary of all key architectural decisions.
 - Findings:
 - Evidence (doc files reviewed): ARCHITECTURE_SUMMARY.md
 - Open Questions:
@@ -65,7 +61,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 - Open Questions:
 - Next Actions:
 
-## 2. Data Model
+### 2. Data model
 
 ### 2.1 Schema and table relationship mapping
 
@@ -103,7 +99,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 - Open Questions:
 - Next Actions:
 
-## 3. Request Flow
+### 3. Request flow
 
 ### 3.1 Trace one action end-to-end
 
@@ -136,7 +132,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 
 ## Phase 2: Deep Dive
 
-## 4. Real-time Collaboration
+### 4. Real-time collaboration
 
 ### 4.1 WebSocket establishment flow
 
@@ -174,7 +170,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 - Open Questions:
 - Next Actions:
 
-## 5. TypeScript Patterns
+### 5. TypeScript patterns
 
 ### 5.1 TypeScript version
 
@@ -221,7 +217,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 - Open Questions:
 - Next Actions:
 
-## 6. Testing Infrastructure
+### 6. Testing infrastructure
 
 ### 6.1 Playwright structure and fixtures
 
@@ -250,7 +246,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 - Open Questions:
 - Next Actions:
 
-## 7. Build and Deploy
+### 7. Build and deploy
 
 ### 7.1 Dockerfile output understanding
 
@@ -292,7 +288,7 @@ ask & verify if this is within scope for any current or future PRD work? Review 
 
 ## Phase 3: Synthesis
 
-## 8. Architecture Assessment
+### 8. Architecture assessment
 
 ### 8.1 Strongest architectural decisions
 

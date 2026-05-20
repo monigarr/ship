@@ -1,4 +1,6 @@
-### 2.2 Unified document model behavior
+# Data model summary
+
+## 2.2 Unified document model behavior
 
 - Status: [X] Complete
 - Prompt: Understand the unified document model: how does one table serve docs, issues, projects, and sprints?
@@ -33,7 +35,7 @@
   - Add integration tests enforcing association writes through `document_associations` only.
   - Document and enforce the canonical parent-model rule.
 
-### 2.3 `document_type` discriminator usage
+## 2.3 `document_type` discriminator usage
 
 - Status: [X] Complete
 - Prompt: What is the `document_type` discriminator? How is it used in queries?
@@ -69,7 +71,7 @@
   - Add a short doc page of canonical query templates: generic (`/api/documents`) vs type-specific (`/api/issues`, `/api/projects`, `/api/programs`, `/api/weeks`).
   - Evaluate index usage with `EXPLAIN ANALYZE` on common `workspace_id + document_type` query paths and document tuning decisions.
 
-### 2.4 Document relationship handling
+## 2.4 Document relationship handling
 
 - Status: [X] Complete
 - Prompt: How does the application handle document relationships (linking, parent-child, project membership)?

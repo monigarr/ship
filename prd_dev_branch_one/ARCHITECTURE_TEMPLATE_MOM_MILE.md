@@ -1,21 +1,23 @@
 # ARCHITECTURE.md
-
-## MoniGarr Operating Model (M.O.M.) + M.I.L.E.
-# ============================================================================
-# PROJECT ARCHITECTURE
-# ============================================================================
+#
+## MoniGarr Operating Model (M.O.M.) + M.I.L.E. 
+## Author: Monica Peters
+## Organization: MoniGarr.com LLC
+## Informed by: Gauntlet AI, GFA ##   Cohort 2 Fellowship 2026
+#
 # Project Name:
-#   ShipShape
+#   ShipShape (GFA 2, WK 4, PRD)
 #
 # Project Description:
 #   Auditing & improving a production TypeScript 
 #   codebase from the U.S. Department of the Treasury.
 #
 # Repository:
-#   https://github.com/monigarr/gfa_2_ss_prd1
+#   https://github.com/monigarr/ship
 #
 # Upstream Source of Truth:
-#   github.com/US-Department-of-the-Treasury/ship (NEVER push to this repo)
+#   5/18/2026  Old: github.com/US-Department-of-the-Treasury/ship
+#   5/19/2026  New: github.com/COG-GTM/DOT-ship
 #
 # Upstream Source of Truth Description:
 #   A project management and issue tracking application
@@ -27,89 +29,26 @@
 #   Planning & Initial Development
 #
 # Classification:
-#   X3–X4 (Cross-system frontend/backend integration with Institutional impact)
-#
-# Authors:
-#   Monica Peters, AI Engineering Agents (Cursor)
-#
-# Organization:
-#   MoniGarr / M.O.M. Operating Model
-#
-# Primary Maintainers:
-#   Monica Peters
-#
-# Created:
-#   2026-05-06
+#   [RENAME_CLASSIFICATION_DESCRIPTION]
 #
 # Last Updated:
-#   2026-05-06
-#
-# License:
-#   MIT
+#   2026-20-06
 # ============================================================================
 #
 # DESCRIPTION
 # ----------------------------------------------------------------------------
-# High-level architectural definition for the OpenEMR Patient Dashboard
-# presentation layer modernization using:
-#
-# - MoniGarr Operating Model (M.O.M.)
-# - M.I.L.E. (MoniGarr Intelligence-Led Engineering)
-# - Echelon Enterprise Engineering Protocols
+# High-level architectural definition for [RENAME_PROJECT_NAME] using:
 #
 # This document defines:
-# - Architectural intent for a hybrid brownfield, frontend-only migration
-# - Constraints required to preserve the legacy OpenEMR PHP monolith
-# - Trust boundaries for OAuth2/OpenID Connect
+# - Architectural intent for a [RENAME_ARCHITECTURE_DESCRIPTION_TITLE]
+# - Constraints required to [RENAME_PRD_REQUIREMENT]
+# - [RENAME_PRD_REQUIREMENT]
 # - AI-native strategies for rapid development with Cursor
-# - Security posture for healthcare data (HIPAA awareness)
-# - Operational expectations for clinical environments
-# - Governance requirements for an additive, reversible deployment
-# - Scalability assumptions for single-page application delivery
+# - Security posture for [RENAME_TARGET_INDUSTRY]
+# - Operational expectations for [RENAME_USERS_ENVIRONMENT]
+# - Governance requirements for an [RENAME_DEPLOYMENT_TYPE]
+# - Scalability assumptions for [RENAME_DELIVERY_TYPE]
 # - Human accountability structures for all AI-generated artifacts
-#
-# ============================================================================
-```
-
-
-
-### Echelon Enterprise AI-Native Architecture Template
-
-```md
-# ============================================================================
-# PROJECT ARCHITECTURE
-# ============================================================================
-# Project Name:
-# Repository:
-# Version:
-# Status:
-# Classification:
-# Authors: Monica Peters, monigarr@monigarr.com
-# Organization:
-# Primary Maintainers:
-# Created:
-# Last Updated:
-# License:
-# ============================================================================
-#
-# DESCRIPTION
-# ----------------------------------------------------------------------------
-# High-level architectural definition for this system using:
-#
-# - MoniGarr Operating Model (M.O.M.)
-# - M.I.L.E. (MoniGarr Intelligence-Led Engineering)
-# - Echelon Enterprise Engineering Protocols
-#
-# This document defines:
-# - Architectural intent
-# - Constraints
-# - Trust boundaries
-# - AI integration strategies
-# - Security posture
-# - Operational expectations
-# - Governance requirements
-# - Scalability assumptions
-# - Human accountability structures
 #
 # ============================================================================
 ```
@@ -167,7 +106,7 @@ AI accelerates execution but does not replace:
 
 ---
 
-### 2.2 Ancient + Human + Artificial Intelligence Integration
+### 2.2 Human Ancient Intelligence + Artificial Intelligence Integration
 
 This system integrates:
 
@@ -190,8 +129,9 @@ All systems must support echelon enterprise industry best practices:
 * documentation
 * rapid handoff
 * operational continuity
+* accessibility
 
-No prototype-grade architecture permitted in production repositories.
+Not permitted: prototype-grade architecture in production repositories.
 
 ---
 
@@ -228,13 +168,13 @@ within minimal onboarding time and support optimized intuitive self onboarding w
 
 Define:
 
-* PRD Deliverables as source of truth priorty
+* PRD Deliverables as source of truth priority
 * M.O.M. M.I.L.E. enhancements where relevant, useful and valued
-* features
-* responsibilities
+* Features
+* Responsibilities
 * supported workflows
 * AI capabilities
-* operational environments
+* Operational environments
 * Human Accountability
 * Human Responsibilities
 
@@ -248,7 +188,7 @@ Explicitly define:
 * forbidden behavior
 * deferred features
 * non-goals
-* breaking changes to the origin main or master dev branch
+* breaking changes to the git upstream or origin main or master branch
 
 ---
 
@@ -276,6 +216,8 @@ Specify current project level and rationale.
 * Goal 1
 * Goal 2
 * Goal 3
+* Goal 4
+* Goal 5
 
 ---
 
@@ -372,6 +314,8 @@ Define:
 * cloud inference
 * synthetic data generation
 * evaluation pipelines
+* managed agents orchestrated by observability (LangGraph)
+* LangGraph handles complex tasks with an agent runtime and low-level orchestration framework.
 
 ---
 
@@ -385,7 +329,7 @@ Humans retain authority over:
 * architectural approval
 * compliance
 * data governance
-* final validation
+* final validatio
 
 ---
 
@@ -403,13 +347,14 @@ Humans retain authority over:
 | Adversarial Agent   | Failure analysis         |
 | Performance Agent   | Optimization review      |
 | Compliance Agent    | Compliance verification  |
+| Proof Agent         | Documented proof         |
 
 
 ---
 
 ## Agent Governance Rules
 
-* No autonomous production deployment
+* No autonomous production deployment (for now)
 * No self-authorizing behavior
 * All outputs require verification
 * Human override always available
@@ -595,38 +540,308 @@ Security is:
 
 ## Threat Model
 
+Define and maintain a living, evidence-backed threat model for the M.O.M. M.I.L.E. system across architecture, engineering, AI-assisted development, secure software production, deployment, operations, maintenance, management, acquisition, supply chain, and distribution.
+
+The threat model must identify what must be protected, from whom, through which attack paths, with what mission impact, by which mitigations, with what residual risk, and with what evidence for authorization, release approval, and continuous monitoring.
+
 Define:
 
-* internal threats
-* external threats
-* AI misuse risks
-* operational threats
-* social engineering risks
+* Mission, Authorization, and Risk Context
+  * Mission objectives, mission-essential functions, and critical services
+  * System owner, mission owner, data owner, security owner, privacy owner, and authorizing official roles
+  * Federal impact level and security categorization
+  * FIPS 199 categorization for non-national-security systems
+  * CNSSI 1253 categorization for National Security Systems, if applicable
+  * NIST RMF authorization boundary
+  * FedRAMP, cloud, hybrid, on-premises, edge, or classified-environment considerations, as applicable
+  * Agency overlays, control baselines, inherited controls, external service dependencies, and risk tolerance
+  * ATO, continuous authorization, POA&M, and residual-risk acceptance criteria
+
+* System Scope and Architecture
+  * System components, services, APIs, databases, interfaces, integrations, and deployment environments
+  * Development, test, staging, production, disaster-recovery, and distribution environments
+  * Internet-facing, internal, partner-facing, agency-facing, and machine-to-machine interfaces
+  * Human users, administrators, developers, operators, auditors, AI agents, service accounts, and workload identities
+  * Trust boundaries, privilege boundaries, data boundaries, model boundaries, network boundaries, and authorization boundaries
+  * Data-flow diagrams, process-flow diagrams, AI tool-call flows, RAG flows, model-provider flows, CI/CD flows, and artifact-distribution flows
+
+* Assets Requiring Protection
+  * Mission data
+  * PII, CUI, classified information, regulated data, and sensitive agency data, as applicable
+  * Source code, repositories, branches, commits, pull requests, and code-review records
+  * Build pipelines, deployment pipelines, runners, containers, images, packages, release artifacts, and signing keys
+  * Secrets, credentials, tokens, API keys, certificates, private keys, service-account credentials, and privileged access paths
+  * Logs, audit records, telemetry, security events, and forensic evidence
+  * AI prompts, system prompts, prompt templates, agent instructions, tool definitions, function schemas, and orchestration policies
+  * Model weights, fine-tuned models, embeddings, vector databases, RAG corpora, training data, tuning data, evaluation data, and safety-test data
+  * SBOM, HBOM, provenance records, attestations, supplier evidence, dependency metadata, and release manifests
+  * Documentation, architecture diagrams, threat models, risk decisions, and authorization evidence
+
+* Threat Actors and Threat Sources
+  * Nation-state and advanced persistent threat actors
+  * Cybercriminal groups
+  * Hacktivists
+  * Malicious insiders
+  * Negligent or compromised insiders
+  * Compromised administrators or privileged users
+  * Compromised developers or AI-assisted development workstations
+  * Contractors, vendors, integrators, managed-service providers, and cloud-service dependencies
+  * Third-party AI model, API, plugin, extension, package, or tool providers
+  * Automated bots, credential-stuffing systems, scraping systems, and abuse platforms
+  * Social engineers, phishing operators, and deepfake-enabled impersonators
+  * Unauthorized users, unauthorized AI agents, and unauthorized automation
+  * Physical, environmental, operational, and continuity-related threat sources
+
+* Threat Categories
+  * Internal threats
+  * External threats
+  * Insider threats
+  * Privileged-access threats
+  * Identity and credential threats
+  * Application-layer threats
+  * API and integration threats
+  * Data-security and privacy threats
+  * AI misuse and AI abuse threats
+  * AI model, prompt, agent, and RAG threats
+  * AI-assisted engineering threats
+  * Supply-chain and vendor threats
+  * CI/CD, build, release, and artifact-distribution threats
+  * Cloud, container, infrastructure, and platform threats
+  * Operational, maintenance, monitoring, and incident-response threats
+  * Social engineering and human-targeted threats
+  * Physical, facility, endpoint, and environmental threats
+  * Continuity, availability, resilience, and disaster-recovery threats
+
+* AI-First System Threats
+  * Prompt injection
+  * Indirect prompt injection through documents, websites, emails, tickets, files, logs, or RAG sources
+  * Jailbreaks and policy-bypass attempts
+  * System-prompt extraction
+  * Prompt, conversation, or context leakage
+  * Sensitive-data exposure through model inputs or outputs
+  * Model output manipulation
+  * Tool-call abuse
+  * Agentic overreach or unauthorized autonomous action
+  * Insecure function calling or plugin/tool integration
+  * RAG poisoning, vector-store poisoning, and retrieval manipulation
+  * Training-data poisoning and fine-tuning-data poisoning
+  * Model inversion, model extraction, and membership-inference risks
+  * Hallucinated facts, hallucinated citations, hallucinated dependencies, and unsafe generated code
+  * Unauthorized model substitution or unapproved AI-tool use
+  * Model/provider outage, degradation, throttling, lock-in, or unavailability
+  * Cross-tenant data leakage
+  * AI evaluation bypass
+  * Bias, harmful output, unsafe recommendations, and mission-impacting model failure
+  * Synthetic-content, impersonation, deepfake, and social-engineering amplification risks
+
+* AI-Assisted Engineering Toolchain Threats
+  * Leakage of agency-sensitive code, prompts, tickets, logs, documents, architecture diagrams, or credentials into AI tools
+  * Use of non-approved AI tools, models, extensions, agents, or plugins
+  * Unsafe AI-generated code
+  * AI-generated vulnerable configurations
+  * AI-generated insecure infrastructure-as-code
+  * AI-generated dependency confusion, typosquatting, or malicious package recommendations
+  * AI-generated code with licensing, provenance, or intellectual-property concerns
+  * Overreliance on generated output without human review
+  * Prompt-history, telemetry, local-cache, extension, or workspace exposure
+  * Compromise of developer IDEs, AI coding agents, repository integrations, or automation credentials
+  * Misalignment between AI-generated implementation and approved federal security architecture
+
+* Abuse Cases and Attack Scenarios
+  * Unauthorized access to protected data
+  * Privilege escalation
+  * Credential theft or token replay
+  * Lateral movement
+  * Data exfiltration
+  * Tampering with mission data
+  * Tampering with model outputs
+  * Tampering with audit logs
+  * Tampering with release artifacts
+  * Tampering with SBOM, provenance, or attestation records
+  * Denial of service or mission-service degradation
+  * Compromise of CI/CD pipelines
+  * Compromise of source-code repositories
+  * Compromise of package registries or dependencies
+  * Compromise of cloud resources, containers, Kubernetes, or infrastructure-as-code
+  * Compromise of AI model integrations, RAG pipelines, tool-calling systems, or agent workflows
+  * Unauthorized distribution, downgrade, rollback, or malicious update delivery
+  * Insider misuse of privileged tooling
+  * Social engineering of developers, operators, approvers, help-desk staff, or authorizing officials
+
+* Attack Surface and Entry Points
+  * Web applications
+  * APIs
+  * Authentication endpoints
+  * Administrative consoles
+  * Developer tools
+  * AI assistants and AI coding agents
+  * Model APIs
+  * RAG ingestion interfaces
+  * File-upload paths
+  * Email, chat, ticketing, and collaboration systems
+  * CI/CD systems
+  * Source-code repositories
+  * Package registries
+  * Cloud control planes
+  * Containers and orchestration platforms
+  * Service accounts and workload identities
+  * Remote-access mechanisms
+  * Monitoring, logging, and incident-response tooling
+  * Third-party integrations
+  * Distribution channels and update mechanisms
+
+* Risk Analysis and Prioritization
+  * Threat source
+  * Threat event
+  * Vulnerability or weakness
+  * Preconditions
+  * Attack path
+  * Likelihood
+  * Impact to confidentiality, integrity, availability, privacy, mission, safety, public trust, and national interest
+  * Existing controls
+  * Control gaps
+  * Proposed mitigations
+  * Detection opportunities
+  * Residual risk
+  * Risk owner
+  * Risk decision
+  * Required evidence
+  * POA&M item, if unresolved
+
+* Mitigation and Control Mapping
+  * Map each material threat to security, privacy, AI-risk, operational, and supply-chain controls
+  * Trace mitigations to NIST SP 800-53 control families, agency overlays, FedRAMP requirements, SSDF practices, AI RMF considerations, and agency-specific policies, as applicable
+  * Identify preventive, detective, corrective, compensating, and recovery controls
+  * Identify inherited controls and shared-responsibility assumptions
+  * Validate that mitigations are testable, observable, and evidenced
+  * Track control gaps through POA&M or equivalent risk-management workflow
+
+* Threat Intelligence and Adversary Mapping
+  * Use threat intelligence to identify realistic adversaries, tactics, techniques, and procedures
+  * Map relevant enterprise threats to MITRE ATT&CK
+  * Map relevant AI threats to MITRE ATLAS
+  * Map cloud, identity, endpoint, supply-chain, and software-development threats to applicable agency-approved threat-intelligence sources
+  * Update threat scenarios when new vulnerabilities, incidents, adversary techniques, tools, models, dependencies, or mission conditions emerge
+
+* Secure Software Production and Supply-Chain Threats
+  * Malicious dependencies
+  * Dependency confusion
+  * Typosquatting
+  * Compromised maintainers
+  * Compromised package registries
+  * Compromised build runners
+  * Compromised containers or base images
+  * Tampered artifacts
+  * Signing-key compromise
+  * Incomplete or inaccurate SBOMs
+  * Missing provenance or attestation evidence
+  * Vendor compromise
+  * Unsafe open-source intake
+  * Unapproved code generation
+  * Unauthorized release promotion
+  * Insecure update, rollback, or distribution process
+
+* Operational and Maintenance Threats
+  * Misconfiguration
+  * Configuration drift
+  * Patch failure
+  * Insecure maintenance access
+  * Weak monitoring
+  * Alert fatigue
+  * Log tampering
+  * Inadequate incident response
+  * Backup failure
+  * Disaster-recovery failure
+  * Insider misuse during maintenance windows
+  * Vulnerability backlog growth
+  * End-of-life or unsupported components
+  * Degraded AI model performance, data drift, model drift, or evaluation drift
+
+* Social Engineering and Human-Factor Threats
+  * Phishing
+  * Spear phishing
+  * Business email compromise
+  * Help-desk impersonation
+  * Executive impersonation
+  * Contractor or vendor impersonation
+  * Deepfake audio/video impersonation
+  * Credential harvesting
+  * MFA fatigue attacks
+  * Malicious prompt or document injection targeting AI users
+  * Manipulation of reviewers, approvers, operators, or incident responders
+
+* Required Threat Model Outputs
+  * Threat model summary
+  * Architecture and data-flow diagrams
+  * Trust-boundary map
+  * Asset inventory
+  * Threat actor inventory
+  * Abuse-case catalog
+  * Attack-path analysis
+  * AI threat analysis
+  * Supply-chain threat analysis
+  * Risk register
+  * Control-mitigation traceability matrix
+  * Residual-risk statement
+  * POA&M entries for unresolved risks
+  * Test cases for critical threats
+  * Security-review evidence
+  * Release-gate evidence
+  * Continuous-monitoring triggers
+  * Change-history and approval record
+
+* Threat Model Review Triggers
+  * New architecture decision
+  * New AI model, AI provider, AI tool, agent, extension, or plugin
+  * New dataset, RAG source, vector database, or fine-tuning activity
+  * New API, integration, interconnection, or external service
+  * New cloud, container, CI/CD, or deployment pattern
+  * New dependency, vendor, supplier, package, or open-source component
+  * Major code release
+  * Major configuration change
+  * Major data-flow change
+  * Change in federal impact level, data classification, mission use, or authorization boundary
+  * Discovery of a critical vulnerability
+  * Security incident, privacy incident, AI incident, or near miss
+  * Red-team, penetration-test, audit, or assessment finding
+  * ATO, continuous authorization, annual assessment, or release approval milestone
 
 ---
+# 10. Privacy & Data Governance
+
+## 10.1 Data Classification
+
+The M.O.M. M.I.L.E. Architecture classifies all data, metadata, prompts, outputs, embeddings, model artifacts, logs, records, and derivative works according to federal release status, CUI status, classified status, privacy sensitivity, FIPS 199 impact, AI-use eligibility, sovereignty/community restrictions, authorized environment, and retention obligations.
+
+| Classification | Description | Required Handling |
+|---|---|---|
+| Public | Approved for public release | Validate release authority before AI use, publication, reuse, or distribution |
+| Internal / Non-Public | Agency operational data not approved for public release | Agency-approved systems only; least privilege; audit logging; no unauthorized external AI |
+| Controlled Internal / FCI | Non-public federal or contractor-handled information | Contractual controls, access restrictions, approved storage and processing boundaries |
+| Privacy-Sensitive | PII, sensitive PII, system-of-records data, or data affecting rights, benefits, services, or civil liberties | Privacy review, minimization, consent/routine-use review, enhanced logging, restricted AI eligibility |
+| CUI Basic | Unclassified data requiring safeguarding or dissemination controls | CUI marking, approved environment, dissemination controls, encryption, access logging |
+| CUI Specified | CUI with specific controls required by law, regulation, or government-wide policy | Category-specific controls and explicit approval before AI processing |
+| Classified | Confidential, Secret, or Top Secret national security information | Classified boundary only; cleared users only; no unclassified AI tools |
+| Compartmented / Special Statutory | SCI, SAP, RD, FRD, or other special access/statutory data | Special authorization, compartment-specific handling, strict need-to-know |
+| Sovereign / Community-Protected Overlay | Tribal, Indigenous, cultural, human-subject, or community-governed data | Stewardship approval, consent controls, reuse restrictions, and AI-use limitations |
 
 # 10. Privacy & Data Governance
 
 ## Data Classification
 
-| Classification | Description                       |
-| -------------- | --------------------------------- |
-| Public         | Safe for public release           |
-| Internal       | Restricted operational data       |
-| Confidential   | Sensitive business data           |
-| Sovereign      | Protected cultural/community data |
+The M.O.M. M.I.L.E. Architecture classifies all data, metadata, prompts, outputs, embeddings, model artifacts, logs, records, and derivative works according to federal release status, CUI status, classified status, privacy sensitivity, FIPS 199 impact, AI-use eligibility, sovereignty/community restrictions, authorized environment, and retention obligations.
 
----
-
-## Sovereign AI Considerations
-
-Document:
-
-* Indigenous data governance
-* language preservation protections
-* community approval requirements
-* cultural safety considerations
-
+| Classification | Description | Required Handling |
+|---|---|---|
+| Public | Approved for public release | Validate release authority before AI use, publication, reuse, or distribution |
+| Internal / Non-Public | Agency operational data not approved for public release | Agency-approved systems only; least privilege; audit logging; no unauthorized external AI |
+| Controlled Internal / FCI | Non-public federal or contractor-handled information | Contractual controls, access restrictions, approved storage and processing boundaries |
+| Privacy-Sensitive | PII, sensitive PII, system-of-records data, or data affecting rights, benefits, services, or civil liberties | Privacy review, minimization, consent/routine-use review, enhanced logging, restricted AI eligibility |
+| CUI Basic | Unclassified data requiring safeguarding or dissemination controls | CUI marking, approved environment, dissemination controls, encryption, access logging |
+| CUI Specified | CUI with specific controls required by law, regulation, or government-wide policy | Category-specific controls and explicit approval before AI processing |
+| Classified | Confidential, Secret, or Top Secret national security information | Classified boundary only; cleared users only; no unclassified AI tools |
+| Compartmented / Special Statutory | SCI, SAP, RD, FRD, or other special access/statutory data | Special authorization, compartment-specific handling, strict need-to-know |
+| Sovereign / Community-Protected Overlay | Tribal, Indigenous, cultural, human-subject, or community-governed data | Stewardship approval, consent controls, reuse restrictions, and AI-use limitations |
 ---
 
 # 11. Observability Architecture
@@ -635,7 +850,7 @@ Document:
 
 Examples:
 
-* Langfuse
+* Langfuse or LangGraph
 * OpenTelemetry
 * structured logging
 * metrics
@@ -696,6 +911,10 @@ Every repository must include:
 * docs/
 * internal/
 
+Every repository development branch must include:
+
+* PRD.md
+
 ---
 
 ## Internal Documentation Requirements
@@ -738,7 +957,7 @@ Every production code file must contain:
 """
 ===============================================================================
 FILE: telemetry_manager.py
-AUTHOR: MoniGarr
+AUTHOR: Monica Peters, monica.peters@gfachallenger.gauntletai.com
 CREATED: 2026-05-06
 LICENSE: MIT
 

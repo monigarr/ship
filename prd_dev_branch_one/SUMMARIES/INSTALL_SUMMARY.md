@@ -1,28 +1,33 @@
-FOLLOWING README INSTALLATION INSTRUCTIONS:
+# Install summary
 
-Setup
-# 1. Clone the repository
+Following README installation instructions.
+
+## Setup commands
+
+```bash
+# 1) Clone the repository
 git clone https://github.com/US-Department-of-the-Treasury/ship.git
 cd ship
 
-# 2. Install dependencies
+# 2) Install dependencies
 pnpm install
 
-# 3. Configure environment
+# 3) Configure environment
 cp api/.env.example api/.env.local
 cp web/.env.example web/.env
 
-# 4. Start the database
+# 4) Start the database
 docker-compose up -d
 
-# 5. Create sample data
+# 5) Create sample data
 pnpm db:seed
 
-# 6. Run database migrations
+# 6) Run database migrations
 pnpm db:migrate
 
-# 7. Start the application
+# 7) Start the application
 pnpm dev
+```
 
 ACTION: pnpm install
 RESULT: 
@@ -41,13 +46,13 @@ pnpm -v
 PNPM_HOME:$PATH"\n' >> ~/.bashrc
 
 PROMPT:
-I’m installing this repo based on the README file and have this new message in my cli: [pasted git bash error here]
+I’m installing this repo based on the README file and have this new message in my CLI: [pasted Git Bash error here]
 
 --- Windows PC ---
-All up to pnpm dev worked on pc
-Failure specific to package.json maps dev to a Bash script (./scripts/dev.sh) but on Windows pnpm run is invoking cmd.exe which can’t execute ./... syntax.
+Everything up through `pnpm dev` worked on a PC.
+The failure is specific to `package.json` mapping `dev` to a Bash script (`./scripts/dev.sh`), but on Windows, `pnpm run` invokes `cmd.exe`, which cannot execute `./...` syntax.
 
-Instead of pnpm dev use: 
+Instead of `pnpm dev`, use:
 pnpm dev:raw
 
 Set pnpm to use Git Bash for scripts:

@@ -30,9 +30,6 @@ table.
 This project does not ask you to build a new feature from scratch. It asks you to do what production
 engineers actually do: inherit a system, understand it deeply, measure its health, diagnose its
 weaknesses, and make it better with proof.
-Gate: Project completion is required for Austin admission.
-
-
 Project Overview
 Seven-day sprint with two phases:
 
@@ -43,7 +40,7 @@ Seven-day sprint with two phases:
                                                                    categories
  Implementation              Friday, 11:59 PM                      Measurable improvements across all 7
                                                                    categories
- Final Submission            Sunday, 11:59 PM                      Polish, documentation, presentation
+ Final Submission            Sunday, 10:59 PM CT                   Polish, documentation, presentation
 
 
 Phase 1: The Audit (36 Hours)
@@ -177,7 +174,7 @@ reliability.
 
 How to Measure
     •​ Run the full test suite: pnpm test. Record pass/fail counts and total runtime
-    •​ Read the test files. Catalog what user flows are covered and which are not
+    •​ Read the test files. Catalog which user flows are covered and which are not
     •​ Identify flaky tests: run the suite 3 times and note any tests that pass sometimes and fail others
     •​ Map critical user flows (document CRUD, real-time sync, auth, sprint management) against
         existing test coverage
