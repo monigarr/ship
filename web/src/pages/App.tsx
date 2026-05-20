@@ -303,6 +303,7 @@ export function AppLayout() {
               onClick={() => setWorkspaceSwitcherOpen(!workspaceSwitcherOpen)}
               className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
               title={currentWorkspace?.name || 'Select workspace'}
+              aria-label="Switch workspace"
             >
               {currentWorkspace?.name?.charAt(0).toUpperCase() || 'W'}
             </button>
@@ -411,6 +412,7 @@ export function AppLayout() {
               onClick={logout}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/80 text-xs font-medium text-white hover:bg-accent transition-colors"
               title={`${user?.name} - Click to logout`}
+              aria-label="Log out"
             >
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </button>
@@ -1070,7 +1072,7 @@ function IssuesList({
             <button
               type="button"
               onClick={(e) => handleMenuClick(e, issue)}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
               aria-label={`Actions for ${issue.title || 'Untitled'}`}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -1282,7 +1284,7 @@ function ProjectsList({
                 <button
                   type="button"
                   onClick={(e) => handleMenuClick(e, project)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
                   aria-label={`Actions for ${project.title || 'Untitled'}`}
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -1538,7 +1540,7 @@ function ProgramsList({
                 <button
                   type="button"
                   onClick={(e) => handleMenuClick(e, program.id)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-border/50 opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 transition-opacity"
                   aria-label={`Actions for ${program.name}`}
                 >
                   <MoreHorizontalIcon />
