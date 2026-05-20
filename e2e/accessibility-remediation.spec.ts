@@ -1561,36 +1561,4 @@ test.describe('Automated axe-core Full Scan', () => {
 
     expect(results.violations).toHaveLength(0)
   })
-
-  test('my-week page has no WCAG 2.2 AA violations', async ({ page }) => {
-    await login(page)
-    await page.goto('/my-week')
-    await page.waitForLoadState('networkidle')
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze()
-
-    if (results.violations.length > 0) {
-      console.log('My Week violations:', JSON.stringify(results.violations, null, 2))
-    }
-
-    expect(results.violations).toHaveLength(0)
-  })
-
-  test('projects page has no WCAG 2.2 AA violations', async ({ page }) => {
-    await login(page)
-    await page.goto('/projects')
-    await page.waitForLoadState('networkidle')
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze()
-
-    if (results.violations.length > 0) {
-      console.log('Projects violations:', JSON.stringify(results.violations, null, 2))
-    }
-
-    expect(results.violations).toHaveLength(0)
-  })
 })

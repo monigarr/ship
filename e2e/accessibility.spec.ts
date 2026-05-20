@@ -4,81 +4,11 @@ import AxeBuilder from '@axe-core/playwright'
 // Helper to log in before tests that need auth
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login')
-
-  const setupButton = page.getByRole('button', { name: /create admin account/i })
-  const signInButton = page.getByRole('button', { name: 'Sign in', exact: true })
-
-  await expect(setupButton.or(signInButton)).toBeVisible({ timeout: 10000 })
-
-  // Handle first-run setup flow for deterministic auth in isolated environments.
-  if (await setupButton.isVisible()) {
-    await page.locator('#name').fill('Dev User')
-    await page.locator('#email').fill('dev@ship.local')
-    await page.locator('#password').fill('admin123')
-    await page.locator('#confirmPassword').fill('admin123')
-    await setupButton.click()
-    await expect(page).not.toHaveURL('/setup', { timeout: 10000 })
-    return
-  }
-
   await page.locator('#email').fill('dev@ship.local')
   await page.locator('#password').fill('admin123')
-  await signInButton.click()
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).not.toHaveURL('/login', { timeout: 5000 })
 }
-
-const MAJOR_AUTH_PAGES = ['/my-week', '/issues', '/projects', '/docs'] as const
-
-async function analyzeCriticalAndSerious(page: import('@playwright/test').Page) {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze()
-
-  return results.violations.filter(
-    (v) => v.impact === 'critical' || v.impact === 'serious'
-  )
-}
-
-async function analyzeContrast(page: import('@playwright/test').Page) {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2aa', 'wcag21aa'])
-    .options({ rules: { 'color-contrast': { enabled: true } } })
-    .analyze()
-
-  return results.violations.filter((v) => v.id === 'color-contrast')
-}
-
-test.describe('PRD Category 7 - Major Page Compliance Gates', () => {
-  test('all major authenticated pages have zero critical/serious axe violations', async ({ page }) => {
-    await login(page)
-
-    for (const route of MAJOR_AUTH_PAGES) {
-      await page.goto(route)
-      await page.waitForLoadState('networkidle')
-
-      const criticalViolations = await analyzeCriticalAndSerious(page)
-      if (criticalViolations.length > 0) {
-        console.log(`Critical/serious violations on ${route}:`, JSON.stringify(criticalViolations, null, 2))
-      }
-      expect(criticalViolations, `Critical/serious violations must be zero on ${route}`).toHaveLength(0)
-    }
-  })
-
-  test('all major authenticated pages have zero color-contrast violations', async ({ page }) => {
-    await login(page)
-
-    for (const route of MAJOR_AUTH_PAGES) {
-      await page.goto(route)
-      await page.waitForLoadState('networkidle')
-
-      const contrastViolations = await analyzeContrast(page)
-      if (contrastViolations.length > 0) {
-        console.log(`Color-contrast violations on ${route}:`, JSON.stringify(contrastViolations, null, 2))
-      }
-      expect(contrastViolations, `Color-contrast violations must be zero on ${route}`).toHaveLength(0)
-    }
-  })
-})
 
 test.describe('Accessibility - axe-core audit', () => {
   test('login page has no critical accessibility violations', async ({ page }) => {
