@@ -26,24 +26,33 @@ if [ -z "$DOCKER_BIN" ]; then
   exit 1
 fi
 
-REPO_MOUNT="$PWD"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+REPO_MOUNT="$REPO_ROOT"
 if [ "$DOCKER_BIN" = "docker.exe" ]; then
   if command -v cygpath >/dev/null 2>&1; then
-    REPO_MOUNT="$(cygpath -w "$PWD")"
+    REPO_MOUNT="$(cygpath -w "$REPO_ROOT")"
   elif command -v wslpath >/dev/null 2>&1; then
-    REPO_MOUNT="$(wslpath -w "$PWD")"
+    REPO_MOUNT="$(wslpath -w "$REPO_ROOT")"
   fi
 fi
 
+run_docker() {
+  if [ "$DOCKER_BIN" = "docker.exe" ] || [ -n "$MSYSTEM" ]; then
+    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL="*" "$DOCKER_BIN" "$@"
+  else
+    "$DOCKER_BIN" "$@"
+  fi
+}
+
 echo "Running staged gitleaks secret scan..."
-"$DOCKER_BIN" run --rm -v "$REPO_MOUNT:/repo" -w /repo zricethezav/gitleaks:latest git /repo --staged --redact --no-banner --exit-code 1
+run_docker run --rm -v "$REPO_MOUNT:/repo" -w /repo zricethezav/gitleaks:latest git /repo --staged --redact --no-banner --exit-code 1
 
 echo "Running trivy secret/misconfig scan..."
 STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR)"
 if [ -n "$STAGED_FILES" ]; then
   for file in $STAGED_FILES; do
     if [ -f "$file" ]; then
-      "$DOCKER_BIN" run --rm -v "$REPO_MOUNT:/repo" aquasec/trivy:latest filesystem --scanners misconfig,secret --severity HIGH,CRITICAL --exit-code 1 --quiet "/repo/$file"
+      run_docker run --rm -v "$REPO_MOUNT:/repo" aquasec/trivy:latest filesystem --scanners misconfig,secret --severity HIGH,CRITICAL --exit-code 1 --quiet "/repo/$file"
     fi
   done
 else

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ship-compliance"
+version = "0.1.0"
+description = "Federal compliance CLI for Ship monorepo"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "typer==0.25.1",
+  "rich==15.0.0",
+  "psycopg2-binary==2.9.9",
+  "PyYAML==6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.2.2",
+]
+
+[project.scripts]
+ship-compliance = "ship_compliance.cli:app"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ship_compliance*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
