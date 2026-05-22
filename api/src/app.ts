@@ -214,7 +214,8 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
     res.json({ token: generateToken(req) });
   });
 
-  // Health check (no CSRF needed)
+  // Health check contract (used by Render + nginx startup probe): unauthenticated GET /health must return 200 with { status: 'ok' }.
+  // Keep this response aligned with DEPLOYMENT.md and API_STARTUP_CHECK_PATH configuration.
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });

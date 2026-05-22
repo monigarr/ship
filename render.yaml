@@ -47,4 +47,16 @@ services:
           name: ship-api
           property: host
       - key: API_SCHEME
-        value: https
+        value: http
+      - key: API_PORT
+        value: "10000"
+      - key: API_HEALTH_FALLBACK
+        value: "0"
+      - key: API_STARTUP_CHECK_MODE
+        value: warn
+      - key: API_STARTUP_CHECK_PATH
+        value: /health
+      - key: API_STARTUP_CHECK_RETRIES
+        value: "3"
+      - key: API_STARTUP_CHECK_TIMEOUT_SECONDS
+        value: "2"
