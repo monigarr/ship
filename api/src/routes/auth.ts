@@ -29,6 +29,18 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  // Guard against oversized credential payloads.
+  if (String(email).length > 254 || String(password).length > 1024) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Credentials exceed allowed length',
+      },
+    });
+    return;
+  }
+
   try {
     // Find user with their workspace memberships (case-insensitive email lookup)
     const userResult = await pool.query(
@@ -179,7 +191,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     });
 
     // Pending accountability items will be fetched via /api/accountability/action-items
-    const pendingAccountabilityItems: any[] = [];
+    const pendingAccountabilityItems: Array<Record<string, never>> = [];
 
     // Set cookie with hardened security options
     res.cookie('session_id', sessionId, {
@@ -309,7 +321,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
     }
 
     // Pending accountability items will be fetched via /api/accountability/action-items
-    const pendingAccountabilityItems: any[] = [];
+    const pendingAccountabilityItems: Array<Record<string, never>> = [];
 
     res.json({
       success: true,

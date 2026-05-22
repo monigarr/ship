@@ -303,6 +303,9 @@ export function AppLayout() {
               onClick={() => setWorkspaceSwitcherOpen(!workspaceSwitcherOpen)}
               className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
               title={currentWorkspace?.name || 'Select workspace'}
+              aria-label={currentWorkspace?.name ? `Current workspace ${currentWorkspace.name}` : 'Select workspace'}
+              aria-haspopup="menu"
+              aria-expanded={workspaceSwitcherOpen}
             >
               {currentWorkspace?.name?.charAt(0).toUpperCase() || 'W'}
             </button>
@@ -411,6 +414,7 @@ export function AppLayout() {
               onClick={logout}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/80 text-xs font-medium text-white hover:bg-accent transition-colors"
               title={`${user?.name} - Click to logout`}
+              aria-label={`Logout ${user?.name ?? 'current user'}`}
             >
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </button>
@@ -1023,14 +1027,12 @@ function IssuesList({
   }, []);
 
   const handleChangeStatus = useCallback(async (issue: Issue, state: string) => {
-    const originalState = issue.state;
     await onUpdateIssue(issue.id, { state });
     showToast(`Status changed to ${state.replace('_', ' ')}`, 'success');
     setContextMenu(null);
   }, [onUpdateIssue, showToast]);
 
   const handleArchive = useCallback(async (issue: Issue) => {
-    const originalState = issue.state;
     await onUpdateIssue(issue.id, { state: 'cancelled' });
     showToast('Issue archived', 'success');
     setContextMenu(null);

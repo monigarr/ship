@@ -91,5 +91,24 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: proxyConfig,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            tiptap: [
+              '@tiptap/core',
+              '@tiptap/react',
+              '@tiptap/starter-kit',
+              '@tiptap/pm/state',
+              '@tiptap/pm/model',
+              '@tiptap/pm/view',
+            ],
+            yjs: ['yjs', 'y-websocket', 'y-indexeddb'],
+            query: ['@tanstack/react-query', '@tanstack/react-query-persist-client'],
+            emoji: ['emoji-picker-react'],
+          },
+        },
+      },
+    },
   };
 });

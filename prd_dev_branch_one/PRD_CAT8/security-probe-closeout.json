@@ -1,0 +1,448 @@
+{
+  "generatedAt": "2026-05-21T22:07:13.588Z",
+  "target": {
+    "baseUrl": "http://localhost:3000",
+    "wsBaseUrl": "ws://localhost:3000"
+  },
+  "summary": {
+    "total": 37,
+    "byStatus": {
+      "pass": 4,
+      "fail": 0,
+      "warn": 33,
+      "skip": 0,
+      "error": 0
+    },
+    "bySeverity": {
+      "critical": 2,
+      "high": 30,
+      "medium": 1,
+      "low": 0,
+      "info": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "auth-unauthenticated-route-access",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated auth route rejection",
+      "details": "Route correctly rejects unauthenticated access.",
+      "reproduction": [
+        "curl -i \"http://localhost:3000/api/auth/me\""
+      ],
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-member-admin-escalation-check",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Member cannot access admin endpoint",
+      "details": "Access correctly blocked with 401.",
+      "reproduction": [
+        "Login as non-admin member",
+        "curl -i -H \"cookie: session_id=...\" \"http://localhost:3000/api/admin/workspaces\""
+      ],
+      "evidence": {
+        "loginStatus": 403,
+        "adminStatus": 401
+      }
+    },
+    {
+      "id": "ws-unauthenticated-upgrade-check",
+      "surface": "websocket",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated WebSocket upgrade rejection",
+      "details": "WebSocket endpoint rejects unauthenticated connections.",
+      "reproduction": [
+        "wscat -c \"ws://localhost:3000/collaboration/security-probe:00000000-0000-0000-0000-000000000000\""
+      ],
+      "evidence": {
+        "statusCode": 401
+      }
+    },
+    {
+      "id": "ws-malformed-payload-check-auth-failed",
+      "surface": "websocket",
+      "status": "warn",
+      "severity": "medium",
+      "title": "Authenticated WebSocket malformed payload check unavailable",
+      "details": "Could not authenticate member user (login status 403).",
+      "reproduction": [
+        "Verify SECURITY_PROBE_MEMBER_EMAIL and SECURITY_PROBE_MEMBER_PASSWORD values."
+      ]
+    },
+    {
+      "id": "input-reflected-xss-check",
+      "surface": "input-sanitization",
+      "status": "pass",
+      "severity": "info",
+      "title": "Reflected input payload check",
+      "details": "No raw reflected payload detected in API response.",
+      "reproduction": [
+        "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=<script>alert(\"ship_probe\")</script>\""
+      ],
+      "evidence": {
+        "status": 404,
+        "reflected": false
+      }
+    },
+    {
+      "id": "dep-advisory-1113461",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113465",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113515",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: rollup",
+      "details": "Rollup 4 has Arbitrary File Write via Path Traversal (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113540",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113544",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113548",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113552",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: minimatch",
+      "details": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113568",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "critical",
+      "title": "Dependency advisory: fast-xml-parser",
+      "details": "fast-xml-parser has an entity encoding bypass via regex injection in DOCTYPE entity names (critical)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1113569",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: fast-xml-parser",
+      "details": "fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit) (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114006",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: hono",
+      "details": "Hono vulnerable to arbitrary file access via serveStatic vulnerability  (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114151",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: svgo",
+      "details": "SVGO DoS through entity expansion in DOCTYPE (Billion Laughs) (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114170",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: @hono/node-server",
+      "details": "@hono/node-server has authorization bypass for protected static paths via encoded slashes in Serve Static Middleware (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114194",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: express-rate-limit",
+      "details": "express-rate-limit: IPv4-mapped IPv6 addresses bypass per-client rate limiting on servers with dual-stack network (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114526",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: flatted",
+      "details": "flatted vulnerable to unbounded recursion DoS in parse() revive phase (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114591",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: undici",
+      "details": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114637",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: undici",
+      "details": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1114639",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: undici",
+      "details": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115339",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: fast-xml-parser",
+      "details": "fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278) (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115357",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: flatted",
+      "details": "Prototype Pollution via parse() in NodeJS flatted (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115527",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: path-to-regexp",
+      "details": "path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115552",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: picomatch",
+      "details": "Picomatch has a ReDoS vulnerability via extglob quantifiers (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115554",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: picomatch",
+      "details": "Picomatch has a ReDoS vulnerability via extglob quantifiers (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115573",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: path-to-regexp",
+      "details": "path-to-regexp vulnerable to Denial of Service via sequential optional groups (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1115806",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: lodash",
+      "details": "lodash vulnerable to Code Injection via `_.template` imports key names (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1116234",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: vite",
+      "details": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1117571",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "critical",
+      "title": "Dependency advisory: protobufjs",
+      "details": "Arbitrary code execution in protobufjs (critical)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1117870",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: fast-uri",
+      "details": "fast-uri vulnerable to path traversal via percent-encoded dot segments (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1117884",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: fast-uri",
+      "details": "fast-uri vulnerable to host confusion via percent-encoded authority delimiters (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1118641",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: protobufjs",
+      "details": "protobuf.js: Code injection through bytes field defaults in generated toObject code (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1118928",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: protobufjs",
+      "details": "protobuf.js: Code generation gadget after prototype pollution (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1118930",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: protobufjs",
+      "details": "protobuf.js: Process-wide denial of service through unsafe option paths (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    },
+    {
+      "id": "dep-advisory-1118932",
+      "surface": "dependencies",
+      "status": "warn",
+      "severity": "high",
+      "title": "Dependency advisory: protobufjs",
+      "details": "protobuf.js: Denial of service through unbounded protobuf recursion (high)",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    }
+  ]
+}

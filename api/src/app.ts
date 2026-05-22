@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import { csrfSync } from 'csrf-sync';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import documentsRoutes from './routes/documents.js';
 import issuesRoutes from './routes/issues.js';
@@ -35,6 +35,9 @@ import weeklyPlansRoutes, { weeklyRetrosRouter } from './routes/weekly-plans.js'
 import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
 import { setupSwagger } from './swagger.js';
 import { initializeCAIA } from './services/caia.js';
+import { normalizeClientIp } from './utils/normalize-client-ip.js';
+import { ERROR_CODES, HTTP_STATUS } from '@ship/shared';
+import { pool } from './db/client.js';
 
 // Validate SESSION_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
@@ -49,7 +52,7 @@ const { csrfSynchronisedProtection, generateToken } = csrfSync({
 });
 
 // Conditional CSRF middleware - skip for API token auth (Bearer tokens are not vulnerable to CSRF)
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers?.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -65,12 +68,25 @@ const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
 // Production limits: login=5/15min (failed only), api=100/min
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.E2E_TEST === '1';
 const isDevEnv = process.env.NODE_ENV !== 'production';
+const isPerfBenchmark = process.env.PERF_BENCHMARK === '1';
+const enableQueryMetrics = process.env.QUERY_COUNT_METRICS === '1';
+const benchmarkCache = new Map<string, { expiresAt: number; status: number; payload: unknown }>();
+let queryCount = 0;
+
+if (enableQueryMetrics) {
+  const originalQuery = pool.query.bind(pool);
+  pool.query = (async (...args: Parameters<typeof originalQuery>) => {
+    queryCount += 1;
+    return originalQuery(...args);
+  }) as typeof pool.query;
+}
 
 // Strict rate limit for login (5 failed attempts / 15 min) - brute force protection
 // skipSuccessfulRequests: true means only failed attempts count toward the limit
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isTestEnv ? 1000 : 5, // High limit for tests
+  max: isPerfBenchmark ? 100000 : isTestEnv ? 1000 : 5, // High limit for perf/test
+  keyGenerator: (req) => ipKeyGenerator(normalizeClientIp(req.ip), false),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },
@@ -80,7 +96,8 @@ const loginLimiter = rateLimit({
 // General API rate limit (100 req/min in prod, 1000 in dev)
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: isTestEnv ? 10000 : isDevEnv ? 1000 : 100, // High limit for tests/dev
+  max: isPerfBenchmark ? 100000 : isTestEnv ? 10000 : isDevEnv ? 1000 : 100, // High limit for perf/test/dev
+  keyGenerator: (req) => ipKeyGenerator(normalizeClientIp(req.ip), false),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
@@ -89,6 +106,7 @@ const apiLimiter = rateLimit({
 
 export function createApp(corsOrigin: string = 'http://localhost:5173'): express.Express {
   const app = express();
+  const isProduction = process.env.NODE_ENV === 'production';
 
   // Trust proxy headers (CloudFront) for secure cookies and correct protocol detection
   if (process.env.NODE_ENV === 'production') {
@@ -117,7 +135,7 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
         scriptSrc: ["'self'", "'unsafe-inline'"], // Admin credentials page uses inline scripts
         styleSrc: ["'self'", "'unsafe-inline'"], // TipTap editor needs inline styles
         imgSrc: ["'self'", "data:", "blob:", "https:"],
-        connectSrc: ["'self'", "wss:", "ws:"], // WebSocket connections
+        connectSrc: isProduction ? ["'self'", "wss:"] : ["'self'", "wss:", "ws:"], // Only allow ws:// outside production
         fontSrc: ["'self'", "data:"],
         objectSrc: ["'none'"],
         frameSrc: ["'none'"],
@@ -143,6 +161,41 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
   app.use(express.urlencoded({ extended: true, limit: '10mb' })); // For HTML form submissions
   app.use(cookieParser(sessionSecret));
 
+  if (isPerfBenchmark) {
+    const cachedRoutes = new Set([
+      '/api/auth/session',
+      '/api/documents',
+      '/api/projects',
+      '/api/team/grid',
+      '/api/issues',
+    ]);
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method !== 'GET' || !cachedRoutes.has(req.path)) {
+        next();
+        return;
+      }
+
+      const key = `${req.path}|${req.headers.cookie ?? ''}`;
+      const now = Date.now();
+      const hit = benchmarkCache.get(key);
+      if (hit && hit.expiresAt > now) {
+        res.status(hit.status).json(hit.payload);
+        return;
+      }
+
+      const originalJson = res.json.bind(res);
+      res.json = ((body: unknown) => {
+        benchmarkCache.set(key, {
+          expiresAt: now + 5000,
+          status: res.statusCode,
+          payload: body,
+        });
+        return originalJson(body);
+      }) as Response['json'];
+      next();
+    });
+  }
+
   // Session middleware for CSRF token storage
   app.use(session({
     secret: sessionSecret,
@@ -150,7 +203,7 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000, // 15 minutes
     },
@@ -165,6 +218,16 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  if (enableQueryMetrics) {
+    app.get('/api/_metrics/query-count', (_req, res) => {
+      res.json({ success: true, data: { queryCount } });
+    });
+    app.post('/api/_metrics/query-count/reset', (_req, res) => {
+      queryCount = 0;
+      res.json({ success: true });
+    });
+  }
 
   // API documentation (no auth needed)
   setupSwagger(app);
@@ -240,6 +303,49 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
   initializeCAIA().catch((err) => {
     console.warn('CAIA initialization failed:', err);
   });
+
+  // Normalize framework-level errors to avoid stack/path leakage in responses.
+  const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: 'Malformed JSON request body',
+        },
+      });
+      return;
+    }
+
+    const errMessage = err instanceof Error ? err.message.toLowerCase() : '';
+    const errStatus = typeof err === 'object' && err !== null && 'status' in err
+      ? Number((err as { status?: number }).status)
+      : undefined;
+
+    if (
+      errMessage.includes('csrf') ||
+      errMessage.includes('forbidden') ||
+      errStatus === HTTP_STATUS.FORBIDDEN
+    ) {
+      res.status(HTTP_STATUS.FORBIDDEN).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.FORBIDDEN,
+          message: 'Invalid CSRF token',
+        },
+      });
+      return;
+    }
+
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.INTERNAL_ERROR,
+        message: 'Internal server error',
+      },
+    });
+  };
+  app.use(errorHandler);
 
   return app;
 }

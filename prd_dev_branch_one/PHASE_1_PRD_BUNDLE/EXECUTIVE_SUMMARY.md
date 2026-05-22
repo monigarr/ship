@@ -32,13 +32,13 @@ The report does not attempt to fix issues during Phase 1. Instead, it establishe
 
 | Reviewer Question | Fast Answer |
 |---|---|
-| Are all 7 categories covered? | Yes. |
-| Are there concrete baseline numbers? | Yes. |
-| Are methods and tools documented? | Yes. |
-| Are weaknesses and severity rankings included? | Yes. |
-| Are raw evidence artifacts listed? | Yes. |
-| Are limitations disclosed? | Yes. |
-| Is there a credible Phase 2 improvement path? | Yes. |
+| Are all 7 categories covered?                     | Yes. |
+| Are there concrete baseline numbers?              | Yes. |
+| Are methods and tools documented?                 | Yes. |
+| Are weaknesses and severity rankings included?    | Yes. |
+| Are raw evidence artifacts listed?                | Yes. |
+| Are limitations disclosed?                        | Yes. |
+| Is there a credible Phase 2 improvement path?     | Yes. |
 
 ---
 
@@ -65,7 +65,7 @@ The highest type-safety violation density is in API route handlers:
 | File | Combined Violation Count | Why It Matters |
 |---|---:|---|
 | `api/src/routes/weeks.ts` | 216 | Complex sprint/week orchestration with many runtime assumptions. |
-| `api/src/routes/team.ts` | 171 | Aggregated team data likely touches many nullability and shape assumptions. |
+| `api/src/routes/team.ts`  | 171 | Aggregated team data likely touches many nullability and shape assumptions. |
 | `api/src/routes/projects.ts` | 106 | Project views are workflow-critical and assertion-heavy. |
 | `api/src/routes/claude.ts` | 79 | AI-adjacent integration surface with runtime-shape uncertainty. |
 | `api/src/routes/issues.ts` | 78 | Core issue workflow plus latency concerns. |
@@ -80,10 +80,10 @@ The frontend build has a large production output and oversized main entry chunk:
 
 | Metric | Baseline |
 |---|---:|
-| Total production bundle output | `11625.94 KB` |
-| Largest chunk | `index-C2vAyoQ1.js` — `2025.14 KB` |
-| JS chunk count | `261` |
-| Largest dependencies | `emoji-picker-react`, `highlight.js`, `yjs` |
+| Total production bundle output    | `11625.94 KB` |
+| Largest chunk                     | `index-C2vAyoQ1.js` — `2025.14 KB` |
+| JS chunk count                    | `261` |
+| Largest dependencies              | `emoji-picker-react`, `highlight.js`, `yjs` |
 
 **Why this matters:** the editor and collaboration stack are valuable features, but they should not dominate initial route load when users do not immediately need them.
 
@@ -95,11 +95,11 @@ At 25 concurrent connections:
 
 | Endpoint | P50 | P95 | P99 | Risk |
 |---|---:|---:|---:|---|
-| `/api/issues` | 253 ms | 287.67 ms | 299 ms | Highest latency baseline |
-| `/api/team/grid` | 13 ms | 104 ms | 144 ms | Highest variance after issues |
-| `/api/auth/session` | 13 ms | 27.33 ms | 36 ms | Healthy |
-| `/api/documents` | 13 ms | 28 ms | 37 ms | Healthy |
-| `/api/projects` | 12 ms | 26.33 ms | 35 ms | Healthy |
+| `/api/issues`         | 253 ms    | 287.67 ms     | 299 ms    | Highest latency baseline |
+| `/api/team/grid`      | 13 ms     | 104 ms        | 144 ms    | Highest variance after issues |
+| `/api/auth/session`   | 13 ms     | 27.33 ms      | 36 ms     | Healthy |
+| `/api/documents`      | 13 ms     | 28 ms         | 37 ms     | Healthy |
+| `/api/projects`       | 12 ms     | 26.33 ms      | 35 ms     | Healthy |
 
 **Why this matters:** Phase 2 has a direct PRD target: reduce P95 by 20% on at least 2 endpoints. `/api/issues` and `/api/team/grid` are the best targets because they have clear upside and measurable baselines.
 
@@ -137,11 +137,11 @@ Lighthouse scores are generally strong, but manual and axe findings show route-l
 
 | Area | Likely Failure Mode | Reason |
 |---|---|---|
-| Search | Query latency growth | `ILIKE` search uses sequential scan behavior. |
-| API aggregation routes | Tail-latency amplification | Dense orchestration and runtime-shape assumptions. |
-| Collaboration E2E/CI | Test instability | Heavy isolated environment setup and editor collaboration paths. |
-| Frontend load | Slow first interaction | Oversized main bundle and heavy editor dependencies. |
-| Accessibility workflows | Inconsistent operability | Automated scores are stronger than manual route parity. |
+| Search                    | Query latency growth | `ILIKE` search uses sequential scan behavior. |
+| API aggregation routes    | Tail-latency amplification | Dense orchestration and runtime-shape assumptions. |
+| Collaboration E2E/CI      | Test instability | Heavy isolated environment setup and editor collaboration paths. |
+| Frontend load             | Slow first interaction | Oversized main bundle and heavy editor dependencies. |
+| Accessibility workflows   | Inconsistent operability | Automated scores are stronger than manual route parity. |
 
 ---
 

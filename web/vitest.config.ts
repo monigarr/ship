@@ -34,6 +34,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    fileParallelism: false,
+    maxWorkers: 1,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      exclude: ['node_modules', 'dist', 'src/test/**'],
+    },
   },
   resolve: {
     alias: {

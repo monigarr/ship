@@ -10,6 +10,7 @@ import { extractHypothesisFromContent, extractSuccessCriteriaFromContent, extrac
 import { yjsToJson, jsonToYjs } from '../utils/yjsConverter.js';
 import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
 import cookie from 'cookie';
+import { normalizeClientIp } from '../utils/normalize-client-ip.js';
 
 const messageSync = 0;
 const messageAwareness = 1;
@@ -51,20 +52,22 @@ setInterval(() => {
 
 // Check if IP is rate limited for new connections
 function isConnectionRateLimited(ip: string): boolean {
+  const normalizedIp = normalizeClientIp(ip);
   const now = Date.now();
-  const attempts = connectionAttempts.get(ip) || [];
+  const attempts = connectionAttempts.get(normalizedIp) || [];
   const recentAttempts = attempts.filter(t => now - t < RATE_LIMIT.CONNECTION_WINDOW_MS);
   return recentAttempts.length >= RATE_LIMIT.MAX_CONNECTIONS_PER_IP;
 }
 
 // Record a connection attempt from an IP
 function recordConnectionAttempt(ip: string): void {
+  const normalizedIp = normalizeClientIp(ip);
   const now = Date.now();
-  const attempts = connectionAttempts.get(ip) || [];
+  const attempts = connectionAttempts.get(normalizedIp) || [];
   attempts.push(now);
   // Keep only recent attempts to limit memory usage
   const recentAttempts = attempts.filter(t => now - t < RATE_LIMIT.CONNECTION_WINDOW_MS);
-  connectionAttempts.set(ip, recentAttempts);
+  connectionAttempts.set(normalizedIp, recentAttempts);
 }
 
 // Check if a WebSocket connection is rate limited for messages
@@ -102,6 +105,35 @@ const pendingSaves = new Map<string, NodeJS.Timeout>();
 function parseDocId(docName: string): string {
   const parts = docName.split(':');
   return parts.length > 1 ? parts[1]! : parts[0]!;
+}
+
+const ALLOWED_DOC_PREFIXES = new Set([
+  'wiki',
+  'issue',
+  'project',
+  'program',
+  'sprint',
+  'person',
+  'weekly_plan',
+  'weekly_retro',
+  'standup',
+]);
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isValidRoomName(roomName: string): boolean {
+  if (!roomName || roomName.length > 128) return false;
+  if (!roomName.includes(':')) {
+    // Legacy format: plain UUID room names
+    return isUuid(roomName);
+  }
+
+  const [prefix, docId] = roomName.split(':');
+  if (!prefix || !docId) return false;
+  if (!ALLOWED_DOC_PREFIXES.has(prefix)) return false;
+  return isUuid(docId);
 }
 
 // Track last content history log time per document to avoid excessive logging
@@ -304,42 +336,50 @@ function getAwareness(docName: string, doc: Y.Doc): awarenessProtocol.Awareness 
 }
 
 function handleMessage(ws: WebSocket, message: Uint8Array, docName: string, doc: Y.Doc, aw: awarenessProtocol.Awareness) {
-  const decoder = decoding.createDecoder(message);
-  const messageType = decoding.readVarUint(decoder);
+  try {
+    const decoder = decoding.createDecoder(message);
+    const messageType = decoding.readVarUint(decoder);
 
-  switch (messageType) {
-    case messageSync: {
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, messageSync);
-      // Pass ws as origin so broadcast excludes the sender
-      syncProtocol.readSyncMessage(decoder, encoder, doc, ws);
+    switch (messageType) {
+      case messageSync: {
+        const encoder = encoding.createEncoder();
+        encoding.writeVarUint(encoder, messageSync);
+        // Pass ws as origin so broadcast excludes the sender
+        syncProtocol.readSyncMessage(decoder, encoder, doc, ws);
 
-      if (encoding.length(encoder) > 1) {
-        ws.send(encoding.toUint8Array(encoder));
-      }
-      break;
-    }
-    case messageAwareness: {
-      const awarenessData = decoding.readVarUint8Array(decoder);
-
-      // Extract the actual client's awarenessClientId from the update
-      // This is critical for proper cleanup on disconnect - the server was
-      // previously storing doc.clientID (server's ID) instead of the client's
-      // actual awareness clientID, causing stale states on page refresh.
-      // Format: [numStates, ...for each: clientId, clock, stateJson]
-      const conn = conns.get(ws);
-      if (conn) {
-        const updateDecoder = decoding.createDecoder(awarenessData);
-        const numStates = decoding.readVarUint(updateDecoder);
-        if (numStates > 0) {
-          const clientId = decoding.readVarUint(updateDecoder);
-          conn.awarenessClientId = clientId;
+        if (encoding.length(encoder) > 1) {
+          ws.send(encoding.toUint8Array(encoder));
         }
+        break;
       }
+      case messageAwareness: {
+        const awarenessData = decoding.readVarUint8Array(decoder);
 
-      awarenessProtocol.applyAwarenessUpdate(aw, awarenessData, ws);
-      break;
+        // Extract the actual client's awarenessClientId from the update
+        // This is critical for proper cleanup on disconnect - the server was
+        // previously storing doc.clientID (server's ID) instead of the client's
+        // actual awareness clientID, causing stale states on page refresh.
+        // Format: [numStates, ...for each: clientId, clock, stateJson]
+        const conn = conns.get(ws);
+        if (conn) {
+          const updateDecoder = decoding.createDecoder(awarenessData);
+          const numStates = decoding.readVarUint(updateDecoder);
+          if (numStates > 0) {
+            const clientId = decoding.readVarUint(updateDecoder);
+            conn.awarenessClientId = clientId;
+          }
+        }
+
+        awarenessProtocol.applyAwarenessUpdate(aw, awarenessData, ws);
+        break;
+      }
+      default: {
+        ws.close(1008, 'Unsupported message type');
+        break;
+      }
     }
+  } catch {
+    ws.close(1003, 'Malformed websocket payload');
   }
 }
 
@@ -664,7 +704,12 @@ export function setupCollaboration(server: Server) {
       return;
     }
 
-    const docName = url.pathname.replace('/collaboration/', '');
+    const docName = decodeURIComponent(url.pathname.replace('/collaboration/', ''));
+    if (!isValidRoomName(docName)) {
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
     const docId = parseDocId(docName);
 
     // Check document access (visibility check)
