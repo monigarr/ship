@@ -1,0 +1,42 @@
+# Render production web image: build Vite app and serve via nginx.
+FROM public.ecr.aws/docker/library/node:20-slim AS builder
+
+WORKDIR /app
+
+RUN npm config set strict-ssl false
+RUN npm install -g pnpm@10.27.0 && pnpm config set strict-ssl false
+
+# Copy workspace manifests first for dependency caching.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+COPY web/package.json ./web/
+COPY shared/package.json ./shared/
+COPY api/package.json ./api/
+
+RUN pnpm install --frozen-lockfile --filter @ship/web --filter @ship/shared --ignore-scripts
+
+COPY shared/ ./shared/
+COPY web/ ./web/
+
+ARG VITE_API_URL=""
+ARG VITE_WS_URL=""
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_WS_URL=${VITE_WS_URL}
+
+RUN pnpm build:shared && pnpm --filter @ship/web build
+
+FROM public.ecr.aws/nginx/nginx:1.27-alpine
+
+RUN apk add --no-cache gettext
+
+COPY web/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY web/nginx/start-nginx.sh /usr/local/bin/start-nginx.sh
+RUN chmod +x /usr/local/bin/start-nginx.sh
+COPY --from=builder /app/web/dist/ /usr/share/nginx/html/
+
+ENV PORT=10000
+ENV API_HOST=ship-api.onrender.com
+ENV API_SCHEME=https
+
+EXPOSE 10000
+
+CMD ["/usr/local/bin/start-nginx.sh"]

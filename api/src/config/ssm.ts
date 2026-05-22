@@ -40,6 +40,23 @@ export async function loadProductionSecrets(): Promise<void> {
     return; // Use .env files for local dev
   }
 
+  // Render (and other non-AWS environments) can provide env vars directly.
+  if (process.env.SKIP_SSM_SECRETS === '1') {
+    console.log('Skipping SSM secrets load (SKIP_SSM_SECRETS=1)');
+    return;
+  }
+
+  // If all required values are already provided, do not overwrite them from SSM.
+  if (
+    process.env.DATABASE_URL &&
+    process.env.SESSION_SECRET &&
+    process.env.CORS_ORIGIN &&
+    process.env.APP_BASE_URL
+  ) {
+    console.log('Skipping SSM secrets load (required env vars already present)');
+    return;
+  }
+
   const environment = process.env.ENVIRONMENT || 'prod';
   const basePath = `/ship/${environment}`;
 

@@ -33,23 +33,23 @@ Status values:
 
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
-| IR-1 | Before/after proof is mandatory for every improvement | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/phase2-regeneration-summary.md` | Need complete before/after packs for remaining open categories (C1/C2/C3/C4/C6/C7) |
+| IR-1 | Before/after proof is mandatory for every improvement | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` | N/A |
 | IR-2 | Existing tests must still pass | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/lint-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/build-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/api-test-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-after.log` | Keep rerun artifacts current after final remediations |
-| IR-3 | Reasoning documented per improvement (what changed, why old was suboptimal, tradeoffs) | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need final per-category reasoning writeups for remaining open categories |
-| IR-4 | No cosmetic-only changes counted as improvements | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need final reviewer validation pass mapping each counted change to measurable metric delta |
-| IR-5 | Commit discipline: logical separation with descriptive history | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need final commit-history review artifact proving discipline and separation |
+| IR-3 | Reasoning documented per improvement (what changed, why old was suboptimal, tradeoffs) | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md`, `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/REVIEWER_CLOSEOUT_REPORT.md` | N/A |
+| IR-4 | No cosmetic-only changes counted as improvements | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md` | N/A |
+| IR-5 | Commit discipline: logical separation with descriptive history | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/REPO_FORK_BRANCH_EVIDENCE.md` | N/A |
 
 ## C) Phase 2 PRD - Discovery + Submission Deliverables
 
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
-| D-1 | Discovery requirement: 3 discoveries with file path/line range, meaning, and future application | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need final packaged discovery write-up with all required fields |
+| D-1 | Discovery requirement: 3 discoveries with file path/line range, meaning, and future application | Met | `prd_dev_branch_one/DISCOVERY_WRITEUP.md` | N/A |
 | SR-1 | Audit report with baseline measurements for all 7 categories | Met | `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md` | N/A |
-| SR-2 | Improvement documentation for all 7 categories (before/root cause/fix/after/reproducibility) | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/phase2-regeneration-summary.md` | Need complete improvement docs for remaining categories |
+| SR-2 | Improvement documentation for all 7 categories (before/root cause/fix/after/reproducibility) | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` | N/A |
 | SR-3 | Discovery write-up deliverable | Met | `prd_dev_branch_one/DISCOVERY_WRITEUP.md` | N/A |
-| SR-4 | Demo video (3-5 min) artifact evidence | Not Met | `PRESENTATION.md`, `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need branch-local demo evidence (link/script/recording reference) packaged in `prd_dev_branch_one/` |
-| SR-5 | AI cost analysis + deployed app proof + social post evidence | Not Met | `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md` | Need explicit artifacts for AI cost, deployment/public URL evidence, and social post link/screenshot |
-| SR-6 | GitHub repo fork with improvements on clearly labeled branches + setup guide in README | Not Met | `README.md` | Need explicit branch packaging evidence in this submission bundle; setup guide exists but fork/branch evidence is not packaged in `prd_dev_branch_one/` |
+| SR-4 | Demo video (3-5 min) artifact evidence | Not Met | `prd_dev_branch_one/DEMO_VIDEO_PACKAGE.md`, `prd_dev_branch_one/EXTERNAL_INPUT_NEEDED.md` | Need final recorded demo URL/file + timestamped proof attachment |
+| SR-5 | AI cost analysis + deployed app proof + social post evidence | Not Met | `prd_dev_branch_one/AI_COST_ANALYSIS.md`, `prd_dev_branch_one/DEPLOYMENT_EVIDENCE.md`, `prd_dev_branch_one/SOCIAL_POST_EVIDENCE.md`, `prd_dev_branch_one/EXTERNAL_INPUT_NEEDED.md` | Need public deploy URL evidence and published social post URL/screenshot (AI cost section already complete) |
+| SR-6 | GitHub repo fork with improvements on clearly labeled branches + setup guide in README | Met | `README.md`, `prd_dev_branch_one/REPO_FORK_BRANCH_EVIDENCE.md` | N/A |
 
 ## D) Cat8 PRD - Security Probe Tool Requirements
 

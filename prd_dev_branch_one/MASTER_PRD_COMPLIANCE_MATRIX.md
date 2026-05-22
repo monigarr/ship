@@ -39,16 +39,18 @@ Status legend: `Met` | `Partial` | `Missing` | `Pending Regeneration`
 
 | Requirement ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| IR-1 | Before/after proof for every improvement | Partial | `PHASE_2_PRD_BUNDLE/evidence/*`, `PRD_CAT8/security-probe-report.*`, `PRD_CAT8/cat8-regeneration-summary.md` |
+| IR-1 | Before/after proof for every improvement | Met | `PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md`, `PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md`, `IMPLEMENTATION_RULES_CLOSEOUT.md` |
 | IR-2 | Existing tests pass after changes | Met | `PHASE_2_PRD_BUNDLE/evidence/final-gate-summary.md`, `PHASE_2_PRD_BUNDLE/evidence/type-check-final.log`, `PHASE_2_PRD_BUNDLE/evidence/build-final.log`, `PHASE_2_PRD_BUNDLE/evidence/test-final.log`, `PHASE_2_PRD_BUNDLE/evidence/test-coverage-final.log` |
-| IR-3 | Reasoning documented per improvement | Partial | Phase 1 bundle contains reasoning; Phase 2 delta package pending |
-| IR-4 | No cosmetic-only changes counted | Pending Regeneration | validated in final matrix pass |
-| IR-5 | Commit discipline and logical separation | Pending Regeneration | will be validated in final git history review |
+| IR-3 | Reasoning documented per improvement | Met | `PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md`, `IMPLEMENTATION_RULES_CLOSEOUT.md`, `REVIEWER_CLOSEOUT_REPORT.md` |
+| IR-4 | No cosmetic-only changes counted | Met | `IMPLEMENTATION_RULES_CLOSEOUT.md`, `PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md` |
+| IR-5 | Commit discipline and logical separation | Met | `IMPLEMENTATION_RULES_CLOSEOUT.md`, `REPO_FORK_BRANCH_EVIDENCE.md` |
+| D-1 | Discovery requirement with file path + line range + reflection | Met | `DISCOVERY_WRITEUP.md` |
 | SR-1 | Audit report baseline completeness | Met | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md` |
-| SR-2 | Improvement documentation for all categories | Partial | to be finalized in consolidated evidence pack |
+| SR-2 | Improvement documentation for all categories | Met | `PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` |
 | SR-3 | Discovery write-up (3 discoveries) | Met | `DISCOVERY_WRITEUP.md` |
-| SR-4 | Demo/presentation artifacts | Partial | `DEMO_VIDEO_PACKAGE.md` (recording flow packaged; final recording URL/file pending) |
-| SR-5 | AI cost analysis + deployment evidence | Partial | `AI_COST_ANALYSIS.md`, `DEPLOYMENT_EVIDENCE.md`, `SOCIAL_POST_EVIDENCE.md` (public deploy URL + published social link still pending) |
+| SR-4 | Demo/presentation artifacts | Partial | `DEMO_VIDEO_PACKAGE.md`, `EXTERNAL_INPUT_NEEDED.md` (final recording URL/file pending) |
+| SR-5 | AI cost analysis + deployment evidence | Partial | `AI_COST_ANALYSIS.md`, `DEPLOYMENT_EVIDENCE.md`, `SOCIAL_POST_EVIDENCE.md`, `EXTERNAL_INPUT_NEEDED.md` (public deploy URL + published social link pending) |
+| SR-6 | Forked repo with clear branches and setup guide | Met | `README.md`, `REPO_FORK_BRANCH_EVIDENCE.md` |
 
 ## Consolidation Notes
 

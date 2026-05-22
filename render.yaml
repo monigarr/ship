@@ -1,0 +1,50 @@
+databases:
+  - name: ship-postgres
+    plan: starter
+    databaseName: ship
+    user: ship
+
+services:
+  - type: web
+    name: ship-api
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ENVIRONMENT
+        value: render
+      - key: SKIP_SSM_SECRETS
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ship-postgres
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: CDN_DOMAIN
+        sync: false
+
+  - type: web
+    name: ship-web
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile.web.prod
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: ship-api
+          property: host
+      - key: API_SCHEME
+        value: https

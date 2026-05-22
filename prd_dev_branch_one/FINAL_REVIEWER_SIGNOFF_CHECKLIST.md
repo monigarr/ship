@@ -44,15 +44,20 @@ Pass criteria:
 
 ## 4) Category-Specific Improvement Evidence
 
-- C2 bundle:
-  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c2-after-summary.md`
-- C3 latency:
-  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c3-after-summary.md`
-  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c3-perf-*-c25.json`
+- Consolidated category documentation:
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md`
+- Open-set closeout:
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md`
+- Fresh C3/C4/C6/C7 proof:
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c4-query-count-remediation.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c6-runtime-remediation.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c7-axe-remediation.md`
 
 Pass criteria:
 
 - Improvement claims are backed by before/after numeric deltas
+- Reasoning/root-cause/fix/tradeoff text is present for all C1-C7
 
 ## 5) Submission Artifacts
 
@@ -61,10 +66,13 @@ Pass criteria:
 - `prd_dev_branch_one/DEMO_VIDEO_PACKAGE.md`
 - `prd_dev_branch_one/DEPLOYMENT_EVIDENCE.md`
 - `prd_dev_branch_one/SOCIAL_POST_EVIDENCE.md`
+- `prd_dev_branch_one/REPO_FORK_BRANCH_EVIDENCE.md`
+- `README.md`
 
 Pass criteria:
 
-- Deliverable package exists and is review-ready; any external-publication dependencies are explicitly marked
+- Local deliverable package exists and is review-ready
+- Remaining external dependencies are explicitly marked (demo link/file, public deploy URL proof, social post URL/screenshot)
 
 ## Reviewer Decision Record
 

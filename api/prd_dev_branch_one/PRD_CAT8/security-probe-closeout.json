@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-05-21T21:52:29.095Z",
+  "target": {
+    "baseUrl": "http://localhost:3000",
+    "wsBaseUrl": "ws://localhost:3000"
+  },
+  "summary": {
+    "total": 6,
+    "byStatus": {
+      "pass": 4,
+      "fail": 0,
+      "warn": 1,
+      "skip": 0,
+      "error": 1
+    },
+    "bySeverity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 2,
+      "low": 0,
+      "info": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "auth-unauthenticated-route-access",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated auth route rejection",
+      "details": "Route correctly rejects unauthenticated access.",
+      "reproduction": [
+        "curl -i \"http://localhost:3000/api/auth/me\""
+      ],
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-member-admin-escalation-check",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Member cannot access admin endpoint",
+      "details": "Access correctly blocked with 401.",
+      "reproduction": [
+        "Login as non-admin member",
+        "curl -i -H \"cookie: session_id=...\" \"http://localhost:3000/api/admin/workspaces\""
+      ],
+      "evidence": {
+        "loginStatus": 403,
+        "adminStatus": 401
+      }
+    },
+    {
+      "id": "ws-unauthenticated-upgrade-check",
+      "surface": "websocket",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated WebSocket upgrade rejection",
+      "details": "WebSocket endpoint rejects unauthenticated connections.",
+      "reproduction": [
+        "wscat -c \"ws://localhost:3000/collaboration/security-probe:00000000-0000-0000-0000-000000000000\""
+      ],
+      "evidence": {
+        "statusCode": 401
+      }
+    },
+    {
+      "id": "ws-malformed-payload-check-note",
+      "surface": "websocket",
+      "status": "warn",
+      "severity": "medium",
+      "title": "Malformed WebSocket payload path requires authenticated fuzz run",
+      "details": "Run with valid credentials and send malformed/oversized payloads to verify close behavior and server stability.",
+      "reproduction": [
+        "Authenticate user and run scripted malformed frame tests against collaboration endpoint"
+      ]
+    },
+    {
+      "id": "input-reflected-xss-check",
+      "surface": "input-sanitization",
+      "status": "pass",
+      "severity": "info",
+      "title": "Reflected input payload check",
+      "details": "No raw reflected payload detected in API response.",
+      "reproduction": [
+        "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=<script>alert(\"ship_probe\")</script>\""
+      ],
+      "evidence": {
+        "status": 404,
+        "reflected": false
+      }
+    },
+    {
+      "id": "dep-audit-failed",
+      "surface": "dependencies",
+      "status": "error",
+      "severity": "medium",
+      "title": "Dependency audit failed",
+      "details": "Command failed: pnpm audit --json\n",
+      "reproduction": [
+        "pnpm audit --json"
+      ]
+    }
+  ]
+}
