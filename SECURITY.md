@@ -59,11 +59,25 @@ When deploying Ship:
 
 ### Pre-commit Compliance Checks
 
-This repository uses `comply opensource` as a pre-commit hook that scans for:
+This repository uses fail-closed pre-commit hooks that run Dockerized security scanners:
 
-- **Secrets**: API keys, passwords, tokens (via gitleaks)
-- **Sensitive Information**: AI-powered analysis for PII, internal URLs
-- **Vulnerabilities**: Container and dependency scanning (via trivy)
+- **Secrets**: API keys, passwords, tokens (via `gitleaks` on staged changes)
+- **Sensitive Information**: hardcoded sensitive patterns (via `trivy` secret scanner)
+- **Misconfiguration**: IaC/container config security issues (via `trivy` misconfig scanner)
+
+The official compliance-docs tool for this repository is [strongdm/comply](https://github.com/strongdm/comply). It is used for documentation/compliance workflows, not as the pre-commit security scanner engine.
+
+#### Windows + WSL Docker setup (required for local hooks)
+
+If pre-commit reports `docker` not found from Bash/WSL:
+
+1. Open Docker Desktop -> **Settings** -> **Resources** -> **WSL Integration**.
+2. Enable integration for the distro used by this repository.
+3. Restart Docker Desktop.
+4. From your Bash/WSL shell, verify Docker access:
+   - `docker --version` or `docker.exe --version`
+5. Re-run hook validation:
+   - `bash .husky/pre-commit`
 
 ### NEVER Bypass Security Checks
 
@@ -74,7 +88,7 @@ If you encounter a situation where you're tempted to use `--no-verify`:
 | Situation | Correct Action |
 |-----------|----------------|
 | False positive from gitleaks | Add to `.gitleaksignore` and re-run |
-| Compliance tool crashes | Report bug to compliance-toolkit repo, wait for fix |
+| Scanner/tool crashes | Fix local Docker/scanner setup first; do not bypass hooks |
 | Need to commit urgently | No exception. Fix the issue first. |
 | CI is down | Local hooks still work. CI is backup enforcement. |
 
@@ -95,4 +109,4 @@ Every commit to main should have an associated security attestation in `ATTESTAT
 - Documents which scanning tools were used
 - Provides audit trail for FISMA compliance
 
-Run `comply opensource` to update the attestation before committing.
+Update `ATTESTATION.md` when your branch is ready for release/security sign-off.

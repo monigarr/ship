@@ -1,3 +1,5 @@
+set -e
+
 # Fail on empty Playwright tests (they silently pass - major footgun)
 if [ -f "./scripts/check-empty-tests.sh" ]; then
   ./scripts/check-empty-tests.sh
@@ -8,18 +10,42 @@ if [ -f "./scripts/check-api-coverage.sh" ]; then
   ./scripts/check-api-coverage.sh --staged
 fi
 
-# Open source compliance checks (secrets scan + AI analysis)
-if command -v comply &> /dev/null; then
-  # NOTE: --skip-trivy is temporary workaround for compliance-toolkit bug
-  # https://github.com/US-Department-of-the-Treasury/compliance-toolkit/issues/XXX
-  # Remove --skip-trivy once the ImportError in sbom module is fixed
-  comply opensource --hook --staged --exclude e2e --skip-trivy
+# Required local security scanners (fail-closed)
+DOCKER_BIN=""
+if command -v docker.exe >/dev/null 2>&1; then
+  DOCKER_BIN="docker.exe"
+elif command -v docker >/dev/null 2>&1; then
+  DOCKER_BIN="docker"
+fi
+
+if [ -z "$DOCKER_BIN" ]; then
+  echo ""
+  echo "ERROR: Docker is required for pre-commit security checks."
+  echo "Install/start Docker Desktop, then retry commit."
+  echo ""
+  exit 1
+fi
+
+REPO_MOUNT="$PWD"
+if [ "$DOCKER_BIN" = "docker.exe" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    REPO_MOUNT="$(cygpath -w "$PWD")"
+  elif command -v wslpath >/dev/null 2>&1; then
+    REPO_MOUNT="$(wslpath -w "$PWD")"
+  fi
+fi
+
+echo "Running staged gitleaks secret scan..."
+"$DOCKER_BIN" run --rm -v "$REPO_MOUNT:/repo" -w /repo zricethezav/gitleaks:latest git /repo --staged --redact --no-banner --exit-code 1
+
+echo "Running trivy secret/misconfig scan..."
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [ -n "$STAGED_FILES" ]; then
+  for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+      "$DOCKER_BIN" run --rm -v "$REPO_MOUNT:/repo" aquasec/trivy:latest filesystem --scanners misconfig,secret --severity HIGH,CRITICAL --exit-code 1 --quiet "/repo/$file"
+    fi
+  done
 else
-  echo ""
-  echo "WARNING: 'comply' CLI not installed - skipping open source compliance checks"
-  echo "Install with: pip install comply-cli"
-  echo ""
-  echo "This project requires comply for pre-commit security scanning."
-  echo "Your commit will proceed, but please install comply for future commits."
-  echo ""
+  echo "No staged files for trivy scan."
 fi

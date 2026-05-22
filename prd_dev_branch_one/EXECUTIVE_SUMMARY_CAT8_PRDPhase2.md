@@ -8,6 +8,7 @@
 - Fixed key **Windows/cross-platform build portability issues** (script compatibility and bundling config), improving reproducibility of validation runs.
 - Executed strict compliance closeout passes and advanced many local requirements to **Met**, with final local compliance docs and reviewer checklists prepared.
 - Narrowed remaining gaps to mostly **external proof inputs** (demo/deployment/social evidence), with explicit placeholders/checklists ready for final completion.
+- Standardized security enforcement to a **fail-closed hook model**: Dockerized `gitleaks` + `trivy` now block commits on findings, while `strongdm/comply` is retained as the official compliance-docs distribution for policy workflows.
 
 ## Source Chats
 

@@ -34,7 +34,7 @@
     "db:orphan-check": "pnpm --filter @ship/api db:orphan-check",
     "security:probe": "pnpm --filter @ship/api security:probe",
     "prepare": "husky",
-    "postinstall": "git config merge.ours.driver true && (command -v comply >/dev/null 2>&1 || echo '\\n⚠️  comply CLI not installed - pre-commit hooks require it\\n   Install with: pip install comply-cli\\n')"
+    "postinstall": "git config merge.ours.driver true && (command -v comply >/dev/null 2>&1 || echo '\\n⚠️  strongdm comply not found in PATH\\n   Official source: https://github.com/strongdm/comply\\n   Note: pre-commit security scanning uses Dockerized gitleaks + trivy\\n')"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
