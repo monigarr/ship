@@ -1,6 +1,6 @@
 databases:
   - name: ship-postgres
-    plan: starter
+    plan: basic-1gb
     databaseName: ship
     user: ship
 
