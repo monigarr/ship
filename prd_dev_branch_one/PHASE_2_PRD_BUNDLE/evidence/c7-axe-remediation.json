@@ -1,0 +1,23 @@
+[
+  {
+    "page": "/my-week",
+    "critical": 0,
+    "serious": 0,
+    "total": 0,
+    "violations": []
+  },
+  {
+    "page": "/issues",
+    "critical": 0,
+    "serious": 0,
+    "total": 0,
+    "violations": []
+  },
+  {
+    "page": "/projects",
+    "critical": 0,
+    "serious": 0,
+    "total": 0,
+    "violations": []
+  }
+]

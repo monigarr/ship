@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "generatedAt": "2026-05-23T14:28:21.092Z",
+    "repoRoot": "D:/GFA_Cohort_5/Week_Four/ship",
+    "includedPaths": [
+      "web/src/**/*",
+      "api/src/**/*",
+      "shared/src/**/*"
+    ],
+    "typescriptVersion": "5.9.3"
+  },
+  "strictMode": {
+    "perPackage": {
+      "web": true,
+      "api": true,
+      "shared": true
+    },
+    "strictModeEnabled": true,
+    "strictModeErrorCountIfDisabled": null
+  },
+  "totals": {
+    "anyTypes": 224,
+    "asAssertions": 697,
+    "nonNullAssertions": 324,
+    "tsDirectives": 1,
+    "untypedParameters": 1478,
+    "implicitAnyReturns": 88
+  },
+  "breakdownByPackage": {
+    "web": {
+      "anyTypes": 33,
+      "asAssertions": 370,
+      "nonNullAssertions": 33,
+      "tsDirectives": 1,
+      "untypedParameters": 1164,
+      "implicitAnyReturns": 52
+    },
+    "api": {
+      "anyTypes": 191,
+      "asAssertions": 325,
+      "nonNullAssertions": 291,
+      "tsDirectives": 0,
+      "untypedParameters": 314,
+      "implicitAnyReturns": 36
+    },
+    "shared": {
+      "anyTypes": 0,
+      "asAssertions": 2,
+      "nonNullAssertions": 0,
+      "tsDirectives": 0,
+      "untypedParameters": 0,
+      "implicitAnyReturns": 0
+    }
+  },
+  "topViolationDenseFiles": [
+    {
+      "file": "api/src/routes/weeks.ts",
+      "package": "api",
+      "total": 100,
+      "counts": {
+        "anyTypes": 0,
+        "asAssertions": 23,
+        "nonNullAssertions": 46,
+        "tsDirectives": 0,
+        "untypedParameters": 26,
+        "implicitAnyReturns": 5
+      },
+      "whyProblematic": "frequent non-null assertions can hide unsafe nullability assumptions; secondary driver: many untyped parameters reduce call-site and contract clarity."
+    },
+    {
+      "file": "api/src/services/accountability.test.ts",
+      "package": "api",
+      "total": 77,
+      "counts": {
+        "anyTypes": 32,
+        "asAssertions": 32,
+        "nonNullAssertions": 0,
+        "tsDirectives": 0,
+        "untypedParameters": 13,
+        "implicitAnyReturns": 0
+      },
+      "whyProblematic": "extensive explicit any usage weakens compile-time guarantees; secondary driver: heavy type assertion usage suggests runtime shape uncertainty."
+    },
+    {
+      "file": "api/src/__tests__/transformIssueLinks.test.ts",
+      "package": "api",
+      "total": 71,
+      "counts": {
+        "anyTypes": 37,
+        "asAssertions": 28,
+        "nonNullAssertions": 1,
+        "tsDirectives": 0,
+        "untypedParameters": 0,
+        "implicitAnyReturns": 5
+      },
+      "whyProblematic": "extensive explicit any usage weakens compile-time guarantees; secondary driver: heavy type assertion usage suggests runtime shape uncertainty."
+    },
+    {
+      "file": "api/src/routes/issues.ts",
+      "package": "api",
+      "total": 67,
+      "counts": {
+        "anyTypes": 0,
+        "asAssertions": 1,
+        "nonNullAssertions": 34,
+        "tsDirectives": 0,
+        "untypedParameters": 29,
+        "implicitAnyReturns": 3
+      },
+      "whyProblematic": "frequent non-null assertions can hide unsafe nullability assumptions; secondary driver: many untyped parameters reduce call-site and contract clarity."
+    },
+    {
+      "file": "web/src/pages/ReviewsPage.tsx",
+      "package": "web",
+      "total": 67,
+      "counts": {
+        "anyTypes": 0,
+        "asAssertions": 6,
+        "nonNullAssertions": 4,
+        "tsDirectives": 0,
+        "untypedParameters": 57,
+        "implicitAnyReturns": 0
+      },
+      "whyProblematic": "many untyped parameters reduce call-site and contract clarity; secondary driver: heavy type assertion usage suggests runtime shape uncertainty."
+    }
+  ],
+  "repro": {
+    "command": "pnpm audit:c1",
+    "exitCode": 0,
+    "runtimeMs": 25957
+  }
+}
