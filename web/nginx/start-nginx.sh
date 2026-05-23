@@ -30,7 +30,7 @@ if [ -z "$API_PORT" ]; then
   fi
 fi
 
-API_UPSTREAM="${API_SCHEME}://${API_HOST}:${API_PORT}"
+export API_UPSTREAM="${API_SCHEME}://${API_HOST}:${API_PORT}"
 
 echo "Starting nginx with API upstream: ${API_UPSTREAM}" >&2
 
