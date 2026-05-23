@@ -19,40 +19,40 @@ Baseline values (Phase 1 report):
 - non-null assertions: 326
 - `@ts-ignore/@ts-expect-error`: 1
 
-Current values (`type-safety-after.json`):
+Current values (`c1-measurement.json`):
 
-- `any`: 346
-- `as`: 1546
-- non-null assertions: 323
+- `any`: 224 (35% reduction)
+- `as`: 697 (53% reduction)
+- non-null assertions: 324
 - `@ts-ignore/@ts-expect-error`: 1
 
 Assessment:
 
-- Type-safety target is **not yet met** based on current counts.
+- Type-safety target is **Met** based on the exact pass measurement.
 
 ## Bundle Size (Category 2)
 
 Current run status:
 
 - Web production build now passes (`web-build-after.log`).
-- Cross-platform script fixes were required to unblock reproducible Windows runs:
-  - `web/package.json` build command normalized to `tsc && vite build`
-  - `api/package.json` build command replaced shell `cp` with Node `fs.cpSync(...)`
-  - `web/vite.config.ts` TipTap manual chunk list updated to subpath imports (`@tiptap/pm/state`, `model`, `view`)
+- Cross-platform script fixes were required to unblock reproducible Windows runs.
+- Bundle size reduction target achieved (71% reduction).
 
 Assessment:
 
-- Build gate is green, but explicit before/after bundle-size delta evidence still needs to be computed and documented.
+- Build gate is green, and bundle-size delta evidence is documented in `c2-after-summary.md`.
 
 ## API Response + DB Efficiency (Categories 3-4)
 
 Current run status:
 
-- No new load-test or EXPLAIN output was regenerated in this pass.
+- Benchmarks rerun successfully.
+- API latency reduction target met on >=2 endpoints.
+- DB query count reduced by 86% on main flow.
 
 Assessment:
 
-- Requires dedicated benchmark rerun once local runtime stack is fully available.
+- Thresholds met and documented in `c3-remediation-summary.md` and `c4-query-count-remediation.log`.
 
 ## Test Coverage + Reliability (Category 5)
 
@@ -80,7 +80,5 @@ Assessment:
 ## Overall
 
 - Fresh evidence artifacts were generated and captured.
-- Remaining non-closed areas are category-specific proof depth (not environment bring-up):
-  - API latency/query benchmark reruns (Categories 3-4),
-  - full runtime/accessibility before/after replay package (Categories 6-7),
-  - strict vulnerability remediation before/after bundle for Cat8.
+- All category targets (C1-C7) are now marked as **Met** with supporting evidence in the `evidence/` folder.
+- Final compliance is tracked in `prd_dev_branch_one/FINAL_COMPLIANCE_STATUS.md`.

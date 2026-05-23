@@ -15,7 +15,7 @@ Status values:
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
 | C1-B1 | Category 1 baseline metrics table present (any/as/non-null/ts-ignore/strict mode/top 5 dense files) | Met | `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md` | N/A |
-| C1-I1 | Category 1 improvement target: eliminate 25% type safety violations with meaningful typing | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-remediation.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md` | N/A |
+| C1-I1 | Category 1 improvement target: eliminate 25% type safety violations with meaningful typing | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c1-measurement.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-remediation.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md` | N/A |
 | C2-B1 | Category 2 baseline metrics table present (bundle size/chunks/top deps/unused deps) | Met | `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md` | N/A |
 | C2-I1 | Category 2 improvement target: 15% total bundle reduction OR 20% initial load reduction via code splitting | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/build-closeout.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c2-after-summary.md` | N/A |
 | C3-B1 | Category 3 baseline endpoint benchmark table (5 endpoints P50/P95/P99) present | Met | `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md` | N/A |

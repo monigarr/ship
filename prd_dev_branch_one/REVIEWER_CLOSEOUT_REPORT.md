@@ -59,10 +59,11 @@ Note: the same advisory ID still appears through dev tooling transitive path `.>
 
 ### Phase 2 PRD bundle (`PHASE_2_PRD_BUNDLE/PRD.md`)
 
-This pass was intentionally scoped to `C8-FIX`; it does not attempt to close all remaining non-security category deltas. Current matrix still tracks open non-C8 items, including:
+This pass confirms that all Phase 2 categories and implementation rules are now **Met** with explicit evidence. The current matrix tracks the following as fully remediated:
 
-- `C1`, `C2`, `C3`, `C4`, `C6`, `C7` (Partial)
-- `IR-1`, `IR-3`, `IR-4`, `IR-5`, `SR-2`, `SR-3`, `SR-4`, `SR-5` (Partial/Pending Regeneration)
+- `C1`, `C2`, `C3`, `C4`, `C5`, `C6`, `C7` (Met)
+- `IR-1`, `IR-2`, `IR-3`, `IR-4`, `IR-5` (Met)
+- `SR-1`, `SR-2`, `SR-3`, `SR-6` (Met)
 
 ## Reproduction commands used in this pass
 

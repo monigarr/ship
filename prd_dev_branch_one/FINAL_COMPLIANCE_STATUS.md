@@ -40,14 +40,10 @@ Formula used: `((baseline - after) / baseline) * 100` (positive = improvement/re
 
 | Category | Metric | Baseline | After | Delta % | Proof |
 | --- | ---: | ---: | ---: | ---: | --- |
-| C1 | `any` count (top 5 files) | 650 | 0 | 100.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after-v2.json` |
-| C1 | `any` count (overall) | 346 | ~140 | 59.54% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after-v2.json` |
-| C1 | Function parameter `any` types | ~50 | 0 | 100.00% | Targeted refactoring in weeks.ts, projects.ts, programs.ts, feedback.ts - Kimi K2.5 |
-| C1 | Array `any[]` types | ~18 | 0 | 100.00% | Replaced with proper union types across all route files - Kimi K2.5 |
-| C1 | API routes `any` elimination | ~18 | 0 | 100.00% | Complete elimination of `any` types in api/src/routes/*.ts - Kimi K2.5 |
-| C1 | `as` assertion count | 1490 | ~1350 | 9.40% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after-v2.json` |
-| C1 | non-null assertion count | 326 | ~280 | 14.11% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after-v2.json` |
-| C1 | ts directive count | 1 | 1 | 0.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after-v2.json` |
+| C1 | `any` count (overall) | 346 | 224 | 35.26% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c1-measurement.json` |
+| C1 | `as` assertion count | 1490 | 697 | 53.22% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c1-measurement.json` |
+| C1 | non-null assertion count | 326 | 324 | 0.61% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c1-measurement.json` |
+| C1 | ts directive count | 1 | 1 | 0.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c1-measurement.json` |
 | C2 | total dist size (KB) | 11625.94 | 3362.42 | 71.08% | `PHASE_2_PRD_BUNDLE/evidence/c2-after-summary.md` |
 | C3 | `/api/auth/session` P95 (ms) | 27.33 | 61.00 | -123.20% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
 | C3 | `/api/documents` P95 (ms) | 28.00 | 245.00 | -775.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |

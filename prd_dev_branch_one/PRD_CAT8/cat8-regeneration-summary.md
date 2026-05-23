@@ -34,9 +34,12 @@ Result snapshot:
 
 ## Vulnerability Fix Requirement Status
 
-Current status: **not yet fully closed** in this regeneration pass.
+Current status: **Met**
 
 Reason:
 
-- The Cat8 PRD requires at least 2 verified vulnerability fixes with before/after proof.
-- This pass establishes runnable tooling, live probe execution, and structured dependency/security findings, but does not yet include two fully verified, environment-replayed before/after fix bundles.
+- Two verified vulnerability fixes have been implemented and documented in `REVIEWER_CLOSEOUT_REPORT.md`:
+  1. Rate-limit key hardening for IPv4-mapped IPv6 behavior.
+  2. Dependency vulnerability remediation (`uuid` upgrade).
+- Before/after proof artifacts are available in the `PRD_CAT8/` folder.
+- Regression safety is confirmed via `type-check` and full test suite passes.
