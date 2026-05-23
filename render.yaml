@@ -60,3 +60,11 @@ services:
         value: "3"
       - key: API_STARTUP_CHECK_TIMEOUT_SECONDS
         value: "2"
+
+  - type: web
+    name: ship-docs
+    runtime: static
+    rootDir: .
+    buildCommand: ""
+    staticPublishPath: ./docs
+    autoDeploy: true

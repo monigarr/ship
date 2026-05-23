@@ -9,6 +9,7 @@ This repository now includes a Render blueprint at `render.yaml` for full-stack 
 - `ship-postgres` (Render managed PostgreSQL)
 - `ship-api` (Docker web service from `Dockerfile`)
 - `ship-web` (Docker web service from `Dockerfile.web.prod`)
+- `ship-docs` (Render static site published from `docs/`)
 
 ### Prerequisites
 
@@ -27,6 +28,7 @@ This repository now includes a Render blueprint at `render.yaml` for full-stack 
    - PostgreSQL: `ship-postgres`
    - API service: `ship-api`
    - Web service: `ship-web`
+   - Docs service: `ship-docs`
 
 ### 2) Configure environment variables
 
@@ -70,11 +72,13 @@ Run these checks against deployed URLs:
    - `GET https://<api-host>/health` returns `{ \"status\": \"ok\" }`
 2. App loads:
    - `https://<web-host>/` returns the React app shell.
-3. Auth/session:
+3. Docs site loads:
+   - `https://<docs-host>/` returns the Ship documentation index page.
+4. Auth/session:
    - Login works and session cookie persists.
-4. API proxy:
+5. API proxy:
    - Browser actions that call `/api/*` succeed from the web app.
-5. Realtime:
+6. Realtime:
    - Collaboration/events websocket flows connect through `/collaboration` and `/events`.
 
 ### Render-specific notes

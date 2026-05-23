@@ -122,6 +122,12 @@ pnpm build:web
 - `docs/accountability-manager-guide.md`
 - `docs/developer-workflow-guide.md`
 
+Render docs deployment:
+
+- The Render blueprint includes a `ship-docs` static service that publishes the `docs/` folder.
+- `docs/index.html` is the landing page for repository documentation in production.
+- `docs/md-viewer.html` renders markdown files as styled HTML in-browser.
+
 Operational/deployment references:
 
 - `DEPLOYMENT.md`

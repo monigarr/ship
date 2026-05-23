@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ship Docs Viewer</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b1220;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --panel: #111827;
+        --border: #334155;
+        --link: #38bdf8;
+        --code-bg: #0f172a;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(11, 18, 32, 0.96);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--border);
+      }
+      .header-inner {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 0.75rem 1rem;
+        display: flex;
+        gap: 0.8rem;
+        align-items: center;
+      }
+      .header-inner a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      .header-inner code {
+        color: var(--muted);
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 1.2rem 1rem 3rem;
+      }
+      article {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        overflow-wrap: anywhere;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        margin-top: 1.25rem;
+        margin-bottom: 0.6rem;
+      }
+      h1 { font-size: 1.9rem; }
+      h2 { font-size: 1.45rem; }
+      h3 { font-size: 1.2rem; }
+      p, li {
+        line-height: 1.6;
+      }
+      a {
+        color: var(--link);
+      }
+      pre, code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+      :not(pre) > code {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.08rem 0.35rem;
+      }
+      blockquote {
+        margin: 1rem 0;
+        border-left: 3px solid var(--border);
+        padding: 0.2rem 0 0.2rem 0.8rem;
+        color: var(--muted);
+      }
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1.25rem 0;
+      }
+      .status {
+        color: var(--muted);
+      }
+      .error {
+        color: #fda4af;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <a href="./index.html">Back to docs index</a>
+        <span>•</span>
+        <code id="doc-path">Loading...</code>
+      </div>
+    </header>
+    <main>
+      <article id="content">
+        <p class="status">Loading markdown...</p>
+      </article>
+    </main>
+    <script>
+      function escapeHtml(value) {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function parseInline(input) {
+        let out = escapeHtml(input);
+        out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+        out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+        out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        out = out.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+        return out;
+      }
+
+      function parseMarkdown(markdown) {
+        const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+        const html = [];
+        let i = 0;
+
+        function flushParagraph(startIndex) {
+          const parts = [];
+          let j = startIndex;
+          while (j < lines.length) {
+            const line = lines[j];
+            if (!line.trim()) break;
+            if (
+              /^#{1,6}\s+/.test(line) ||
+              /^```/.test(line) ||
+              /^[-*+]\s+/.test(line) ||
+              /^\d+\.\s+/.test(line) ||
+              /^>\s?/.test(line) ||
+              /^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
+            ) {
+              break;
+            }
+            parts.push(parseInline(line));
+            j += 1;
+          }
+          if (parts.length) {
+            html.push("<p>" + parts.join(" ") + "</p>");
+          }
+          return j;
+        }
+
+        while (i < lines.length) {
+          const line = lines[i];
+          const trimmed = line.trim();
+
+          if (!trimmed) {
+            i += 1;
+            continue;
+          }
+
+          const fenceMatch = /^```([a-zA-Z0-9_-]+)?\s*$/.exec(trimmed);
+          if (fenceMatch) {
+            const language = fenceMatch[1] ? ` class="language-${fenceMatch[1]}"` : "";
+            const code = [];
+            i += 1;
+            while (i < lines.length && !/^```/.test(lines[i].trim())) {
+              code.push(lines[i]);
+              i += 1;
+            }
+            if (i < lines.length) i += 1;
+            html.push(`<pre><code${language}>${escapeHtml(code.join("\n"))}</code></pre>`);
+            continue;
+          }
+
+          const heading = /^(#{1,6})\s+(.+)$/.exec(line);
+          if (heading) {
+            const depth = heading[1].length;
+            html.push(`<h${depth}>${parseInline(heading[2].trim())}</h${depth}>`);
+            i += 1;
+            continue;
+          }
+
+          if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(trimmed)) {
+            html.push("<hr />");
+            i += 1;
+            continue;
+          }
+
+          if (/^>\s?/.test(line)) {
+            const block = [];
+            while (i < lines.length && /^>\s?/.test(lines[i])) {
+              block.push(lines[i].replace(/^>\s?/, ""));
+              i += 1;
+            }
+            html.push(`<blockquote>${parseInline(block.join(" "))}</blockquote>`);
+            continue;
+          }
+
+          if (/^[-*+]\s+/.test(line)) {
+            html.push("<ul>");
+            while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
+              html.push(`<li>${parseInline(lines[i].replace(/^[-*+]\s+/, ""))}</li>`);
+              i += 1;
+            }
+            html.push("</ul>");
+            continue;
+          }
+
+          if (/^\d+\.\s+/.test(line)) {
+            html.push("<ol>");
+            while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+              html.push(`<li>${parseInline(lines[i].replace(/^\d+\.\s+/, ""))}</li>`);
+              i += 1;
+            }
+            html.push("</ol>");
+            continue;
+          }
+
+          i = flushParagraph(i);
+        }
+
+        return html.join("\n");
+      }
+
+      function rewriteMarkdownLinks(root, currentDocPath) {
+        const slashIndex = currentDocPath.lastIndexOf("/");
+        const baseDir = slashIndex >= 0 ? currentDocPath.slice(0, slashIndex + 1) : "";
+        const anchors = root.querySelectorAll("a[href]");
+
+        anchors.forEach((anchor) => {
+          const rawHref = anchor.getAttribute("href");
+          if (!rawHref) return;
+          if (/^(#|mailto:|https?:|\/\/)/i.test(rawHref)) return;
+
+          const hashIndex = rawHref.indexOf("#");
+          const cleanHref = hashIndex >= 0 ? rawHref.slice(0, hashIndex) : rawHref;
+          const hashPart = hashIndex >= 0 ? rawHref.slice(hashIndex) : "";
+
+          const resolved = new URL(cleanHref || ".", `https://ship-docs.local/${baseDir}`);
+          const normalizedPath = resolved.pathname.replace(/^\/+/, "");
+
+          if (/\.md$/i.test(normalizedPath)) {
+            anchor.setAttribute(
+              "href",
+              `./md-viewer.html?file=${encodeURIComponent(normalizedPath)}${hashPart}`
+            );
+          }
+        });
+      }
+
+      async function bootstrap() {
+        const params = new URLSearchParams(window.location.search);
+        const file = params.get("file");
+        const docPathEl = document.getElementById("doc-path");
+        const contentEl = document.getElementById("content");
+
+        if (!file) {
+          contentEl.innerHTML = '<p class="error">Missing <code>?file=...</code> query parameter.</p>';
+          docPathEl.textContent = "No file selected";
+          return;
+        }
+
+        const normalized = file.trim();
+        if (
+          !/^[a-zA-Z0-9_./-]+\.md$/i.test(normalized) ||
+          normalized.includes("..") ||
+          normalized.startsWith("/")
+        ) {
+          contentEl.innerHTML = '<p class="error">Invalid markdown path.</p>';
+          docPathEl.textContent = normalized;
+          return;
+        }
+
+        docPathEl.textContent = normalized;
+
+        try {
+          const response = await fetch(normalized);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const markdown = await response.text();
+          contentEl.innerHTML = parseMarkdown(markdown);
+          rewriteMarkdownLinks(contentEl, normalized);
+        } catch (error) {
+          contentEl.innerHTML = `<p class="error">Unable to load <code>${escapeHtml(
+            normalized
+          )}</code> (${escapeHtml(String(error))}).</p>`;
+        }
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>
