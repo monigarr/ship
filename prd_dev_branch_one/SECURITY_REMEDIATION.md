@@ -54,21 +54,21 @@ The goal was to produce production-ready controls and evidence, not suppression 
   - `pnpm-lock.yaml`
 - Reduced production advisory exposure by moving MCP SDK to API devDependencies (developer/operator path, not production runtime path).
 - Captured package-to-feature mapping:
-  - `prd_dev_branch_one/PRD_CAT8/dependency-feature-impact.md`
+  - `PRD_CAT8/dependency-feature-impact.md`
 - Enforced production guardrail:
   - `pnpm security:ci:dependencies`
   - `.github/workflows/dependency-audit.yml`
 
 ## Evidence regenerated
 
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-security-remediation.log`
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-security-remediation.log`
-- `prd_dev_branch_one/PRD_CAT8/security-probe-remediation.log`
-- `prd_dev_branch_one/PRD_CAT8/security-probe-report.json`
-- `prd_dev_branch_one/PRD_CAT8/security-probe-report.md`
-- `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-post-upgrade.json`
-- `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-remediated.json`
-- `prd_dev_branch_one/PRD_CAT8/dependency-audit-remediation.log`
+- `PHASE_2_PRD_BUNDLE/evidence/type-check-security-remediation.log`
+- `PHASE_2_PRD_BUNDLE/evidence/test-security-remediation.log`
+- `PRD_CAT8/security-probe-remediation.log`
+- `PRD_CAT8/security-probe-report.json`
+- `PRD_CAT8/security-probe-report.md`
+- `PRD_CAT8/pnpm-audit-prod-post-upgrade.json`
+- `PRD_CAT8/pnpm-audit-prod-remediated.json`
+- `PRD_CAT8/dependency-audit-remediation.log`
 
 ## Final security outcome
 
@@ -78,7 +78,7 @@ The goal was to produce production-ready controls and evidence, not suppression 
 
 ## Compliance docs updated
 
-- `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md`
-- `prd_dev_branch_one/STRICT_REQUIREMENT_CHECKLIST.md`
-- `prd_dev_branch_one/FINAL_COMPLIANCE_STATUS.md`
-- `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`
+- `MASTER_PRD_COMPLIANCE_MATRIX.md`
+- `STRICT_REQUIREMENT_CHECKLIST.md`
+- `FINAL_COMPLIANCE_STATUS.md`
+- `PRD_CAT8/manual-review-closeout.md`

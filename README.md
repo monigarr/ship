@@ -100,11 +100,63 @@ pnpm db:migrate
 pnpm db:seed
 pnpm db:orphan-check
 
+# Remote wiki seed (bulk-upload markdown portfolio to a deployed Ship instance)
+pnpm --filter @ship/api seed:remote-wiki
+
 # Build
 pnpm build
 pnpm build:api
 pnpm build:web
 ```
+
+## Remote wiki seed (future weeks)
+
+Use this workflow to bulk-create wiki documents in a deployed Ship instance from local markdown artifacts (for example, a week’s PRD bundle). This uses the Ship REST API with your normal login credentials—there is no mass-upload button in the web UI.
+
+**Script:** `api/src/scripts/seed-remote-wiki-docs.ts`
+
+**Default source:** `prd_dev_branch_one/` (override with `SHIP_SEED_SOURCE_DIR`)
+
+```bash
+# Required: credentials and target instance (never commit these)
+export SHIP_BASE_URL=https://ship-web-jyqh.onrender.com
+export SHIP_EMAIL=you@example.com
+export SHIP_PASSWORD=your-password
+
+# First run: creates root portfolio doc + all .md files as nested wiki pages
+pnpm --filter @ship/api seed:remote-wiki
+
+# Later runs: add only missing pages (skips if root already exists unless resume is set)
+export SHIP_SEED_RESUME=1
+pnpm --filter @ship/api seed:remote-wiki
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:SHIP_BASE_URL = "https://ship-web-jyqh.onrender.com"
+$env:SHIP_EMAIL = "you@example.com"
+$env:SHIP_PASSWORD = "your-password"
+pnpm --filter @ship/api seed:remote-wiki
+```
+
+**Useful options:**
+
+| Variable | Purpose |
+| --- | --- |
+| `SHIP_SEED_ROOT_TITLE` | Root portfolio doc title (default: `GFA Week 4 — PRD Portfolio`) |
+| `SHIP_SEED_SOURCE_DIR` | Path to markdown tree (relative to `api/`) |
+| `SHIP_SEED_RESUME=1` | Reuse existing root; create only missing wiki pages |
+| `SHIP_SEED_DRY_RUN=1` | Print actions without creating documents |
+| `SHIP_SEED_DELAY_MS` | Delay between API calls (default: `300`) |
+
+After seeding, open **Documents** in Ship and look for the root portfolio title. Each markdown file becomes a wiki page; folder structure becomes parent/child docs.
+
+**Notes:**
+
+- Only `.md` files are imported. Attach logs/JSON in the editor or keep them in git evidence folders.
+- Render’s edge firewall may block some payloads; the script sanitizes common patterns (angle brackets, `curl -i`).
+- For a new week, change `SHIP_SEED_ROOT_TITLE` and point `SHIP_SEED_SOURCE_DIR` at that week’s artifact folder.
 
 ## Security and compliance tooling
 
