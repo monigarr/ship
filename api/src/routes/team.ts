@@ -7,6 +7,19 @@ import { TEMPLATE_HEADINGS, extractText, hasContent } from '../utils/document-co
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
 
+// Safe query parameter extraction helpers
+function getQueryString(req: Request, key: string): string | undefined {
+  const val = req.query[key];
+  return typeof val === 'string' ? val : undefined;
+}
+
+function getQueryInt(req: Request, key: string): number | undefined {
+  const val = req.query[key];
+  if (typeof val !== 'string') return undefined;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? undefined : parsed;
+}
+
 // GET /api/team/grid - Get team grid data
 // Query params:
 //   fromSprint: number - start of range (default: current - 7)
@@ -76,11 +89,13 @@ router.get('/grid', authMiddleware, async (req: Request, res: Response) => {
     // Parse query params for sprint range (default: ~quarter each way)
     const defaultBack = 7;
     const defaultForward = 7;
-    const fromSprint = req.query.fromSprint
-      ? Math.max(1, parseInt(req.query.fromSprint as string, 10))
+    const fromSprintParam = getQueryInt(req, 'fromSprint');
+    const fromSprint = fromSprintParam !== undefined
+      ? Math.max(1, fromSprintParam)
       : Math.max(1, currentSprintNumber - defaultBack);
-    const toSprint = req.query.toSprint
-      ? parseInt(req.query.toSprint as string, 10)
+    const toSprintParam = getQueryInt(req, 'toSprint');
+    const toSprint = toSprintParam !== undefined
+      ? toSprintParam
       : currentSprintNumber + defaultForward;
 
     // Generate sprint periods for requested range

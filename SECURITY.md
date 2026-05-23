@@ -97,7 +97,7 @@ If you encounter a situation where you're tempted to use `--no-verify`:
 GitHub Actions provides a second layer of enforcement:
 
 - **secrets-scan**: Runs gitleaks on every PR
-- **attestation-check**: Verifies ATTESTATION.md exists and is current
+- **attestation-check**: Verifies `ATTESTATION.md` exists, contains required fields, and is updated at `HEAD`
 
 These are required status checks. PRs cannot merge without passing.
 
@@ -110,3 +110,9 @@ Every commit to main should have an associated security attestation in `ATTESTAT
 - Provides audit trail for FISMA compliance
 
 Update `ATTESTATION.md` when your branch is ready for release/security sign-off.
+
+Minimum attestation freshness rule enforced by CI:
+
+- `git log -1 --format=%H -- ATTESTATION.md` **must match** `git rev-parse HEAD`
+- Front matter must include: `reviewer`, `reviewer_email`, `scan_result`, `date`, `timestamp`
+- `scan_result` must be `PASS`

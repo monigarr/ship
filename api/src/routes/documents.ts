@@ -10,12 +10,32 @@ import { loadContentFromYjsState } from '../utils/yjsConverter.js';
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
 
+// Document row interface for database query results
+interface DocumentRow {
+  id: string;
+  workspace_id: string;
+  document_type: string;
+  title: string;
+  content: unknown;
+  properties: Record<string, unknown>;
+  parent_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  visibility: 'private' | 'workspace';
+  yjs_state: Buffer | null;
+  yjs_state_updated_at: string | null;
+  ticket_number: number | null;
+  [key: string]: unknown;
+}
+
 // Check if user can access a document (visibility check)
 async function canAccessDocument(
   docId: string,
   userId: string,
   workspaceId: string
-): Promise<{ canAccess: boolean; doc: any | null }> {
+): Promise<{ canAccess: boolean; doc: DocumentRow | null }> {
   const result = await pool.query(
     `SELECT d.*,
             (d.visibility = 'workspace' OR d.created_by = $2 OR
@@ -645,7 +665,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     await client.query('BEGIN');
 
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | boolean | null)[] = [];
     let paramIndex = 1;
 
     // Track extracted values from content (content is source of truth)
@@ -737,7 +757,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (data.properties !== undefined || contentUpdated || hasTopLevelProps) {
       const currentProps = existing.properties || {};
       const dataProps = data.properties || {};
-      let newProps = {
+      let newProps: Record<string, unknown> = {
         ...currentProps,
         ...dataProps,
         ...topLevelProps,

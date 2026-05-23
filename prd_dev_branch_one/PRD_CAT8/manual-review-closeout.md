@@ -1,6 +1,6 @@
 # Cat8 Manual Review Closeout
 
-Generated: 2026-05-21
+Generated: 2026-05-22
 
 ## Scope
 
@@ -16,7 +16,9 @@ Manual review requirements from `PRD_CAT8/PRD.md`:
 - `prd_dev_branch_one/PRD_CAT8/cors-csp-headers.log`
 - `prd_dev_branch_one/PRD_CAT8/cors-origin-check.log`
 - `prd_dev_branch_one/PRD_CAT8/error-leakage-check.log`
-- `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md`
+- `prd_dev_branch_one/PRD_CAT8/security-probe-report.md`
+- `prd_dev_branch_one/PRD_CAT8/dependency-feature-impact.md`
+- `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-remediated.json`
 - `api/src/app.ts`
 - `api/src/collaboration/index.ts`
 
@@ -42,7 +44,7 @@ Status: **Met**
 
 - API limiter headers are present (`RateLimit-*`) in `cors-origin-check.log`.
 - HTTP login and API limiter configuration in `api/src/app.ts`.
-- WebSocket connection/message flood protections and 429/1008 close handling are implemented in `api/src/collaboration/index.ts` and exercised by probe output (`security-probe-closeout-3.md`).
+- WebSocket connection/message flood protections and 429/1008 close handling are implemented in `api/src/collaboration/index.ts` and exercised by probe output (`security-probe-report.md`).
 
 ### M4 - Error verbosity leakage
 
@@ -56,4 +58,5 @@ Status: **Met**
 
 ## Conclusion
 
-All Cat8 manual-review sub-requirements (`C8-M1` through `C8-M4`) have direct evidence artifacts and can be marked **Met**.
+All Cat8 manual-review sub-requirements (`C8-M1` through `C8-M4`) have direct evidence artifacts and are marked **Met**.
+Dependency burn-down and feature-impact mapping are additionally documented in `dependency-feature-impact.md` with post-remediation production audit evidence.

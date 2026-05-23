@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2026-05-22T01:37:03.628Z",
+  "generatedAt": "2026-05-22T21:09:28.951Z",
   "target": {
     "baseUrl": "http://localhost:3000",
     "wsBaseUrl": "ws://localhost:3000"
   },
   "summary": {
-    "total": 40,
+    "total": 38,
     "byStatus": {
-      "pass": 7,
+      "pass": 9,
       "fail": 0,
-      "warn": 33,
-      "skip": 0,
+      "warn": 23,
+      "skip": 6,
       "error": 0
     },
     "bySeverity": {
-      "critical": 2,
-      "high": 30,
-      "medium": 0,
-      "low": 0,
-      "info": 8
+      "critical": 1,
+      "high": 21,
+      "medium": 1,
+      "low": 6,
+      "info": 9
     }
   },
   "findings": [
     {
-      "id": "auth-unauthenticated-route-access",
+      "id": "auth-unauthenticated-route-api-auth-me",
       "surface": "auth-session",
       "status": "pass",
       "severity": "info",
-      "title": "Unauthenticated auth route rejection",
-      "details": "Route correctly rejects unauthenticated access.",
+      "title": "Unauthenticated route rejection (/api/auth/me)",
+      "details": "Route correctly rejected unauthenticated access with 401.",
       "reproduction": [
         "curl -i \"http://localhost:3000/api/auth/me\""
       ],
@@ -37,19 +37,74 @@
       }
     },
     {
-      "id": "auth-member-admin-escalation-check",
+      "id": "auth-unauthenticated-route-api-auth-session",
       "surface": "auth-session",
       "status": "pass",
       "severity": "info",
-      "title": "Member cannot access admin endpoint",
-      "details": "Access correctly blocked with 403.",
+      "title": "Unauthenticated route rejection (/api/auth/session)",
+      "details": "Route correctly rejected unauthenticated access with 401.",
       "reproduction": [
-        "Login as non-admin member",
-        "curl -i -H \"cookie: session_id=...\" \"http://localhost:3000/api/admin/workspaces\""
+        "curl -i \"http://localhost:3000/api/auth/session\""
       ],
       "evidence": {
-        "loginStatus": 200,
-        "adminStatus": 403
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-unauthenticated-route-api-documents",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated route rejection (/api/documents)",
+      "details": "Route correctly rejected unauthenticated access with 401.",
+      "reproduction": [
+        "curl -i \"http://localhost:3000/api/documents\""
+      ],
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-unauthenticated-route-api-issues",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated route rejection (/api/issues)",
+      "details": "Route correctly rejected unauthenticated access with 401.",
+      "reproduction": [
+        "curl -i \"http://localhost:3000/api/issues\""
+      ],
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-unauthenticated-route-api-admin-workspaces",
+      "surface": "auth-session",
+      "status": "pass",
+      "severity": "info",
+      "title": "Unauthenticated route rejection (/api/admin/workspaces)",
+      "details": "Route correctly rejected unauthenticated access with 401.",
+      "reproduction": [
+        "curl -i \"http://localhost:3000/api/admin/workspaces\""
+      ],
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "auth-deep-session-checks-skipped",
+      "surface": "auth-session",
+      "status": "skip",
+      "severity": "low",
+      "title": "Deep auth/session checks skipped",
+      "details": "Member authentication failed (status 401). Provide valid member credentials via SECURITY_PROBE_MEMBER_EMAIL/PASSWORD.",
+      "reproduction": [
+        "Set SECURITY_PROBE_MEMBER_EMAIL and SECURITY_PROBE_MEMBER_PASSWORD to valid credentials",
+        "Re-run pnpm security:probe"
+      ],
+      "evidence": {
+        "loginStatus": 401
       }
     },
     {
@@ -67,24 +122,23 @@
       }
     },
     {
-      "id": "ws-malformed-payload-check",
+      "id": "ws-malformed-payload-check-auth-failed",
       "surface": "websocket",
-      "status": "pass",
-      "severity": "info",
-      "title": "Malformed and oversized WebSocket payload handling",
-      "details": "Server rejected malformed websocket payload with HTTP 400 before upgrade.",
+      "status": "warn",
+      "severity": "medium",
+      "title": "Authenticated WebSocket malformed payload check unavailable",
+      "details": "Could not authenticate member user (login status 401).",
       "reproduction": [
-        "Authenticate as member user",
-        "Connect to \"ws://localhost:3000/collaboration/security-probe:00000000-0000-0000-0000-000000000000\" and send malformed payloads"
+        "Verify SECURITY_PROBE_MEMBER_EMAIL and SECURITY_PROBE_MEMBER_PASSWORD values."
       ]
     },
     {
-      "id": "input-reflected-xss-check",
+      "id": "input-reflected-search-query-xss",
       "surface": "input-sanitization",
       "status": "pass",
       "severity": "info",
-      "title": "Reflected input payload check",
-      "details": "No raw reflected payload detected in API response.",
+      "title": "Reflected XSS probe (Search query parameter)",
+      "details": "/api/search handled xss payload with status 404.",
       "reproduction": [
         "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=<script>alert(\"ship_probe\")</script>\""
       ],
@@ -94,51 +148,89 @@
       }
     },
     {
-      "id": "input-sqli-probe-check",
+      "id": "input-reflected-search-query-sqli",
       "surface": "input-sanitization",
       "status": "pass",
       "severity": "info",
-      "title": "SQLi-style payload handling",
-      "details": "SQLi-style probe did not produce server error (status 404).",
+      "title": "Reflected SQLI probe (Search query parameter)",
+      "details": "/api/search handled sqli payload with status 404.",
       "reproduction": [
         "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=' OR 1=1 --\""
       ],
       "evidence": {
-        "status": 404
+        "status": 404,
+        "reflected": false
       }
     },
     {
-      "id": "input-excessive-length-check",
+      "id": "input-reflected-search-query-long",
       "surface": "input-sanitization",
       "status": "pass",
       "severity": "info",
-      "title": "Excessive length payload handling",
-      "details": "Long-input probe handled without server error (status 404).",
+      "title": "Reflected LONG probe (Search query parameter)",
+      "details": "/api/search handled long payload with status 404.",
       "reproduction": [
-        "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=<10k chars>\""
+        "curl -G \"http://localhost:3000/api/search\" --data-urlencode \"query=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\""
       ],
       "evidence": {
         "status": 404,
-        "length": 10000
+        "reflected": false
       }
     },
     {
-      "id": "input-stored-vector-check",
+      "id": "input-reflected-issues-state-filter-skipped",
       "surface": "input-sanitization",
-      "status": "warn",
-      "severity": "info",
-      "title": "Stored vector payload handling",
-      "details": "Stored vector probe write/read completed (create status 201).",
+      "status": "skip",
+      "severity": "low",
+      "title": "Reflected input probe skipped (Issues state filter parameter)",
+      "details": "Authenticated credentials not available for this reflected-input probe target.",
       "reproduction": [
-        "Authenticate as member user",
-        "POST \"http://localhost:3000/api/issues\" with script-like title payload",
-        "GET \"http://localhost:3000/api/issues\" and inspect returned JSON"
-      ],
-      "evidence": {
-        "createStatus": 201,
-        "listStatus": 200,
-        "reflectedStoredPayload": false
-      }
+        "Set member credentials and rerun security probe."
+      ]
+    },
+    {
+      "id": "input-reflected-issues-priority-filter-skipped",
+      "surface": "input-sanitization",
+      "status": "skip",
+      "severity": "low",
+      "title": "Reflected input probe skipped (Issues priority filter parameter)",
+      "details": "Authenticated credentials not available for this reflected-input probe target.",
+      "reproduction": [
+        "Set member credentials and rerun security probe."
+      ]
+    },
+    {
+      "id": "input-reflected-documents-type-filter-skipped",
+      "surface": "input-sanitization",
+      "status": "skip",
+      "severity": "low",
+      "title": "Reflected input probe skipped (Documents type filter parameter)",
+      "details": "Authenticated credentials not available for this reflected-input probe target.",
+      "reproduction": [
+        "Set member credentials and rerun security probe."
+      ]
+    },
+    {
+      "id": "input-reflected-team-grid-range-filter-skipped",
+      "surface": "input-sanitization",
+      "status": "skip",
+      "severity": "low",
+      "title": "Reflected input probe skipped (Team grid date-range parameter)",
+      "details": "Authenticated credentials not available for this reflected-input probe target.",
+      "reproduction": [
+        "Set member credentials and rerun security probe."
+      ]
+    },
+    {
+      "id": "input-stored-vector-skipped",
+      "surface": "input-sanitization",
+      "status": "skip",
+      "severity": "low",
+      "title": "Stored vector probes skipped",
+      "details": "Set SECURITY_PROBE_MEMBER_EMAIL and SECURITY_PROBE_MEMBER_PASSWORD to run stored-input checks.",
+      "reproduction": [
+        "Set member credentials and rerun security probe."
+      ]
     },
     {
       "id": "dep-advisory-1113461",
@@ -149,7 +241,14 @@
       "details": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1113465",
@@ -160,7 +259,14 @@
       "details": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1113515",
@@ -171,7 +277,14 @@
       "details": "Rollup 4 has Arbitrary File Write via Path Traversal (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "rollup",
+        "features": [
+          "Frontend bundling pipeline"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_d1c9c207c256d988cd870c1226ab24ca\\\\node_modules\\\\vitest\",\"dependencies\":{\"vite\":{\"from\":\"vite\",\"version\":\"6.4.1\",\"resolved\":\"https://registry.npmjs.org/vite/-/vite-6.4.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vite@6.4.1_@types+node@22.1_c50f343ebef7657a6cae03101c6efbaa\\\\node_modules\\\\vite\",\"dependencies\":{\"rollup\":{\"from\":\"rollup\",\"version\":\"4.55.1\",\"resolved\":\"https://registry.npmjs.org/rollup/-/rollup-4.55.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\rollup@4.55.1\\\\node_modules\\\\rollup\"}}},\"@vitest/mocker\":{\"from\":\"@vitest/mocker\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/mocker/-/mocker-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+mocker@4.0.17_vite@_442f0dd2c250b345691164aa1adb4d8b\\\\node_modules\\\\@vitest\\\\mocker\",\"dependencies\":{\"vite\":{\"from\":\"vite\",\"version\":\"6.4.1\",\"resolved\":\"https://registry.npmjs.org/vite/-/vite-6.4.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vite@6.4.1_@types+node@22.1_c50f343ebef7657a6cae03101c6efbaa\\\\node_modules\\\\vite\",\"dependencies\":{\"rollup\":{\"from\":\"rollup\",\"version\":\"4.55.1\",\"resolved\":\"https://registry.npmjs.org/rollup/-/rollup-4.55.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\rollup@4.55.1\\\\node_modules\\\\rollup\"}}}}}}}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://reg"
+      }
     },
     {
       "id": "dep-advisory-1113540",
@@ -182,7 +295,14 @@
       "details": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1113544",
@@ -193,7 +313,14 @@
       "details": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1113548",
@@ -204,7 +331,14 @@
       "details": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1113552",
@@ -215,40 +349,14 @@
       "details": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1113568",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "critical",
-      "title": "Dependency advisory: fast-xml-parser",
-      "details": "fast-xml-parser has an entity encoding bypass via regex injection in DOCTYPE entity names (critical)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1113569",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: fast-xml-parser",
-      "details": "fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit) (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1114006",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: hono",
-      "details": "Hono vulnerable to arbitrary file access via serveStatic vulnerability  (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "minimatch",
+        "features": [
+          "Build and tooling glob expansion"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1114151",
@@ -259,29 +367,14 @@
       "details": "SVGO DoS through entity expansion in DOCTYPE (Billion Laughs) (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1114170",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: @hono/node-server",
-      "details": "@hono/node-server has authorization bypass for protected static paths via encoded slashes in Serve Static Middleware (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1114194",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: express-rate-limit",
-      "details": "express-rate-limit: IPv4-mapped IPv6 addresses bypass per-client rate limiting on servers with dual-stack network (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "svgo",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1114526",
@@ -292,7 +385,14 @@
       "details": "flatted vulnerable to unbounded recursion DoS in parse() revive phase (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "flatted",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"flatted\":{\"from\":\"flatted\",\"version\":\"3.3.3\",\"resolved\":\"https://registry.npmjs.org/flatted/-/flatted-3.3.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\flatted@3.3.3\\\\node_modules\\\\flatted\"}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_e17f6b9aaf76db6cade272b9d899c347\\\\node_modules\\\\vitest\",\"dependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"flatted\":{\"from\":\"flatted\",\"version\":\"3.3.3\",\"resolved\":\"https://registry.npmjs.org/flatted/-/flatted-3.3.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\flatted@3.3.3\\\\node_modules\\\\flatted\"}}}}}}}]"
+      }
     },
     {
       "id": "dep-advisory-1114591",
@@ -303,7 +403,14 @@
       "details": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "undici",
+        "features": [
+          "Node fetch/network stack"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1114637",
@@ -314,7 +421,14 @@
       "details": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "undici",
+        "features": [
+          "Node fetch/network stack"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1114639",
@@ -325,18 +439,14 @@
       "details": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1115339",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: fast-xml-parser",
-      "details": "fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278) (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "undici",
+        "features": [
+          "Node fetch/network stack"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1115357",
@@ -347,18 +457,14 @@
       "details": "Prototype Pollution via parse() in NodeJS flatted (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1115527",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: path-to-regexp",
-      "details": "path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "flatted",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"flatted\":{\"from\":\"flatted\",\"version\":\"3.3.3\",\"resolved\":\"https://registry.npmjs.org/flatted/-/flatted-3.3.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\flatted@3.3.3\\\\node_modules\\\\flatted\"}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_e17f6b9aaf76db6cade272b9d899c347\\\\node_modules\\\\vitest\",\"dependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"flatted\":{\"from\":\"flatted\",\"version\":\"3.3.3\",\"resolved\":\"https://registry.npmjs.org/flatted/-/flatted-3.3.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\flatted@3.3.3\\\\node_modules\\\\flatted\"}}}}}}}]"
+      }
     },
     {
       "id": "dep-advisory-1115552",
@@ -369,7 +475,14 @@
       "details": "Picomatch has a ReDoS vulnerability via extglob quantifiers (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "picomatch",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"tinyglobby\":{\"from\":\"tinyglobby\",\"version\":\"0.2.15\",\"resolved\":\"https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\tinyglobby@0.2.15\\\\node_modules\\\\tinyglobby\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"},\"fdir\":{\"from\":\"fdir\",\"version\":\"6.5.0\",\"resolved\":\"https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\fdir@6.5.0_picomatch@4.0.3\\\\node_modules\\\\fdir\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"}}}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_d1c9c207c256d988cd870c1226ab24ca\\\\node_modules\\\\vitest\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"},\"tinyglobby\":{\"from\":\"tinyglobby\",\"version\":\"0.2.15\",\"resolved\":\"https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship"
+      }
     },
     {
       "id": "dep-advisory-1115554",
@@ -380,18 +493,14 @@
       "details": "Picomatch has a ReDoS vulnerability via extglob quantifiers (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1115573",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: path-to-regexp",
-      "details": "path-to-regexp vulnerable to Denial of Service via sequential optional groups (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "picomatch",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"tinyglobby\":{\"from\":\"tinyglobby\",\"version\":\"0.2.15\",\"resolved\":\"https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\tinyglobby@0.2.15\\\\node_modules\\\\tinyglobby\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"},\"fdir\":{\"from\":\"fdir\",\"version\":\"6.5.0\",\"resolved\":\"https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\fdir@6.5.0_picomatch@4.0.3\\\\node_modules\\\\fdir\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"}}}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_d1c9c207c256d988cd870c1226ab24ca\\\\node_modules\\\\vitest\",\"dependencies\":{\"picomatch\":{\"from\":\"picomatch\",\"version\":\"4.0.3\",\"resolved\":\"https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\picomatch@4.0.3\\\\node_modules\\\\picomatch\"},\"tinyglobby\":{\"from\":\"tinyglobby\",\"version\":\"0.2.15\",\"resolved\":\"https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship"
+      }
     },
     {
       "id": "dep-advisory-1115806",
@@ -402,7 +511,14 @@
       "details": "lodash vulnerable to Code Injection via `_.template` imports key names (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "lodash",
+        "features": [
+          "Feature mapping requires review"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1116234",
@@ -413,7 +529,14 @@
       "details": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "vite",
+        "features": [
+          "Frontend dev server / build chain"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true,\"devDependencies\":{\"@vitest/ui\":{\"from\":\"@vitest/ui\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+ui@4.0.17_vitest@4.0.17\\\\node_modules\\\\@vitest\\\\ui\",\"dependencies\":{\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_d1c9c207c256d988cd870c1226ab24ca\\\\node_modules\\\\vitest\",\"dependencies\":{\"vite\":{\"from\":\"vite\",\"version\":\"6.4.1\",\"resolved\":\"https://registry.npmjs.org/vite/-/vite-6.4.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vite@6.4.1_@types+node@22.1_c50f343ebef7657a6cae03101c6efbaa\\\\node_modules\\\\vite\"},\"@vitest/mocker\":{\"from\":\"@vitest/mocker\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/@vitest/mocker/-/mocker-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\@vitest+mocker@4.0.17_vite@_442f0dd2c250b345691164aa1adb4d8b\\\\node_modules\\\\@vitest\\\\mocker\",\"dependencies\":{\"vite\":{\"from\":\"vite\",\"version\":\"6.4.1\",\"resolved\":\"https://registry.npmjs.org/vite/-/vite-6.4.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vite@6.4.1_@types+node@22.1_c50f343ebef7657a6cae03101c6efbaa\\\\node_modules\\\\vite\"}}}}}}},\"vitest\":{\"from\":\"vitest\",\"version\":\"4.0.17\",\"resolved\":\"https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vitest@4.0.17_@types+node@2_e17f6b9aaf76db6cade272b9d899c347\\\\node_modules\\\\vitest\",\"dependencies\":{\"vite\":{\"from\":\"vite\",\"version\":\"6.4.1\",\"resolved\":\"https://registry.npmjs.org/vite/-/vite-6.4.1.tgz\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\node_modules\\\\.pnpm\\\\vite@6.4.1_@types+node@22.1_38e72792877b288169d17282d367660d\\\\node_modules\\\\vite\"},\"@vit"
+      }
     },
     {
       "id": "dep-advisory-1117571",
@@ -424,29 +547,14 @@
       "details": "Arbitrary code execution in protobufjs (critical)",
       "reproduction": [
         "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1117870",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: fast-uri",
-      "details": "fast-uri vulnerable to path traversal via percent-encoded dot segments (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
-    },
-    {
-      "id": "dep-advisory-1117884",
-      "surface": "dependencies",
-      "status": "warn",
-      "severity": "high",
-      "title": "Dependency advisory: fast-uri",
-      "details": "fast-uri vulnerable to host confusion via percent-encoded authority delimiters (high)",
-      "reproduction": [
-        "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "protobufjs",
+        "features": [
+          "Generated schema serialization paths"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1118641",
@@ -457,7 +565,14 @@
       "details": "protobuf.js: Code injection through bytes field defaults in generated toObject code (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "protobufjs",
+        "features": [
+          "Generated schema serialization paths"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1118928",
@@ -468,7 +583,14 @@
       "details": "protobuf.js: Code generation gadget after prototype pollution (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "protobufjs",
+        "features": [
+          "Generated schema serialization paths"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1118930",
@@ -479,7 +601,14 @@
       "details": "protobuf.js: Process-wide denial of service through unsafe option paths (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "protobufjs",
+        "features": [
+          "Generated schema serialization paths"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     },
     {
       "id": "dep-advisory-1118932",
@@ -490,7 +619,14 @@
       "details": "protobuf.js: Denial of service through unbounded protobuf recursion (high)",
       "reproduction": [
         "pnpm audit --json"
-      ]
+      ],
+      "evidence": {
+        "package": "protobufjs",
+        "features": [
+          "Generated schema serialization paths"
+        ],
+        "dependencyPath": "[{\"name\":\"@ship/api\",\"version\":\"0.0.0\",\"path\":\"D:\\\\GFA_Cohort_5\\\\Week_Four\\\\ship\\\\api\",\"private\":true}]"
+      }
     }
   ]
 }

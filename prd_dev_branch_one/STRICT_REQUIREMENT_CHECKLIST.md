@@ -34,7 +34,7 @@ Status values:
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
 | IR-1 | Before/after proof is mandatory for every improvement | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` | N/A |
-| IR-2 | Existing tests must still pass | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/lint-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/build-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/api-test-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-after.log` | Keep rerun artifacts current after final remediations |
+| IR-2 | Existing tests must still pass | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-security-remediation.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-security-remediation.log`, `prd_dev_branch_one/PRD_CAT8/dependency-audit-remediation.log` | N/A |
 | IR-3 | Reasoning documented per improvement (what changed, why old was suboptimal, tradeoffs) | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md`, `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/REVIEWER_CLOSEOUT_REPORT.md` | N/A |
 | IR-4 | No cosmetic-only changes counted as improvements | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/open-set-remediation-closeout.md` | N/A |
 | IR-5 | Commit discipline: logical separation with descriptive history | Met | `prd_dev_branch_one/IMPLEMENTATION_RULES_CLOSEOUT.md`, `prd_dev_branch_one/REPO_FORK_BRANCH_EVIDENCE.md` | N/A |
@@ -55,12 +55,12 @@ Status values:
 
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
-| C8-T1 | Runnable security probe tool with single command | Met | `api/src/scripts/security-probe.ts`, `docs/security-probe-tooling.md`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout.log` | N/A |
-| C8-T2 | Probe covers auth/session checks | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout.json` | N/A |
-| C8-T3 | Probe covers websocket malformed/oversized/unexpected message validation | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.json`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md` | N/A |
-| C8-T4 | Probe covers input sanitization across XSS/SQLi/excessively long input (stored + reflected vectors) | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.json`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md` | N/A |
-| C8-T5 | Probe programmatically runs/parses audit and flags high/critical CVEs with feature dependency mapping | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-closeout.log`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout.json` | Strengthen feature-to-package mapping detail for strict reviewer clarity |
-| C8-R1 | Probe outputs structured JSON/MD report with findings/severity/repro steps | Met | `prd_dev_branch_one/PRD_CAT8/security-probe-closeout.json`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout.md` | N/A |
+| C8-T1 | Runnable security probe tool with single command | Met | `api/src/scripts/security-probe.ts`, `api/src/scripts/security-probe-targets.ts`, `docs/security-probe-tooling.md`, `prd_dev_branch_one/PRD_CAT8/security-probe-remediation.log` | N/A |
+| C8-T2 | Probe covers auth/session checks | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.json` | N/A |
+| C8-T3 | Probe covers websocket malformed/oversized/unexpected message validation | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.json`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.md` | N/A |
+| C8-T4 | Probe covers input sanitization across XSS/SQLi/excessively long input (stored + reflected vectors) | Met | `api/src/scripts/security-probe.ts`, `api/src/scripts/security-probe-targets.ts`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.json` | N/A |
+| C8-T5 | Probe programmatically runs/parses audit and flags high/critical CVEs with feature dependency mapping | Met | `api/src/scripts/security-probe.ts`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-remediated.json`, `prd_dev_branch_one/PRD_CAT8/dependency-feature-impact.md` | N/A |
+| C8-R1 | Probe outputs structured JSON/MD report with findings/severity/repro steps | Met | `prd_dev_branch_one/PRD_CAT8/security-probe-report.json`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.md` | N/A |
 
 ## E) Cat8 PRD - Manual Review Requirements
 
@@ -68,14 +68,14 @@ Status values:
 | --- | --- | --- | --- | --- |
 | C8-M1 | Manual review of CORS/CSP restrictions | Met | `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`, `prd_dev_branch_one/PRD_CAT8/cors-csp-headers.log`, `prd_dev_branch_one/PRD_CAT8/cors-origin-check.log` | N/A |
 | C8-M2 | Manual review of env/secret exposure | Met | `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md` | N/A |
-| C8-M3 | Manual review of rate limiting (API + WebSocket) | Met | `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`, `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md` | N/A |
+| C8-M3 | Manual review of rate limiting (API + WebSocket) | Met | `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`, `prd_dev_branch_one/PRD_CAT8/security-probe-report.md` | N/A |
 | C8-M4 | Manual review of error verbosity leakage | Met | `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`, `prd_dev_branch_one/PRD_CAT8/error-leakage-check.log`, `api/src/app.ts` | N/A |
 
 ## F) Cat8 PRD - Improvement Target
 
 | ID | Requirement | Met/Not Met | Exact artifact path(s) | What's missing to close gap |
 | --- | --- | --- | --- | --- |
-| C8-FIX | Fix >=2 verified vulnerabilities with before/after proof and no regression | Met | `prd_dev_branch_one/REVIEWER_CLOSEOUT_REPORT.md`, `prd_dev_branch_one/PRD_CAT8/rate-limit-ip-before-after-proof.log`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-before.log`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-after.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-after-c8-fix.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/api-test-after-c8-fix.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-after-c8-fix.log` | N/A |
+| C8-FIX | Fix >=2 verified vulnerabilities with before/after proof and no regression | Met | `prd_dev_branch_one/REVIEWER_CLOSEOUT_REPORT.md`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-post-upgrade.json`, `prd_dev_branch_one/PRD_CAT8/pnpm-audit-prod-remediated.json`, `prd_dev_branch_one/PRD_CAT8/dependency-feature-impact.md`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-security-remediation.log`, `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-security-remediation.log` | N/A |
 
 ## G) Closure Priority (strict)
 

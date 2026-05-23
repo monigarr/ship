@@ -33,6 +33,9 @@
     "db:migrate": "pnpm --filter @ship/api db:migrate",
     "db:orphan-check": "pnpm --filter @ship/api db:orphan-check",
     "security:probe": "pnpm --filter @ship/api security:probe",
+    "security:ci:secrets": "docker run --rm -v \"${PWD}:/repo\" zricethezav/gitleaks:latest git /repo --redact --no-banner --exit-code 1",
+    "security:ci:attestation": "node scripts/ci/validate-attestation.mjs",
+    "security:ci:dependencies": "node scripts/ci/check-prod-audit.mjs",
     "prepare": "husky",
     "postinstall": "git config merge.ours.driver true && (command -v comply >/dev/null 2>&1 || echo '\\n⚠️  strongdm comply not found in PATH\\n   Official source: https://github.com/strongdm/comply\\n   Note: pre-commit security scanning uses Dockerized gitleaks + trivy\\n')"
   },

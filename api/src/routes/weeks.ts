@@ -15,6 +15,75 @@ import { extractText } from '../utils/document-content.js';
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
 
+// Interface for sprint row from database queries
+interface SprintRow {
+  id: string;
+  title: string;
+  properties: {
+    sprint_number?: number;
+    status?: string;
+    owner_id?: string;
+    plan?: string | null;
+    success_criteria?: string[] | null;
+    confidence?: number | null;
+    plan_history?: unknown | null;
+    is_complete?: boolean | null;
+    missing_fields?: string[];
+    planned_issue_ids?: string[] | null;
+    snapshot_taken_at?: string | null;
+    plan_approval?: unknown | null;
+    review_approval?: unknown | null;
+    review_rating?: unknown | null;
+    accountable_id?: string | null;
+    assignee_ids?: string[];
+  };
+  owner_id?: string;
+  owner_name?: string;
+  owner_email?: string;
+  program_id?: string;
+  program_name?: string;
+  program_prefix?: string;
+  program_accountable_id?: string;
+  owner_reports_to?: string;
+  workspace_sprint_start_date?: string | Date;
+  issue_count?: number | string;
+  completed_count?: number | string;
+  started_count?: number | string;
+  has_plan?: boolean | string;
+  has_retro?: boolean | string;
+  retro_outcome?: string | null;
+  retro_id?: string | null;
+}
+
+// Interface for issue objects
+interface SprintIssue {
+  id: string;
+  title: string;
+  state: string;
+  priority: string;
+  assignee_id: string | null;
+  assignee_name: string | null;
+  assignee_archived: boolean;
+  estimate: number | null;
+  ticket_number: number;
+  display_id: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+}
+
+// Safe query parameter extraction helpers
+function getQueryString(req: Request, key: string): string | undefined {
+  const val = req.query[key];
+  return typeof val === 'string' ? val : undefined;
+}
+
+function getQueryInt(req: Request, key: string): number | undefined {
+  const val = req.query[key];
+  if (typeof val !== 'string') return undefined;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? undefined : parsed;
+}
+
 /**
  * Look up the reports_to user_id for a sprint's owner.
  * The sprint's owner_id is a person document ID; this resolves their supervisor's user_id.
@@ -87,8 +156,13 @@ async function broadcastAccountabilityUpdateToSprintOwner(
 // GET /api/weeks/lookup-person - Find person document by user_id
 router.get('/lookup-person', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const workspaceId = req.workspaceId!;
-    const userId = req.query.user_id as string;
+    const workspaceId = req.workspaceId;
+    const userId = getQueryString(req, 'user_id');
+
+    if (!workspaceId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
     if (!userId) {
       res.status(400).json({ error: 'user_id is required' });
@@ -119,11 +193,16 @@ router.get('/lookup-person', authMiddleware, async (req: Request, res: Response)
 // Returns the sprint document with its approval properties
 router.get('/lookup', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const workspaceId = req.workspaceId!;
-    const projectId = req.query.project_id as string;
-    const sprintNumber = parseInt(req.query.sprint_number as string, 10);
+    const workspaceId = req.workspaceId;
+    const projectId = getQueryString(req, 'project_id');
+    const sprintNumber = getQueryInt(req, 'sprint_number');
 
-    if (!projectId || isNaN(sprintNumber)) {
+    if (!workspaceId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    if (!projectId || sprintNumber === undefined) {
       res.status(400).json({ error: 'project_id and sprint_number are required' });
       return;
     }
@@ -183,7 +262,7 @@ const updatePlanSchema = z.object({
 
 // Helper to extract sprint from row
 // Dates and status are computed on frontend from sprint_number + workspace.sprint_start_date
-function extractSprintFromRow(row: any) {
+function extractSprintFromRow(row: SprintRow) {
   const props = row.properties || {};
   return {
     id: row.id,
@@ -201,9 +280,9 @@ function extractSprintFromRow(row: any) {
     program_accountable_id: row.program_accountable_id || null,
     owner_reports_to: row.owner_reports_to || null,
     workspace_sprint_start_date: row.workspace_sprint_start_date,
-    issue_count: parseInt(row.issue_count) || 0,
-    completed_count: parseInt(row.completed_count) || 0,
-    started_count: parseInt(row.started_count) || 0,
+    issue_count: typeof row.issue_count === 'string' ? parseInt(row.issue_count, 10) : (row.issue_count ?? 0),
+    completed_count: typeof row.completed_count === 'string' ? parseInt(row.completed_count, 10) : (row.completed_count ?? 0),
+    started_count: typeof row.started_count === 'string' ? parseInt(row.started_count, 10) : (row.started_count ?? 0),
     has_plan: row.has_plan === true || row.has_plan === 't',
     has_retro: row.has_retro === true || row.has_retro === 't',
     // Retro outcome summary (populated if retro exists)
@@ -606,7 +685,7 @@ router.get('/my-week', authMiddleware, async (req: Request, res: Response) => {
     const daysRemaining = isHistorical ? 0 : Math.max(0, Math.ceil((targetSprintEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
     // Build dynamic WHERE clause for issue filters
-    const params: any[] = [workspaceId, targetSprintNumber, userId, isAdmin];
+    const params: (string | number | boolean)[] = [workspaceId, targetSprintNumber, userId, isAdmin];
     let filterConditions = '';
 
     if (state && typeof state === 'string') {
@@ -664,7 +743,7 @@ router.get('/my-week', authMiddleware, async (req: Request, res: Response) => {
     const groupedData: Record<string, {
       sprint: { id: string; name: string; sprint_number: number };
       program: { id: string; name: string; prefix: string } | null;
-      issues: any[];
+      issues: SprintIssue[];
     }> = {};
 
     for (const row of result.rows) {
@@ -709,9 +788,9 @@ router.get('/my-week', authMiddleware, async (req: Request, res: Response) => {
     // Calculate totals
     const totalIssues = groups.reduce((sum, g) => sum + g.issues.length, 0);
     const completedIssues = groups.reduce((sum, g) =>
-      sum + g.issues.filter((i: any) => i.state === 'done').length, 0);
+      sum + g.issues.filter((i) => i.state === 'done').length, 0);
     const inProgressIssues = groups.reduce((sum, g) =>
-      sum + g.issues.filter((i: any) => i.state === 'in_progress' || i.state === 'in_review').length, 0);
+      sum + g.issues.filter((i) => i.state === 'in_progress' || i.state === 'in_review').length, 0);
 
     res.json({
       groups,
@@ -1050,7 +1129,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     const currentProps = existing.rows[0].properties || {};
     const programId = existing.rows[0].program_id;
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | boolean | null | unknown)[] = [];
     let paramIndex = 1;
 
     const data = parsed.data;
@@ -1789,8 +1868,21 @@ const createStandupSchema = z.object({
   date: z.string().optional(), // ISO date string - must be today if provided
 });
 
+// Standup row interface for database query results
+interface StandupRow {
+  id: string;
+  parent_id: string | null;
+  title: string;
+  content: unknown;
+  author_id: string;
+  author_name: string | null;
+  author_email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Helper to format standup response
-function formatStandupResponse(row: any) {
+function formatStandupResponse(row: StandupRow) {
   return {
     id: row.id,
     sprint_id: row.parent_id,
@@ -2018,8 +2110,35 @@ const sprintReviewSchema = z.object({
   plan_validated: z.boolean().nullable().optional(),
 });
 
+// TipTap content node interface
+interface TipTapNode {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: TipTapNode[];
+  text?: string;
+}
+
+// Issue interface for sprint review
+interface SprintReviewIssue {
+  ticket_number: number;
+  title: string;
+  properties?: {
+    carryover_from_sprint_id?: string;
+    state?: string;
+    [key: string]: unknown;
+  };
+}
+
+// Sprint data interface for review
+interface SprintReviewData {
+  sprint_number: number;
+  program_name?: string;
+  plan?: string | null;
+  [key: string]: unknown;
+}
+
 // Helper to generate pre-filled sprint review content
-async function generatePrefilledReviewContent(sprintData: any, issues: any[]) {
+async function generatePrefilledReviewContent(sprintData: SprintReviewData, issues: SprintReviewIssue[]) {
   // Categorize issues
   const issuesPlanned = issues.filter(i => {
     const props = i.properties || {};
@@ -2044,7 +2163,7 @@ async function generatePrefilledReviewContent(sprintData: any, issues: any[]) {
   });
 
   // Build TipTap content with suggested sections
-  const content: any = {
+  const content: { type: string; content: TipTapNode[] } = {
     type: 'doc',
     content: [
       {
@@ -2426,7 +2545,7 @@ router.patch('/:id/review', authMiddleware, async (req: Request, res: Response) 
 
     // Build update query
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | boolean | null)[] = [];
     let paramIndex = 1;
 
     if (content !== undefined) {

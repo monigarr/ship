@@ -23,8 +23,32 @@ const rejectFeedbackSchema = z.object({
   reason: z.string().min(1).max(1000),
 });
 
+// Feedback row interface for database query results
+interface FeedbackRow {
+  id: string;
+  title: string;
+  properties: {
+    state?: string;
+    priority?: string;
+    source?: string;
+    rejection_reason?: string | null;
+    assignee_id?: string | null;
+    [key: string]: unknown;
+  };
+  ticket_number: number;
+  program_id: string;
+  content: unknown;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  program_name: string;
+  program_prefix: string | null;
+  program_color: string;
+  created_by_name: string | null;
+}
+
 // Helper to extract feedback from row
-function extractFeedbackFromRow(row: any, programPrefix?: string | null) {
+function extractFeedbackFromRow(row: FeedbackRow, programPrefix?: string | null) {
   const props = row.properties || {};
   return {
     id: row.id,

@@ -23,7 +23,7 @@ export const swaggerSpec: OpenAPIObject = generateOpenAPIDocument();
 
 export function setupSwagger(app: Express): void {
   // Serve swagger UI at /api/docs
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  app.use('/api/docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'Ship API Documentation',
     swaggerOptions: {
@@ -33,7 +33,7 @@ export function setupSwagger(app: Express): void {
       tagsSorter: 'alpha',
       operationsSorter: 'method',
     },
-  }));
+  }) as any);
 
   // Serve the raw OpenAPI spec
   app.get('/api/openapi.json', (req, res) => {

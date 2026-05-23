@@ -363,9 +363,9 @@ test.describe('Security - File Upload Validation', () => {
         headers: { 'Cookie': cookieHeader }
       })
 
-      // Should return 400 (invalid UUID format) or 401 (auth might fail first)
-      expect([400, 401]).toContain(serveResponse.status())
-      expect([400, 401]).toContain(metaResponse.status())
+      // Must reject malformed/non-UUID file identifiers deterministically
+      expect(serveResponse.status()).toBe(400)
+      expect(metaResponse.status()).toBe(400)
     }
 
     // Also verify that valid UUID format that doesn't exist returns 404
@@ -397,10 +397,8 @@ test.describe('Security - CSRF Protection', () => {
       }
     })
 
-    // Should succeed if CSRF token is in cookie, or fail if token required in header
-    // The important thing is that CSRF protection exists
-    // Status should be either 200 (with cookie token) or 403 (token required)
-    expect([200, 201, 403]).toContain(response.status())
+    // Mutating request without CSRF header must be rejected.
+    expect(response.status()).toBe(403)
   })
 
   test('CSRF tokens prevent cross-origin requests', async ({ browser, apiServer }) => {

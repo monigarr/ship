@@ -65,3 +65,29 @@ Baseline source for all categories: `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE
 - **Fix:** Contrast remediation in `web/src/pages/MyWeekPage.tsx`, `web/src/pages/Projects.tsx`, and `web/src/components/FilterTabs.tsx`; deterministic top-3-page axe runner in `scripts/prd/run-axe-remediation-scan.mjs`.
 - **After:** `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/c7-axe-remediation.md` (0 critical/serious on `/my-week`, `/issues`, `/projects`).
 - **Repro:** `node scripts/prd/run-axe-remediation-scan.mjs`
+
+## Quick Percentage Delta Table (Submission)
+
+Formula used: `((baseline - after) / baseline) * 100` (positive = improvement/reduction).
+
+| Category | Metric | Baseline | After | Delta % | Proof |
+| --- | --- | ---: | ---: | ---: | --- |
+| C1 | `any` count | 346 | 346 | 0.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after.json` |
+| C1 | `as` assertion count | 1490 | 1546 | -3.76% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after.json` |
+| C1 | non-null assertion count | 326 | 323 | 0.92% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after.json` |
+| C1 | ts directive count | 1 | 1 | 0.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/type-safety-after.json` |
+| C2 | total dist size (KB) | 11625.94 | 3362.42 | 71.08% | `PHASE_2_PRD_BUNDLE/evidence/c2-after-summary.md` |
+| C3 | `/api/auth/session` P95 (ms) | 27.33 | 61.00 | -123.20% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
+| C3 | `/api/documents` P95 (ms) | 28.00 | 245.00 | -775.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
+| C3 | `/api/issues` P95 (ms) | 287.67 | 103.33 | 64.08% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
+| C3 | `/api/projects` P95 (ms) | 26.33 | 42.00 | -59.51% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
+| C3 | `/api/team/grid` P95 (ms) | 104.00 | 34.67 | 66.67% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c3-remediation-summary.md` |
+| C4 | main flow query count | 22 | 3 | 86.36% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c4-query-count-remediation.log` |
+| C5 | API suite pass rate | 100.00% | 100.00% | 0.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/api-test-after.log` |
+| C5 | coverage % baseline | N/A | Measured | N/A | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/test-coverage-after.log` |
+| C6 | directly comparable numeric baseline/after pair | N/A | N/A | N/A | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c6-runtime-remediation.log` |
+| C7 | critical+serious axe findings (top 3 pages) | 2 | 0 | 100.00% | `PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`, `PHASE_2_PRD_BUNDLE/evidence/c7-axe-remediation.md` |
+
+Notes:
+- Negative percentages indicate regression versus the baseline for that metric.
+- C6 remains evidence-backed but not reducible to one canonical baseline/after percentage from the current artifacts.

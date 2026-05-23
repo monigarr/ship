@@ -78,8 +78,53 @@ const rejectIssueSchema = z.object({
   reason: z.string().min(1).max(1000),
 });
 
+// Interface for issue row from database queries
+interface IssueRow {
+  id: string;
+  title: string;
+  ticket_number: number;
+  content: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+  created_by: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
+  reopened_at?: string | null;
+  converted_from_id?: string | null;
+  assignee_name?: string | null;
+  assignee_archived?: boolean | null;
+  created_by_name?: string | null;
+  properties: {
+    state?: string;
+    priority?: string;
+    assignee_id?: string | null;
+    estimate?: number | null;
+    source?: string;
+    rejection_reason?: string | null;
+    due_date?: string | null;
+    is_system_generated?: boolean;
+    accountability_target_id?: string | null;
+    accountability_type?: string | null;
+  };
+}
+
+// Safe query parameter extraction helpers
+function getQueryString(req: Request, key: string): string | undefined {
+  const val = req.query[key];
+  return typeof val === 'string' ? val : undefined;
+}
+
+function getQueryArray(req: Request, key: string): string[] | undefined {
+  const val = req.query[key];
+  if (typeof val === 'string') {
+    return val.split(',');
+  }
+  return undefined;
+}
+
 // Helper to extract issue properties from row (without belongs_to - added separately)
-function extractIssueFromRow(row: any) {
+function extractIssueFromRow(row: IssueRow) {
   const props = row.properties || {};
   return {
     id: row.id,
@@ -114,9 +159,14 @@ function extractIssueFromRow(row: any) {
 // List issues with filters
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { state, priority, assignee_id, program_id, sprint_id, source, parent_filter } = req.query;
-    const userId = req.userId!;
-    const workspaceId = req.workspaceId!;
+    const { parent_filter } = req.query;
+    const userId = req.userId;
+    const workspaceId = req.workspaceId;
+
+    if (!userId || !workspaceId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
     // Get visibility context for filtering
     const { isAdmin } = await getVisibilityContext(userId, workspaceId);
@@ -137,54 +187,59 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       WHERE d.workspace_id = $1 AND d.document_type = 'issue'
         AND ${VISIBILITY_FILTER_SQL('d', '$2', '$3')}
     `;
-    const params: (string | boolean | null)[] = [workspaceId, userId, isAdmin];
+    const params: (string | string[] | boolean | null)[] = [workspaceId, userId, isAdmin];
 
     // Exclude archived and deleted issues by default
     query += ` AND d.archived_at IS NULL AND d.deleted_at IS NULL`;
 
     // Filter by source if specified (internal or external)
-    if (source) {
+    const sourceValue = getQueryString(req, 'source');
+    if (sourceValue) {
       query += ` AND d.properties->>'source' = $${params.length + 1}`;
-      params.push(source as string);
+      params.push(sourceValue);
     }
     // No default filtering - show all issues regardless of source
 
-    if (state) {
-      const states = (state as string).split(',');
+    const stateValue = getQueryArray(req, 'state');
+    if (stateValue) {
       query += ` AND d.properties->>'state' = ANY($${params.length + 1})`;
-      params.push(states as any);
+      params.push(stateValue);
     }
 
-    if (priority) {
+    const priorityValue = getQueryString(req, 'priority');
+    if (priorityValue) {
       query += ` AND d.properties->>'priority' = $${params.length + 1}`;
-      params.push(priority as string);
+      params.push(priorityValue);
     }
 
-    if (assignee_id) {
-      if (assignee_id === 'null' || assignee_id === 'unassigned') {
+    const assigneeIdValue = getQueryString(req, 'assignee_id');
+    if (assigneeIdValue) {
+      if (assigneeIdValue === 'null' || assigneeIdValue === 'unassigned') {
         query += ` AND (d.properties->>'assignee_id' IS NULL OR d.properties->>'assignee_id' = '')`;
       } else {
         query += ` AND d.properties->>'assignee_id' = $${params.length + 1}`;
-        params.push(assignee_id as string);
+        params.push(assigneeIdValue);
       }
     }
 
     // Filter by program via junction table
-    if (program_id) {
+    const programIdValue = getQueryString(req, 'program_id');
+    if (programIdValue) {
       query += ` AND EXISTS (
         SELECT 1 FROM document_associations da
         WHERE da.document_id = d.id AND da.related_id = $${params.length + 1} AND da.relationship_type = 'program'
       )`;
-      params.push(program_id as string);
+      params.push(programIdValue);
     }
 
     // Filter by sprint via junction table
-    if (sprint_id) {
+    const sprintIdValue = getQueryString(req, 'sprint_id');
+    if (sprintIdValue) {
       query += ` AND EXISTS (
         SELECT 1 FROM document_associations da
         WHERE da.document_id = d.id AND da.related_id = $${params.length + 1} AND da.relationship_type = 'sprint'
       )`;
-      params.push(sprint_id as string);
+      params.push(sprintIdValue);
     }
 
     // Filter by parent/sub-issue status
@@ -582,12 +637,20 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       accountability_type,
     } = parsed.data;
 
+    const workspaceId = req.workspaceId;
+    const userId = req.userId;
+
+    if (!workspaceId || !userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     await client.query('BEGIN');
 
     // Use advisory lock to serialize ticket number generation per workspace
     // This prevents race conditions where concurrent requests get the same MAX value
     // The lock key is derived from workspace_id (first 15 hex chars as bigint)
-    const workspaceIdHex = req.workspaceId!.replace(/-/g, '').substring(0, 15);
+    const workspaceIdHex = workspaceId.replace(/-/g, '').substring(0, 15);
     const lockKey = parseInt(workspaceIdHex, 16);
     await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
 
@@ -705,7 +768,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     const existingIssue = existing.rows[0];
     const currentProps = existingIssue.properties || {};
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | boolean | null | unknown)[] = [];
     let paramIndex = 1;
 
     const data = parsed.data;
@@ -1207,13 +1270,13 @@ router.post('/bulk', authMiddleware, async (req: Request, res: Response) => {
         }
 
         const setClauses: string[] = ['updated_at = NOW()'];
-        const values: any[] = [validIds, workspaceId];
+        const batchValues: (string | string[] | number | boolean | null)[] = [validIds, workspaceId];
         let paramIdx = 3;
 
         if (updates.state !== undefined) {
           // Update state in properties JSONB
           setClauses.push(`properties = jsonb_set(COALESCE(properties, '{}'), '{state}', $${paramIdx}::jsonb)`);
-          values.push(JSON.stringify(updates.state));
+          batchValues.push(JSON.stringify(updates.state));
           paramIdx++;
         }
 
@@ -1222,7 +1285,7 @@ router.post('/bulk', authMiddleware, async (req: Request, res: Response) => {
         if (updates.assignee_id !== undefined) {
           // Update assignee_id in properties JSONB
           setClauses.push(`properties = jsonb_set(COALESCE(properties, '{}'), '{assignee_id}', $${paramIdx}::jsonb)`);
-          values.push(updates.assignee_id === null ? 'null' : JSON.stringify(updates.assignee_id));
+          batchValues.push(updates.assignee_id === null ? 'null' : JSON.stringify(updates.assignee_id));
           paramIdx++;
         }
 
@@ -1230,7 +1293,7 @@ router.post('/bulk', authMiddleware, async (req: Request, res: Response) => {
           `UPDATE documents SET ${setClauses.join(', ')}
            WHERE id = ANY($1) AND workspace_id = $2
            RETURNING *`,
-          values
+          batchValues
         );
 
         // Handle project_id via document_associations table

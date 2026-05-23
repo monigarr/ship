@@ -25,9 +25,6 @@ Optional authenticated probes (defaults assume seeded local data):
 
 - `SECURITY_PROBE_MEMBER_EMAIL`
 - `SECURITY_PROBE_MEMBER_PASSWORD`
-- `SECURITY_PROBE_ADMIN_EMAIL`
-- `SECURITY_PROBE_ADMIN_PASSWORD`
-
 If member credentials are not supplied, the probe defaults to:
 
 - email: `alice.chen@ship.local`
@@ -36,13 +33,21 @@ If member credentials are not supplied, the probe defaults to:
 ## Attack Surfaces Covered
 
 1. Authentication and session handling
-2. WebSocket message validation (unauth + authenticated malformed/oversized payload path)
-3. Input sanitization:
-   - reflected XSS-style payload check
-   - SQLi-style payload handling check
-   - excessive-length payload check
-   - stored-vector create/readback check on issues endpoint
-4. Dependency vulnerabilities (`npm audit --json` parsing)
+   - unauthenticated route matrix (multiple protected endpoints)
+   - session token format and uniqueness sanity checks
+   - session fixation resistance check
+   - old-session replay invalidation check on relogin
+   - session expiry metadata coherence check (`expiresAt`, `absoluteExpiresAt`)
+2. WebSocket message validation
+   - unauthenticated upgrade rejection
+   - malformed/oversized payload rejection on authenticated path
+3. Input sanitization across user-facing surfaces
+   - reflected probes across search/issues/documents/team query params
+   - stored probes across issue/document title fields
+   - vector set includes XSS-style, SQLi-style, and excessive-length payloads
+4. Dependency vulnerabilities
+   - `pnpm audit --json` high/critical parsing
+   - package-to-feature impact mapping and dependency path capture (`pnpm why`)
 
 ## Notes
 

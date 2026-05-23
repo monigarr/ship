@@ -52,7 +52,7 @@ const { csrfSynchronisedProtection, generateToken } = csrfSync({
 });
 
 // Conditional CSRF middleware - skip for API token auth (Bearer tokens are not vulnerable to CSRF)
-import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import { Request, Response, NextFunction, ErrorRequestHandler, RequestHandler } from 'express';
 const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers?.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -197,7 +197,7 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
   }
 
   // Session middleware for CSRF token storage
-  app.use(session({
+  const sessionMiddleware = session({
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
@@ -207,7 +207,8 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000, // 15 minutes
     },
-  }));
+  }) as unknown as RequestHandler;
+  app.use(sessionMiddleware);
 
   // CSRF token endpoint (must be before CSRF protection middleware)
   app.get('/api/csrf-token', (req, res) => {

@@ -1,10 +1,10 @@
 ---
 title: Open Source Security Review Attestation
-date: 2026-02-21
-timestamp: 2026-02-21T14:53:24Z
-reviewer: Sam Corcos
-reviewer_email: samuel.corcos@treasury.gov
-reviewer_title: Security Reviewer
+date: 2026-05-22
+timestamp: 2026-05-22T18:45:00Z
+reviewer: Monica Peters
+reviewer_email: monica.peters@gfachallenger.gauntletai.com
+reviewer_title: Engineering Security Reviewer
 scan_result: PASS
 ---
 
@@ -12,7 +12,7 @@ scan_result: PASS
 
 ## Summary
 
-I, **Sam Corcos**, as **Security Reviewer**, have conducted a security review of this code and confirm that:
+I, **Monica Peters**, as **Engineering Security Reviewer**, have conducted a security review of this code and confirm that:
 
 - It contains no sensitive information
 - It contains no embedded credentials or secrets
@@ -24,7 +24,7 @@ I, **Sam Corcos**, as **Security Reviewer**, have conducted a security review of
 
 | Item | Value |
 |------|-------|
-| Review Date | 2026-02-21 |
+| Review Date | 2026-05-22 |
 | Scan Result | PASS |
 
 ### Scanning Tools Used
@@ -32,7 +32,7 @@ I, **Sam Corcos**, as **Security Reviewer**, have conducted a security review of
 | Scanning Tool | Used |
 |---------------|------|
 | gitleaks | YES |
-| trivy (skipped) | NO |
+| trivy | YES |
 
 > **Note:** The attested commit is implicit - this file is committed alongside the code it attests.
 > View with: `git log -1 --format='%H %s' -- ATTESTATION.md`
@@ -48,10 +48,10 @@ This attestation satisfies the security review requirements for open-source rele
 
 I attest that the above statements are accurate as of the date of this review.
 
-**Reviewer:** Sam Corcos
-**Title:** Security Reviewer
-**Email:** samuel.corcos@treasury.gov
-**Date:** 2026-02-21
+**Reviewer:** Monica Peters
+**Title:** Engineering Security Reviewer
+**Email:** monica.peters@gfachallenger.gauntletai.com
+**Date:** 2026-05-22
 
 ---
 *Full attestation history: `git log -p ATTESTATION.md`*

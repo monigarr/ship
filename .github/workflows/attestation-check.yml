@@ -1,0 +1,30 @@
+name: attestation-check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - gfa2_wk4_phase2
+
+permissions:
+  contents: read
+
+jobs:
+  validate-attestation:
+    name: validate-attestation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate ATTESTATION.md freshness and fields
+        run: node scripts/ci/validate-attestation.mjs
