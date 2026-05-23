@@ -94,18 +94,19 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            tiptap: [
-              '@tiptap/core',
-              '@tiptap/react',
-              '@tiptap/starter-kit',
-              '@tiptap/pm/state',
-              '@tiptap/pm/model',
-              '@tiptap/pm/view',
-            ],
-            yjs: ['yjs', 'y-websocket', 'y-indexeddb'],
-            query: ['@tanstack/react-query', '@tanstack/react-query-persist-client'],
-            emoji: ['emoji-picker-react'],
+          manualChunks: (id) => {
+            if (id.includes('@tiptap/')) {
+              return 'tiptap';
+            }
+            if (id.includes('yjs') || id.includes('y-websocket') || id.includes('y-indexeddb')) {
+              return 'yjs';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query';
+            }
+            if (id.includes('emoji-picker-react')) {
+              return 'emoji';
+            }
           },
         },
       },
