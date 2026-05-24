@@ -80,9 +80,10 @@ The following committed JSON/Markdown files are **point-in-time Cat8 evidence** 
 
 **Verified 2026-05-24** (from `ship/` after `pnpm install`):
 
+- Lockfile: `lodash@4.18.1` (transitive via `testcontainers` → `archiver` → `archiver-utils`, **devDependencies only**; remediates CVE-2025-13465).
 - Lockfile: `hono@4.12.22` (transitive via `@modelcontextprotocol/sdk` → `@hono/node-server`, **devDependencies only**; meets Aikido floor `4.12.18`).
 - Lockfile: `fast-uri@3.1.2` (transitive via `@modelcontextprotocol/sdk` → `ajv`, **devDependencies only**).
 - `pnpm audit --prod`: **0** High/Critical; **0** `hono` or `fast-uri` production advisories (see `pnpm-audit-prod-20260524.json`).
 - CI: `pnpm run security:ci:dependencies` passes.
 
-Regenerate snapshots only when intentionally re-baselining Cat8 metrics; do not use them alone to judge current `hono` or `fast-uri` exposure.
+Regenerate snapshots only when intentionally re-baselining Cat8 metrics; do not use them alone to judge current `hono`, `fast-uri`, or `lodash` exposure.

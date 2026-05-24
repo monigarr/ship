@@ -2,3 +2,6 @@ packages:
   - 'api'
   - 'web'
   - 'shared'
+
+overrides:
+  lodash: 4.18.1
