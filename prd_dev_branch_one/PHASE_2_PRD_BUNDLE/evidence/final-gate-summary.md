@@ -10,14 +10,14 @@ Generated: 2026-05-22
 | build | PASS | `build-final.log` |
 | test | PASS | `test-final.log` |
 | test:coverage | PASS | `test-coverage-final.log` |
-| security:probe | PASS | `../../PRD_CAT8/security-probe-closeout-3.log` |
+| security:probe | PASS | `../../PRD_CAT8/security-probe-closeout-4.log` |
 
 ## Requirement-Level Note
 
 Passing execution gates does not automatically close all Phase 2 measurable thresholds.
 Use:
 
-- `../STRICT_REQUIREMENT_CHECKLIST.md`
-- `../MASTER_PRD_COMPLIANCE_MATRIX.md`
+- `../../STRICT_REQUIREMENT_CHECKLIST.md`
+- `../../MASTER_PRD_COMPLIANCE_MATRIX.md`
 
 for strict requirement-level status.

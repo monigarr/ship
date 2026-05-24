@@ -16,4 +16,4 @@ Big lesson: reliable engineering progress comes from before/after proof, not int
 
 - `prd_dev_branch_one/STRICT_REQUIREMENT_CHECKLIST.md`
 - `prd_dev_branch_one/MASTER_PRD_COMPLIANCE_MATRIX.md`
-- `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md`
+- `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-4.md`

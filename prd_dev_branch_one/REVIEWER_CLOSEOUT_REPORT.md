@@ -55,7 +55,7 @@ Note: the same advisory ID still appears through dev tooling transitive path `.>
 - `C8-FIX`: **Met** (2 verified fixes with before/after proof and regression evidence)
 - Existing tooling requirements remain in place:
   - `C8-T1`, `C8-T2`, `C8-T5`, `C8-R1`: Met
-  - `C8-T3`, `C8-T4`, `C8-M1`, `C8-M2`, `C8-M3`, `C8-M4`: remain Partial pending additional closeout work already tracked
+  - `C8-T3`, `C8-T4`, `C8-M1`, `C8-M2`, `C8-M3`, `C8-M4`: Met (aligned with current compliance ledger and closeout artifacts)
 
 ### Phase 2 PRD bundle (`PHASE_2_PRD_BUNDLE/PRD.md`)
 
@@ -161,6 +161,6 @@ This checklist is valid for PRD expectations that require reproducible before/af
 For strict grading of this pass, validate:
 
 1. `MASTER_PRD_COMPLIANCE_MATRIX.md` row `C8-FIX` is `Met` with direct links to proof artifacts.
-2. `rate-limit-ip-before-after-proof.log` demonstrates vulnerable baseline key behavior and hardened key behavior.
-3. `pnpm-audit-before.log` vs `pnpm-audit-after.log` shows direct `api>uuid` advisory path removal.
+2. `PRD_CAT8/rate-limit-ip-before-after-proof.log` demonstrates vulnerable baseline key behavior and hardened key behavior.
+3. `PRD_CAT8/pnpm-audit-before.log` vs `PRD_CAT8/pnpm-audit-after.log` shows direct `api>uuid` advisory path removal.
 4. Regression gates (`type-check`, tests, coverage) are green in the new `*-after-c8-fix.log` artifacts.

@@ -18,8 +18,8 @@ Pass criteria:
 ## 2) Security (Cat8) Closure Verification
 
 - Probe coverage + report structure:
-  - `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.json`
-  - `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-3.md`
+  - `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-4.json`
+  - `prd_dev_branch_one/PRD_CAT8/security-probe-closeout-4.md`
 - Manual review evidence:
   - `prd_dev_branch_one/PRD_CAT8/manual-review-closeout.md`
   - `prd_dev_branch_one/PRD_CAT8/cors-csp-headers.log`
@@ -32,15 +32,20 @@ Pass criteria:
 
 ## 3) Phase 2 Regression Gates
 
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-closeout.log`
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/lint-closeout.log`
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/build-closeout.log`
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-closeout.log`
-- `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-closeout.log`
+- Latest focused C8-FIX pass artifacts (prioritize these for current branch verification):
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-after-c8-fix.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/api-test-after-c8-fix.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-after-c8-fix.log`
+- Full closeout gate artifacts (historical/full-pass context):
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/type-check-closeout.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/lint-closeout.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/build-closeout.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-closeout.log`
+  - `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/test-coverage-closeout.log`
 
 Pass criteria:
 
-- Type-check/build/tests/coverage execute successfully
+- Latest focused pass and full closeout logs indicate successful execution of type-check/build/tests/coverage
 
 ## 4) Category-Specific Improvement Evidence
 
