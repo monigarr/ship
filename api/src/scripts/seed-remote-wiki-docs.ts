@@ -32,7 +32,7 @@
  * Legal/compliance: N/A
  */
 
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -105,6 +105,24 @@ function titleFromRelativePath(relPath: string): string {
 
 function titleFromDirName(dirName: string): string {
   return dirName.replace(/_/g, ' ').replace(/-/g, ' ').trim().slice(0, 255);
+}
+
+/** Reject readdir names that could escape via path segments or traversal. */
+export function isSafeDirEntryName(name: string): boolean {
+  if (!name || name.includes('\0')) return false;
+  if (name.includes('..') || name.includes('/') || name.includes('\\')) return false;
+  return true;
+}
+
+/** Ensure candidatePath resolves inside rootDir (no directory traversal). */
+export function assertPathWithinRoot(rootDir: string, candidatePath: string): string {
+  const resolvedRoot = path.resolve(rootDir);
+  const resolved = path.resolve(candidatePath);
+  const rel = path.relative(resolvedRoot, resolved);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error(`Path escapes source directory: ${candidatePath}`);
+  }
+  return resolved;
 }
 
 /** Render edge WAF blocks angle brackets and some shell-like patterns in JSON bodies */
@@ -333,12 +351,17 @@ async function createWikiDoc(
 }
 
 async function collectMarkdownFiles(dir: string, baseDir: string): Promise<string[]> {
+  const root = path.resolve(baseDir);
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
   for (const entry of entries) {
-    const full = path.join(dir, entry.name);
+    if (!isSafeDirEntryName(entry.name)) {
+      console.warn(`Skipping unsafe directory entry: ${entry.name}`);
+      continue;
+    }
+    const full = assertPathWithinRoot(root, path.join(dir, entry.name));
     if (entry.isDirectory()) {
-      files.push(...(await collectMarkdownFiles(full, baseDir)));
+      files.push(...(await collectMarkdownFiles(full, root)));
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
       files.push(full);
     }
@@ -362,6 +385,7 @@ async function ensureFolderDocs(
   baseUrl: string,
   session: ShipSession,
   rootId: string,
+  sourceRoot: string,
   mdFiles: string[],
   existingTitles: Set<string>,
   dirToId: Map<string, string>,
@@ -369,7 +393,7 @@ async function ensureFolderDocs(
 
   const relDirs = new Set<string>();
   for (const file of mdFiles) {
-    const rel = path.relative(SOURCE_DIR, file);
+    const rel = path.relative(sourceRoot, file);
     const dir = path.dirname(rel);
     if (dir === '.') continue;
     const parts = dir.split(path.sep);
@@ -423,9 +447,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const sourceRoot = await realpath(SOURCE_DIR);
+
   console.log(`Ship remote wiki seed`);
   console.log(`  Base URL: ${BASE_URL}`);
-  console.log(`  Source:   ${SOURCE_DIR}`);
+  console.log(`  Source:   ${sourceRoot}`);
   console.log(`  Dry run:  ${DRY_RUN}`);
   console.log(`  Resume:   ${RESUME}`);
 
@@ -468,25 +494,27 @@ async function main(): Promise<void> {
     await sleep(DELAY_MS);
   }
 
-  const mdFiles = await collectMarkdownFiles(SOURCE_DIR, SOURCE_DIR);
+  const mdFiles = await collectMarkdownFiles(sourceRoot, sourceRoot);
   console.log(`Found ${mdFiles.length} markdown files.`);
 
   const dirToId = buildDirMapFromExisting(existingDocs, rootId);
-  await ensureFolderDocs(BASE_URL, session, rootId, mdFiles, existingTitles, dirToId);
+  await ensureFolderDocs(BASE_URL, session, rootId, sourceRoot, mdFiles, existingTitles, dirToId);
 
   let created = 0;
   let skipped = 0;
   let failed = 0;
 
   for (const filePath of mdFiles) {
-    const rel = path.relative(SOURCE_DIR, filePath);
+    const rel = path.relative(sourceRoot, filePath);
     const title = titleFromRelativePath(rel);
     if (existingTitles.has(title)) {
       skipped += 1;
       continue;
     }
 
-    const markdown = await readFile(filePath, 'utf8');
+    const realPath = await realpath(filePath);
+    assertPathWithinRoot(sourceRoot, realPath);
+    const markdown = await readFile(realPath, 'utf8');
     const relDir = path.dirname(rel);
     const parentKey = relDir === '.' ? '' : relDir;
     let parentId = dirToId.get(parentKey);
