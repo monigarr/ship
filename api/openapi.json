@@ -565,7 +565,8 @@
               "week_start",
               "week_issues",
               "project_plan",
-              "project_retro"
+              "project_retro",
+              null
             ],
             "description": "Type of accountability task for auto-generated issues"
           },
@@ -751,7 +752,8 @@
               "week_start",
               "week_issues",
               "project_plan",
-              "project_retro"
+              "project_retro",
+              null
             ],
             "description": "Type of accountability task for auto-generated issues"
           }
@@ -1130,7 +1132,8 @@
             "enum": [
               "approved",
               "changed_since_approved",
-              "changes_requested"
+              "changes_requested",
+              null
             ],
             "description": "Approval state: null = pending, approved = current version approved, changed_since_approved = needs re-review, changes_requested = reviewer requested revisions"
           },
@@ -2567,6 +2570,38 @@
           "isCurrent"
         ]
       },
+      "TeamGridResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            }
+          },
+          "sprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintPeriod"
+            }
+          },
+          "associations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/TeamGridAssociation"
+              }
+            },
+            "description": "Map of user_id -> sprint_number -> associations"
+          }
+        },
+        "required": [
+          "users",
+          "sprints",
+          "associations"
+        ]
+      },
       "TeamGridAssociation": {
         "type": "object",
         "properties": {
@@ -2637,38 +2672,6 @@
         "required": [
           "programs",
           "issues"
-        ]
-      },
-      "TeamGridResponse": {
-        "type": "object",
-        "properties": {
-          "users": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Person"
-            }
-          },
-          "sprints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SprintPeriod"
-            }
-          },
-          "associations": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "additionalProperties": {
-                "$ref": "#/components/schemas/TeamGridAssociation"
-              }
-            },
-            "description": "Map of user_id -> sprint_number -> associations"
-          }
-        },
-        "required": [
-          "users",
-          "sprints",
-          "associations"
         ]
       },
       "ReviewCell": {
@@ -5290,42 +5293,11 @@
               },
               {
                 "nullable": true
-              },
-              {
-                "nullable": true
               }
             ],
             "description": "Set to ISO datetime to resolve, null to un-resolve"
           }
         }
-      },
-      "PlanItemAnalysis": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string"
-          },
-          "score": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          },
-          "feedback": {
-            "type": "string"
-          },
-          "issues": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "text",
-          "score",
-          "feedback",
-          "issues"
-        ]
       },
       "PlanAnalysisResult": {
         "type": "object",
@@ -5361,27 +5333,32 @@
           "workload_feedback"
         ]
       },
-      "RetroItemAnalysis": {
+      "PlanItemAnalysis": {
         "type": "object",
         "properties": {
-          "plan_item": {
+          "text": {
             "type": "string"
           },
-          "addressed": {
-            "type": "boolean"
-          },
-          "has_evidence": {
-            "type": "boolean"
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           },
           "feedback": {
             "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
-          "plan_item",
-          "addressed",
-          "has_evidence",
-          "feedback"
+          "text",
+          "score",
+          "feedback",
+          "issues"
         ]
       },
       "RetroAnalysisResult": {
@@ -5409,6 +5386,29 @@
           "overall_score",
           "plan_coverage",
           "suggestions"
+        ]
+      },
+      "RetroItemAnalysis": {
+        "type": "object",
+        "properties": {
+          "plan_item": {
+            "type": "string"
+          },
+          "addressed": {
+            "type": "boolean"
+          },
+          "has_evidence": {
+            "type": "boolean"
+          },
+          "feedback": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_item",
+          "addressed",
+          "has_evidence",
+          "feedback"
         ]
       },
       "AiStatus": {
@@ -5452,6 +5452,7 @@
               "description": "Filter by document type"
             },
             "required": false,
+            "description": "Filter by document type",
             "name": "type",
             "in": "query"
           },
@@ -5463,6 +5464,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "Filter by parent document ID",
             "name": "parent_id",
             "in": "query"
           }
@@ -5592,6 +5594,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "Document ID",
             "name": "id",
             "in": "path"
           }
@@ -5645,6 +5648,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -5689,6 +5693,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -5718,6 +5723,7 @@
               "example": "backlog,todo,in_progress"
             },
             "required": false,
+            "description": "Filter by state(s), comma-separated",
             "name": "state",
             "in": "query"
           },
@@ -5734,6 +5740,7 @@
               "description": "Issue priority level"
             },
             "required": false,
+            "description": "Issue priority level",
             "name": "priority",
             "in": "query"
           },
@@ -5743,6 +5750,7 @@
               "description": "Filter by assignee ID. Use \"null\" or \"unassigned\" for unassigned issues."
             },
             "required": false,
+            "description": "Filter by assignee ID. Use \"null\" or \"unassigned\" for unassigned issues.",
             "name": "assignee_id",
             "in": "query"
           },
@@ -5754,6 +5762,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "program_id",
             "in": "query"
           },
@@ -5765,6 +5774,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "sprint_id",
             "in": "query"
           },
@@ -5779,6 +5789,7 @@
               "description": "Issue source/provenance (never changes after creation)"
             },
             "required": false,
+            "description": "Issue source/provenance (never changes after creation)",
             "name": "source",
             "in": "query"
           },
@@ -5793,6 +5804,7 @@
               "description": "Filter by parent/child relationship"
             },
             "required": false,
+            "description": "Filter by parent/child relationship",
             "name": "parent_filter",
             "in": "query"
           }
@@ -5859,6 +5871,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -5882,21 +5895,24 @@
                   "type": "string",
                   "description": "URL to the new document"
                 },
-                "required": true
+                "required": true,
+                "description": "URL to the new document"
               },
               "X-Converted-Type": {
                 "schema": {
                   "type": "string",
                   "description": "New document type"
                 },
-                "required": true
+                "required": true,
+                "description": "New document type"
               },
               "X-Converted-To": {
                 "schema": {
                   "type": "string",
                   "description": "New document ID"
                 },
-                "required": true
+                "required": true,
+                "description": "New document ID"
               }
             }
           },
@@ -5919,6 +5935,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -5976,6 +5993,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6009,6 +6027,7 @@
               "example": 42
             },
             "required": false,
+            "description": "Ticket number (without the # prefix)",
             "name": "number",
             "in": "path"
           }
@@ -6049,6 +6068,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6152,6 +6172,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6192,6 +6213,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6252,6 +6274,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6292,6 +6315,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -6343,6 +6367,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6473,7 +6498,8 @@
                               "week_start",
                               "week_issues",
                               "project_plan",
-                              "project_retro"
+                              "project_retro",
+                              null
                             ],
                             "description": "Type of accountability task for auto-generated issues"
                           },
@@ -6538,6 +6564,7 @@
               "description": "Include archived projects"
             },
             "required": false,
+            "description": "Include archived projects",
             "name": "archived",
             "in": "query"
           },
@@ -6575,6 +6602,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "program_id",
             "in": "query"
           }
@@ -6641,6 +6669,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6675,6 +6704,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6718,6 +6748,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6748,6 +6779,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6894,6 +6926,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -6938,6 +6971,7 @@
               "description": "Include archived programs"
             },
             "required": false,
+            "description": "Include archived programs",
             "name": "archived",
             "in": "query"
           }
@@ -7004,6 +7038,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7038,6 +7073,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7081,6 +7117,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7111,6 +7148,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -7212,6 +7250,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -7298,6 +7337,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -7383,6 +7423,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -7394,6 +7435,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "Target program ID to merge into",
             "name": "target_id",
             "in": "query"
           }
@@ -7435,6 +7477,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7541,6 +7584,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "program_id",
             "in": "query"
           },
@@ -7595,6 +7639,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7629,6 +7674,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7672,6 +7718,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7702,6 +7749,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7748,6 +7796,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7853,6 +7902,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7901,6 +7951,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -7952,6 +8003,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -8047,6 +8099,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -8133,6 +8186,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8225,6 +8279,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8265,6 +8320,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8369,6 +8425,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8426,6 +8483,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8492,6 +8550,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8554,6 +8613,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8616,6 +8676,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8772,6 +8833,7 @@
               "example": "2025-01-30"
             },
             "required": true,
+            "description": "Start date (YYYY-MM-DD)",
             "name": "date_from",
             "in": "query"
           },
@@ -8783,6 +8845,7 @@
               "example": "2025-01-30"
             },
             "required": true,
+            "description": "End date (YYYY-MM-DD)",
             "name": "date_to",
             "in": "query"
           }
@@ -8864,6 +8927,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8911,6 +8975,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -8945,6 +9010,7 @@
               "description": "Number of weeks to include (default: 5)"
             },
             "required": false,
+            "description": "Number of weeks to include (default: 5)",
             "name": "sprint_count",
             "in": "query"
           },
@@ -8990,6 +9056,7 @@
               "description": "Start of sprint range (default: current - 7)"
             },
             "required": false,
+            "description": "Start of sprint range (default: current - 7)",
             "name": "fromSprint",
             "in": "query"
           },
@@ -9000,6 +9067,7 @@
               "description": "End of sprint range (default: current + 7)"
             },
             "required": false,
+            "description": "End of sprint range (default: current + 7)",
             "name": "toSprint",
             "in": "query"
           },
@@ -9010,6 +9078,7 @@
               "description": "Include archived team members"
             },
             "required": false,
+            "description": "Include archived team members",
             "name": "includeArchived",
             "in": "query"
           }
@@ -9079,6 +9148,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9114,6 +9184,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9177,6 +9248,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9207,6 +9279,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9339,6 +9412,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9402,6 +9476,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -9450,6 +9525,7 @@
               "example": "john"
             },
             "required": true,
+            "description": "Search query",
             "name": "q",
             "in": "query"
           }
@@ -9482,6 +9558,7 @@
               "description": "Search query"
             },
             "required": true,
+            "description": "Search query",
             "name": "q",
             "in": "query"
           },
@@ -9493,6 +9570,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "program_id",
             "in": "query"
           },
@@ -9558,6 +9636,7 @@
               "description": "Filter by document type"
             },
             "required": false,
+            "description": "Filter by document type",
             "name": "type",
             "in": "query"
           },
@@ -9700,6 +9779,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "fileId",
             "in": "path"
           }
@@ -9756,6 +9836,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "fileId",
             "in": "path"
           }
@@ -9791,6 +9872,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "fileId",
             "in": "path"
           }
@@ -9827,6 +9909,7 @@
               "description": "Type of entity to get activity for"
             },
             "required": true,
+            "description": "Type of entity to get activity for",
             "name": "entityType",
             "in": "path"
           },
@@ -9838,6 +9921,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "entityId",
             "in": "path"
           }
@@ -10040,6 +10124,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10070,6 +10155,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10110,6 +10196,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10182,6 +10269,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10220,6 +10308,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10293,6 +10382,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           },
@@ -10304,6 +10394,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "relatedId",
             "in": "path"
           }
@@ -10334,6 +10425,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10377,6 +10469,7 @@
               "description": "Type of context to fetch"
             },
             "required": true,
+            "description": "Type of context to fetch",
             "name": "context_type",
             "in": "query"
           },
@@ -10388,6 +10481,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "Required for standup and review context",
             "name": "sprint_id",
             "in": "query"
           },
@@ -10399,6 +10493,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "Required for retro context",
             "name": "project_id",
             "in": "query"
           }
@@ -10491,6 +10586,7 @@
               "description": "Target week number (defaults to current week)"
             },
             "required": false,
+            "description": "Target week number (defaults to current week)",
             "name": "week_number",
             "in": "query"
           }
@@ -10593,6 +10689,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "person_id",
             "in": "query"
           },
@@ -10604,6 +10701,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "project_id",
             "in": "query"
           },
@@ -10649,6 +10747,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10686,6 +10785,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10726,6 +10826,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "projectId",
             "in": "path"
           }
@@ -10807,6 +10908,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "person_id",
             "in": "query"
           },
@@ -10818,6 +10920,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": false,
+            "description": "UUID identifier",
             "name": "project_id",
             "in": "query"
           },
@@ -10863,6 +10966,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10900,6 +11004,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10940,6 +11045,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -10975,6 +11081,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -11018,6 +11125,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }
@@ -11059,6 +11167,7 @@
               "example": "550e8400-e29b-41d4-a716-446655440000"
             },
             "required": true,
+            "description": "UUID identifier",
             "name": "id",
             "in": "path"
           }

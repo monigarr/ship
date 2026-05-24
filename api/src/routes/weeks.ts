@@ -913,7 +913,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     const parsed = createSprintSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -1103,7 +1103,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
 
     const parsed = updateSprintSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -1433,7 +1433,7 @@ router.patch('/:id/plan', authMiddleware, async (req: Request, res: Response) =>
 
     const parsed = updatePlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -1863,7 +1863,7 @@ router.get('/:id/scope-changes', authMiddleware, async (req: Request, res: Respo
 // Schema for creating a standup
 // Note: date field is optional but if provided must be today (enforced in handler)
 const createStandupSchema = z.object({
-  content: z.record(z.unknown()).default({ type: 'doc', content: [{ type: 'paragraph' }] }),
+  content: z.record(z.string(), z.unknown()).default({ type: 'doc', content: [{ type: 'paragraph' }] }),
   title: z.string().max(200).optional().default('Standup Update'),
   date: z.string().optional(), // ISO date string - must be today if provided
 });
@@ -2023,7 +2023,7 @@ router.post('/:id/standups', authMiddleware, async (req: Request, res: Response)
 
     const parsed = createStandupSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -2105,7 +2105,7 @@ router.post('/:id/standups', authMiddleware, async (req: Request, res: Response)
 
 // Schema for creating/updating a sprint review
 const sprintReviewSchema = z.object({
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
   title: z.string().max(200).optional(),
   plan_validated: z.boolean().nullable().optional(),
 });
@@ -2395,7 +2395,7 @@ router.post('/:id/review', authMiddleware, async (req: Request, res: Response) =
 
     const parsed = sprintReviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -2508,7 +2508,7 @@ router.patch('/:id/review', authMiddleware, async (req: Request, res: Response) 
 
     const parsed = sprintReviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 
@@ -2675,7 +2675,7 @@ router.post('/:id/carryover', authMiddleware, async (req: Request, res: Response
 
     const parsed = carryoverSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+      res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
       return;
     }
 

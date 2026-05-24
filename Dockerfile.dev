@@ -36,4 +36,8 @@ ENV PORT=3000
 
 # Run migrations and start API
 WORKDIR /app/api
+
+RUN mkdir -p /app/api/uploads && chown -R node:node /app
+USER node
+
 CMD ["sh", "-c", "node dist/db/migrate.js && node dist/db/seed.js && node dist/index.js"]

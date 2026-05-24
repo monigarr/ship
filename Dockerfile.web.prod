@@ -24,6 +24,9 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 
 RUN pnpm build:shared && pnpm --filter @ship/web build
 
+RUN chown -R node:node /app
+USER node
+
 FROM public.ecr.aws/nginx/nginx:1.27-alpine
 
 RUN apk add --no-cache gettext
@@ -44,5 +47,10 @@ ENV API_STARTUP_CHECK_RETRIES=3
 ENV API_STARTUP_CHECK_TIMEOUT_SECONDS=2
 
 EXPOSE 10000
+
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /usr/share/nginx/html \
+    && touch /var/run/nginx.pid \
+    && chown nginx:nginx /var/run/nginx.pid
+USER nginx
 
 CMD ["/usr/local/bin/start-nginx.sh"]

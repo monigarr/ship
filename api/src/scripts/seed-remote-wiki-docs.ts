@@ -78,6 +78,7 @@ class CookieJar {
       const pair = raw.split(';')[0]?.trim();
       if (!pair || !pair.includes('=')) continue;
       const [name, ...rest] = pair.split('=');
+      if (!name) continue;
       this.cookies.set(name, rest.join('='));
     }
   }
@@ -152,14 +153,14 @@ export function markdownToTiptap(markdown: string): TiptapDoc {
   });
 
   while (i < lines.length) {
-    const line = lines[i];
+    const line = lines[i] ?? '';
 
     if (line.startsWith('```')) {
       const language = line.slice(3).trim() || 'text';
       const codeLines: string[] = [];
       i += 1;
-      while (i < lines.length && !lines[i].startsWith('```')) {
-        codeLines.push(lines[i]);
+      while (i < lines.length && !(lines[i] ?? '').startsWith('```')) {
+        codeLines.push(lines[i] ?? '');
         i += 1;
       }
       content.push(codeBlock(codeLines.join('\n'), language));
@@ -168,7 +169,7 @@ export function markdownToTiptap(markdown: string): TiptapDoc {
     }
 
     const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line);
-    if (headingMatch) {
+    if (headingMatch?.[1] && headingMatch[2] !== undefined) {
       content.push(heading(headingMatch[1].length, headingMatch[2].trim()));
       i += 1;
       continue;
@@ -176,8 +177,8 @@ export function markdownToTiptap(markdown: string): TiptapDoc {
 
     if (/^[-*]\s+/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
-        items.push(lines[i].replace(/^[-*]\s+/, '').trim());
+      while (i < lines.length && /^[-*]\s+/.test(lines[i] ?? '')) {
+        items.push((lines[i] ?? '').replace(/^[-*]\s+/, '').trim());
         i += 1;
       }
       content.push(bulletList(items));
@@ -190,8 +191,12 @@ export function markdownToTiptap(markdown: string): TiptapDoc {
     }
 
     const paraLines: string[] = [];
-    while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('```') && !/^#{1,6}\s/.test(lines[i]) && !/^[-*]\s+/.test(lines[i])) {
-      paraLines.push(lines[i]);
+    while (i < lines.length) {
+      const current = lines[i] ?? '';
+      if (current.trim() === '' || current.startsWith('```') || /^#{1,6}\s/.test(current) || /^[-*]\s+/.test(current)) {
+        break;
+      }
+      paraLines.push(current);
       i += 1;
     }
     const text = paraLines.join(' ').trim();

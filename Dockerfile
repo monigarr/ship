@@ -26,4 +26,8 @@ ENV PORT=10000
 EXPOSE 10000
 
 WORKDIR /app/api
+
+RUN chown -R node:node /app
+USER node
+
 CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]

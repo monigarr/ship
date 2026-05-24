@@ -147,7 +147,7 @@ describe('Projects API', () => {
     });
 
     it('creates project with valid data including optional owner_id', async () => {
-      const ownerId = '11111111-1111-1111-1111-111111111111';
+      const ownerId = '550e8400-e29b-41d4-a716-446655440000';
       const mockProject = {
         id: 'project-new',
         title: 'New Project',

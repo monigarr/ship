@@ -458,6 +458,7 @@ components:
             - week_issues
             - project_plan
             - project_retro
+            - null
           description: Type of accountability task for auto-generated issues
         rejection_reason:
           type: string
@@ -613,6 +614,7 @@ components:
             - week_issues
             - project_plan
             - project_retro
+            - null
           description: Type of accountability task for auto-generated issues
       required:
         - title
@@ -898,6 +900,7 @@ components:
             - approved
             - changed_since_approved
             - changes_requested
+            - null
           description: "Approval state: null = pending, approved = current version approved, changed_since_approved = needs re-review, changes_requested = reviewer requested revisions"
         approved_by:
           type: string
@@ -2009,6 +2012,28 @@ components:
         - startDate
         - endDate
         - isCurrent
+    TeamGridResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        sprints:
+          type: array
+          items:
+            $ref: "#/components/schemas/SprintPeriod"
+        associations:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              $ref: "#/components/schemas/TeamGridAssociation"
+          description: Map of user_id -> sprint_number -> associations
+      required:
+        - users
+        - sprints
+        - associations
     TeamGridAssociation:
       type: object
       properties:
@@ -2061,28 +2086,6 @@ components:
       required:
         - programs
         - issues
-    TeamGridResponse:
-      type: object
-      properties:
-        users:
-          type: array
-          items:
-            $ref: "#/components/schemas/Person"
-        sprints:
-          type: array
-          items:
-            $ref: "#/components/schemas/SprintPeriod"
-        associations:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              $ref: "#/components/schemas/TeamGridAssociation"
-          description: Map of user_id -> sprint_number -> associations
-      required:
-        - users
-        - sprints
-        - associations
     ReviewCell:
       type: object
       properties:
@@ -4050,28 +4053,7 @@ components:
                             description: ISO 8601 datetime string
                             example: "2025-01-30T14:30:00.000Z"
             - nullable: true
-            - nullable: true
           description: Set to ISO datetime to resolve, null to un-resolve
-    PlanItemAnalysis:
-      type: object
-      properties:
-        text:
-          type: string
-        score:
-          type: number
-          minimum: 0
-          maximum: 1
-        feedback:
-          type: string
-        issues:
-          type: array
-          items:
-            type: string
-      required:
-        - text
-        - score
-        - feedback
-        - issues
     PlanAnalysisResult:
       type: object
       properties:
@@ -4097,22 +4079,26 @@ components:
         - items
         - workload_assessment
         - workload_feedback
-    RetroItemAnalysis:
+    PlanItemAnalysis:
       type: object
       properties:
-        plan_item:
+        text:
           type: string
-        addressed:
-          type: boolean
-        has_evidence:
-          type: boolean
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
         feedback:
           type: string
+        issues:
+          type: array
+          items:
+            type: string
       required:
-        - plan_item
-        - addressed
-        - has_evidence
+        - text
+        - score
         - feedback
+        - issues
     RetroAnalysisResult:
       type: object
       properties:
@@ -4132,6 +4118,22 @@ components:
         - overall_score
         - plan_coverage
         - suggestions
+    RetroItemAnalysis:
+      type: object
+      properties:
+        plan_item:
+          type: string
+        addressed:
+          type: boolean
+        has_evidence:
+          type: boolean
+        feedback:
+          type: string
+      required:
+        - plan_item
+        - addressed
+        - has_evidence
+        - feedback
     AiStatus:
       type: object
       properties:
@@ -4164,6 +4166,7 @@ paths:
                         - weekly_review
                       description: Filter by document type
                     required: false
+                    description: Filter by document type
                     name: type
                     in: query
         - schema:
@@ -4172,6 +4175,7 @@ paths:
                       description: Filter by parent document ID
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: Filter by parent document ID
                     name: parent_id
                     in: query
       responses:
@@ -4251,6 +4255,7 @@ paths:
                       description: Document ID
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: Document ID
                     name: id
                     in: path
       responses:
@@ -4285,6 +4290,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -4313,6 +4319,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4332,6 +4339,7 @@ paths:
                       description: Filter by state(s), comma-separated
                       example: backlog,todo,in_progress
                     required: false
+                    description: Filter by state(s), comma-separated
                     name: state
                     in: query
         - schema:
@@ -4344,12 +4352,14 @@ paths:
                         - none
                       description: Issue priority level
                     required: false
+                    description: Issue priority level
                     name: priority
                     in: query
         - schema:
                       type: string
                       description: Filter by assignee ID. Use "null" or "unassigned" for unassigned issues.
                     required: false
+                    description: Filter by assignee ID. Use "null" or "unassigned" for unassigned issues.
                     name: assignee_id
                     in: query
         - schema:
@@ -4358,6 +4368,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: program_id
                     in: query
         - schema:
@@ -4366,6 +4377,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: sprint_id
                     in: query
         - schema:
@@ -4376,6 +4388,7 @@ paths:
                         - action_items
                       description: Issue source/provenance (never changes after creation)
                     required: false
+                    description: Issue source/provenance (never changes after creation)
                     name: source
                     in: query
         - schema:
@@ -4386,6 +4399,7 @@ paths:
                         - is_sub_issue
                       description: Filter by parent/child relationship
                     required: false
+                    description: Filter by parent/child relationship
                     name: parent_filter
                     in: query
       responses:
@@ -4427,6 +4441,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4444,16 +4459,19 @@ paths:
                 type: string
                 description: URL to the new document
               required: true
+              description: URL to the new document
             X-Converted-Type:
               schema:
                 type: string
                 description: New document type
               required: true
+              description: New document type
             X-Converted-To:
               schema:
                 type: string
                 description: New document ID
               required: true
+              description: New document ID
         404:
           description: Issue not found
     patch:
@@ -4467,6 +4485,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -4503,6 +4522,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4525,6 +4545,7 @@ paths:
                       description: "Ticket number (without the # prefix)"
                       example: 42
                     required: false
+                    description: "Ticket number (without the # prefix)"
                     name: number
                     in: path
       responses:
@@ -4551,6 +4572,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4618,6 +4640,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4644,6 +4667,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -4683,6 +4707,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4709,6 +4734,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -4743,6 +4769,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -4843,6 +4870,7 @@ paths:
                             - week_issues
                             - project_plan
                             - project_retro
+                            - null
                           description: Type of accountability task for auto-generated issues
                         accountability_target_id:
                           type: string
@@ -4885,6 +4913,7 @@ paths:
                       nullable: true
                       description: Include archived projects
                     required: false
+                    description: Include archived projects
                     name: archived
                     in: query
         - schema:
@@ -4911,6 +4940,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: program_id
                     in: query
       responses:
@@ -4952,6 +4982,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -4974,6 +5005,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5001,6 +5033,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5021,6 +5054,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5127,6 +5161,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5154,6 +5189,7 @@ paths:
                       nullable: true
                       description: Include archived programs
                     required: false
+                    description: Include archived programs
                     name: archived
                     in: query
       responses:
@@ -5195,6 +5231,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5217,6 +5254,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5244,6 +5282,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5264,6 +5303,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5335,6 +5375,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5395,6 +5436,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5454,6 +5496,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5462,6 +5505,7 @@ paths:
                       description: Target program ID to merge into
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: Target program ID to merge into
                     name: target_id
                     in: query
       responses:
@@ -5489,6 +5533,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5555,6 +5600,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: program_id
                     in: query
         - schema:
@@ -5590,6 +5636,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5612,6 +5659,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5639,6 +5687,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5659,6 +5708,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5688,6 +5738,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -5763,6 +5814,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5794,6 +5846,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -5827,6 +5880,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5894,6 +5948,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -5955,6 +6010,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6018,6 +6074,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6044,6 +6101,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6115,6 +6173,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6152,6 +6211,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6196,6 +6256,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6236,6 +6297,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6276,6 +6338,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6384,6 +6447,7 @@ paths:
                       description: Start date (YYYY-MM-DD)
                       example: 2025-01-30
                     required: true
+                    description: Start date (YYYY-MM-DD)
                     name: date_from
                     in: query
         - schema:
@@ -6392,6 +6456,7 @@ paths:
                       description: End date (YYYY-MM-DD)
                       example: 2025-01-30
                     required: true
+                    description: End date (YYYY-MM-DD)
                     name: date_to
                     in: query
       responses:
@@ -6443,6 +6508,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6473,6 +6539,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6496,6 +6563,7 @@ paths:
                       maximum: 20
                       description: "Number of weeks to include (default: 5)"
                     required: false
+                    description: "Number of weeks to include (default: 5)"
                     name: sprint_count
                     in: query
         - schema:
@@ -6525,6 +6593,7 @@ paths:
                       nullable: true
                       description: "Start of sprint range (default: current - 7)"
                     required: false
+                    description: "Start of sprint range (default: current - 7)"
                     name: fromSprint
                     in: query
         - schema:
@@ -6532,6 +6601,7 @@ paths:
                       nullable: true
                       description: "End of sprint range (default: current + 7)"
                     required: false
+                    description: "End of sprint range (default: current + 7)"
                     name: toSprint
                     in: query
         - schema:
@@ -6539,6 +6609,7 @@ paths:
                       nullable: true
                       description: Include archived team members
                     required: false
+                    description: Include archived team members
                     name: includeArchived
                     in: query
       responses:
@@ -6583,6 +6654,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6606,6 +6678,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6648,6 +6721,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6668,6 +6742,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6752,6 +6827,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -6793,6 +6869,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -6823,6 +6900,7 @@ paths:
                       description: Search query
                       example: john
                     required: true
+                    description: Search query
                     name: q
                     in: query
       responses:
@@ -6843,6 +6921,7 @@ paths:
                       type: string
                       description: Search query
                     required: true
+                    description: Search query
                     name: q
                     in: query
         - schema:
@@ -6851,6 +6930,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: program_id
                     in: query
         - schema:
@@ -6896,6 +6976,7 @@ paths:
                         - weekly_review
                       description: Filter by document type
                     required: false
+                    description: Filter by document type
                     name: type
                     in: query
         - schema:
@@ -6993,6 +7074,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: fileId
                     in: path
       requestBody:
@@ -7029,6 +7111,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: fileId
                     in: path
       responses:
@@ -7052,6 +7135,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: fileId
                     in: path
       responses:
@@ -7076,6 +7160,7 @@ paths:
                         - sprint
                       description: Type of entity to get activity for
                     required: true
+                    description: Type of entity to get activity for
                     name: entityType
                     in: path
         - schema:
@@ -7084,6 +7169,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: entityId
                     in: path
       responses:
@@ -7211,6 +7297,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7231,6 +7318,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7257,6 +7345,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -7304,6 +7393,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7329,6 +7419,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -7378,6 +7469,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
         - schema:
@@ -7386,6 +7478,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: relatedId
                     in: path
       responses:
@@ -7406,6 +7499,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7434,6 +7528,7 @@ paths:
                         - retro
                       description: Type of context to fetch
                     required: true
+                    description: Type of context to fetch
                     name: context_type
                     in: query
         - schema:
@@ -7442,6 +7537,7 @@ paths:
                       description: Required for standup and review context
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: Required for standup and review context
                     name: sprint_id
                     in: query
         - schema:
@@ -7450,6 +7546,7 @@ paths:
                       description: Required for retro context
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: Required for retro context
                     name: project_id
                     in: query
       responses:
@@ -7505,6 +7602,7 @@ paths:
                       exclusiveMinimum: true
                       description: Target week number (defaults to current week)
                     required: false
+                    description: Target week number (defaults to current week)
                     name: week_number
                     in: query
       responses:
@@ -7569,6 +7667,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: person_id
                     in: query
         - schema:
@@ -7577,6 +7676,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: project_id
                     in: query
         - schema:
@@ -7606,6 +7706,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7630,6 +7731,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7656,6 +7758,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: projectId
                     in: path
       responses:
@@ -7707,6 +7810,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: person_id
                     in: query
         - schema:
@@ -7715,6 +7819,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: false
+                    description: UUID identifier
                     name: project_id
                     in: query
         - schema:
@@ -7744,6 +7849,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7768,6 +7874,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7794,6 +7901,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:
@@ -7817,6 +7925,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -7844,6 +7953,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       requestBody:
@@ -7870,6 +7980,7 @@ paths:
                       description: UUID identifier
                       example: 550e8400-e29b-41d4-a716-446655440000
                     required: true
+                    description: UUID identifier
                     name: id
                     in: path
       responses:

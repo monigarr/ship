@@ -11,8 +11,8 @@ export const StandupResponseSchema = z.object({
   id: UuidSchema,
   title: z.string(),
   document_type: z.literal('standup'),
-  content: z.record(z.unknown()).nullable(),
-  properties: z.record(z.unknown()).nullable().openapi({
+  content: z.record(z.string(), z.unknown()).nullable(),
+  properties: z.record(z.string(), z.unknown()).nullable().openapi({
     description: 'Properties including author_id and date',
   }),
   created_at: DateTimeSchema,
@@ -44,7 +44,7 @@ registry.register('CreateStandup', CreateStandupSchema);
 
 export const UpdateStandupSchema = z.object({
   title: z.string().max(200).optional(),
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
 }).openapi('UpdateStandup');
 
 registry.register('UpdateStandup', UpdateStandupSchema);

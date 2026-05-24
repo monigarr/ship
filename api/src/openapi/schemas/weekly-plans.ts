@@ -11,8 +11,8 @@ export const WeeklyPlanResponseSchema = z.object({
   id: UuidSchema,
   title: z.string(),
   document_type: z.literal('weekly_plan'),
-  content: z.record(z.unknown()).nullable(),
-  properties: z.record(z.unknown()).nullable(),
+  content: z.record(z.string(), z.unknown()).nullable(),
+  properties: z.record(z.string(), z.unknown()).nullable(),
   person_name: z.string().nullable().optional(),
   project_name: z.string().nullable().optional(),
   created_at: DateTimeSchema,
@@ -35,8 +35,8 @@ export const WeeklyRetroResponseSchema = z.object({
   id: UuidSchema,
   title: z.string(),
   document_type: z.literal('weekly_retro'),
-  content: z.record(z.unknown()).nullable(),
-  properties: z.record(z.unknown()).nullable(),
+  content: z.record(z.string(), z.unknown()).nullable(),
+  properties: z.record(z.string(), z.unknown()).nullable(),
   person_name: z.string().nullable().optional(),
   project_name: z.string().nullable().optional(),
   created_at: DateTimeSchema,
@@ -57,8 +57,8 @@ registry.register('CreateWeeklyRetro', CreateWeeklyRetroSchema);
 
 export const ContentHistoryEntrySchema = z.object({
   id: UuidSchema,
-  old_content: z.record(z.unknown()).nullable(),
-  new_content: z.record(z.unknown()).nullable(),
+  old_content: z.record(z.string(), z.unknown()).nullable(),
+  new_content: z.record(z.string(), z.unknown()).nullable(),
   created_at: DateTimeSchema,
   changed_by: z.object({
     id: UuidSchema,
@@ -93,7 +93,7 @@ registry.register('WeekStatus', WeekStatusSchema);
 export const AllocationPersonSchema = z.object({
   id: UuidSchema,
   name: z.string(),
-  weeks: z.record(WeekStatusSchema).openapi({
+  weeks: z.record(z.string(), WeekStatusSchema).openapi({
     description: 'Map of week number to allocation/status data',
   }),
 }).openapi('AllocationPerson');
