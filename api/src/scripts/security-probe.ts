@@ -6,6 +6,11 @@ import type { IncomingMessage } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { WebSocket } from 'ws';
 import { REFLECTED_INPUT_TARGETS, STORED_INPUT_TARGETS } from './security-probe-targets.js';
+import {
+  buildProbeHttpUrl,
+  buildProbeWsUrl,
+  resolveProbeTargets,
+} from './probe-target-url.js';
 
 const exec = promisify(execCb);
 
@@ -25,6 +30,8 @@ interface ProbeFinding {
 }
 
 interface ProbeContext {
+  httpOrigin: string;
+  wsOrigin: string;
   baseUrl: string;
   wsBaseUrl: string;
   timeoutMs: number;
@@ -83,11 +90,21 @@ function getCookieValue(cookieHeader: string | undefined, cookieName: string): s
   return value;
 }
 
-async function fetchJson(
-  url: string,
+async function probeFetch(
+  ctx: ProbeContext,
+  pathAndQuery: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const url = buildProbeHttpUrl(ctx.httpOrigin, pathAndQuery);
+  return fetch(url, { ...init, redirect: 'error' });
+}
+
+async function probeFetchJson(
+  ctx: ProbeContext,
+  pathAndQuery: string,
   init?: RequestInit,
 ): Promise<{ ok: boolean; status: number; headers: Headers; body: unknown }> {
-  const response = await fetch(url, init);
+  const response = await probeFetch(ctx, pathAndQuery, init);
   let body: unknown = null;
   try {
     body = await response.json();
@@ -97,12 +114,12 @@ async function fetchJson(
   return { ok: response.ok, status: response.status, headers: response.headers, body };
 }
 
-async function login(baseUrl: string, email: string, password: string): Promise<{ status: number; sessionCookie?: string; csrfCookie?: string }> {
-  const csrfResponse = await fetch(`${baseUrl}/api/csrf-token`);
+async function login(ctx: ProbeContext, email: string, password: string): Promise<{ status: number; sessionCookie?: string; csrfCookie?: string }> {
+  const csrfResponse = await probeFetch(ctx, '/api/csrf-token');
   const csrfCookie = parseCookie(csrfResponse.headers.get('set-cookie'), 'connect.sid');
   const csrfPayload = await csrfResponse.json() as { token?: string };
 
-  const response = await fetch(`${baseUrl}/api/auth/login`, {
+  const response = await probeFetch(ctx, '/api/auth/login', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -118,8 +135,8 @@ async function login(baseUrl: string, email: string, password: string): Promise<
   };
 }
 
-async function getSession(baseUrl: string, sessionCookie?: string): Promise<{ status: number; body: unknown }> {
-  const response = await fetchJson(`${baseUrl}/api/auth/session`, {
+async function getSession(ctx: ProbeContext, sessionCookie?: string): Promise<{ status: number; body: unknown }> {
+  const response = await probeFetchJson(ctx, '/api/auth/session', {
     headers: sessionCookie ? { cookie: sessionCookie } : {},
   });
   return { status: response.status, body: response.body };
@@ -137,7 +154,7 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
 
   try {
     for (const route of unauthenticatedRoutes) {
-      const response = await fetchJson(`${ctx.baseUrl}${route}`);
+      const response = await probeFetchJson(ctx, route);
       findings.push({
         id: `auth-unauthenticated-route-${route.replaceAll('/', '-').replace(/^-+/, '')}`,
         surface: 'auth-session',
@@ -177,7 +194,7 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
     return findings;
   }
 
-  const baselineLogin = await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword);
+  const baselineLogin = await login(ctx, ctx.memberEmail, ctx.memberPassword);
   if (baselineLogin.status !== 200 || !baselineLogin.sessionCookie) {
     findings.push({
       id: 'auth-deep-session-checks-skipped',
@@ -199,7 +216,7 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
   const baselineToken = getCookieValue(baselineLogin.sessionCookie, 'session_id');
   if (baselineToken) tokenSamples.push(baselineToken);
   for (let idx = 0; idx < 4; idx += 1) {
-    const sampleLogin = await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword);
+    const sampleLogin = await login(ctx, ctx.memberEmail, ctx.memberPassword);
     const tokenValue = getCookieValue(sampleLogin.sessionCookie, 'session_id');
     if (tokenValue) tokenSamples.push(tokenValue);
   }
@@ -222,10 +239,10 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
   });
 
   const fixationCandidate = 'session_id=security-probe-fixed-session';
-  const csrfResponse = await fetch(`${ctx.baseUrl}/api/csrf-token`);
+  const csrfResponse = await probeFetch(ctx, '/api/csrf-token');
   const csrfCookie = parseCookie(csrfResponse.headers.get('set-cookie'), 'connect.sid');
   const csrfBody = await csrfResponse.json() as { token?: string };
-  const fixationLoginResponse = await fetch(`${ctx.baseUrl}/api/auth/login`, {
+  const fixationLoginResponse = await probeFetch(ctx, '/api/auth/login', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -254,12 +271,12 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
     },
   });
 
-  const firstLogin = await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword);
-  const secondLogin = await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword);
-  const oldSessionMe = await fetchJson(`${ctx.baseUrl}/api/auth/me`, {
+  const firstLogin = await login(ctx, ctx.memberEmail, ctx.memberPassword);
+  const secondLogin = await login(ctx, ctx.memberEmail, ctx.memberPassword);
+  const oldSessionMe = await probeFetchJson(ctx, '/api/auth/me', {
     headers: firstLogin.sessionCookie ? { cookie: firstLogin.sessionCookie } : {},
   });
-  const newSessionMe = await fetchJson(`${ctx.baseUrl}/api/auth/me`, {
+  const newSessionMe = await probeFetchJson(ctx, '/api/auth/me', {
     headers: secondLogin.sessionCookie ? { cookie: secondLogin.sessionCookie } : {},
   });
   findings.push({
@@ -279,7 +296,7 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
     },
   });
 
-  const sessionState = await getSession(ctx.baseUrl, secondLogin.sessionCookie);
+  const sessionState = await getSession(ctx, secondLogin.sessionCookie);
   const sessionData = sessionState.body as {
     data?: { createdAt?: string; expiresAt?: string; absoluteExpiresAt?: string };
   };
@@ -318,7 +335,7 @@ async function probeAuthSession(ctx: ProbeContext): Promise<ProbeFinding[]> {
     },
   });
 
-  const adminCheck = await fetchJson(`${ctx.baseUrl}/api/admin/workspaces`, {
+  const adminCheck = await probeFetchJson(ctx, '/api/admin/workspaces', {
     headers: baselineLogin.sessionCookie ? { cookie: baselineLogin.sessionCookie } : {},
   });
 
@@ -393,7 +410,7 @@ function waitForWebSocketClose(ws: WebSocket, timeoutMs: number): Promise<{ code
 async function probeWebSocket(ctx: ProbeContext): Promise<ProbeFinding[]> {
   const findings: ProbeFinding[] = [];
   const wsDoc = 'security-probe:00000000-0000-0000-0000-000000000000';
-  const wsUrl = `${ctx.wsBaseUrl}/collaboration/${wsDoc}`;
+  const wsUrl = buildProbeWsUrl(ctx.wsOrigin, `/collaboration/${wsDoc}`);
 
   const unauth = await wsUnauthProbe(wsUrl, ctx.timeoutMs);
   findings.push({
@@ -410,7 +427,7 @@ async function probeWebSocket(ctx: ProbeContext): Promise<ProbeFinding[]> {
   });
 
   if (ctx.memberEmail && ctx.memberPassword) {
-    const memberLogin = await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword);
+    const memberLogin = await login(ctx, ctx.memberEmail, ctx.memberPassword);
     if (!memberLogin.sessionCookie) {
       findings.push({
         id: 'ws-malformed-payload-check-auth-failed',
@@ -490,7 +507,7 @@ async function probeInputSanitization(ctx: ProbeContext): Promise<ProbeFinding[]
   const longPayload = 'A'.repeat(10_000);
 
   const memberLogin = ctx.memberEmail && ctx.memberPassword
-    ? await login(ctx.baseUrl, ctx.memberEmail, ctx.memberPassword)
+    ? await login(ctx, ctx.memberEmail, ctx.memberPassword)
     : undefined;
   const authCookie = memberLogin?.sessionCookie
     ? [memberLogin.csrfCookie, memberLogin.sessionCookie].filter(Boolean).join('; ')
@@ -515,8 +532,8 @@ async function probeInputSanitization(ctx: ProbeContext): Promise<ProbeFinding[]
       ['sqli', sqliPayload],
       ['long', longPayload],
     ] as const) {
-      const url = `${ctx.baseUrl}${target.path}?${target.queryParam}=${encodeURIComponent(value)}`;
-      const response = await fetchJson(url, {
+      const pathAndQuery = `${target.path}?${target.queryParam}=${encodeURIComponent(value)}`;
+      const response = await probeFetchJson(ctx, pathAndQuery, {
         headers: target.requiresAuth && authCookie ? { cookie: authCookie } : {},
       });
       const reflected = JSON.stringify(response.body).includes(value);
@@ -540,7 +557,7 @@ async function probeInputSanitization(ctx: ProbeContext): Promise<ProbeFinding[]
   }
 
   if (memberLogin?.sessionCookie && memberLogin.csrfCookie) {
-    const csrfResponse = await fetch(`${ctx.baseUrl}/api/csrf-token`, {
+    const csrfResponse = await probeFetch(ctx, '/api/csrf-token', {
       headers: { cookie: memberLogin.csrfCookie },
     });
     const csrfData = await csrfResponse.json() as { token?: string };
@@ -565,12 +582,12 @@ async function probeInputSanitization(ctx: ProbeContext): Promise<ProbeFinding[]
         if (csrfHeaderValue) {
           createHeaders['x-csrf-token'] = csrfHeaderValue;
         }
-        const createResponse = await fetchJson(`${ctx.baseUrl}${target.createPath}`, {
+        const createResponse = await probeFetchJson(ctx, target.createPath, {
           method: 'POST',
           headers: createHeaders,
           body: JSON.stringify(createBody),
         });
-        const readResponse = await fetchJson(`${ctx.baseUrl}${target.listPath}`, {
+        const readResponse = await probeFetchJson(ctx, target.listPath, {
           headers: { cookie: memberLogin.sessionCookie },
         });
         const reflectedStoredPayload = JSON.stringify(readResponse.body).includes(variant.value);
@@ -792,14 +809,21 @@ export function toMarkdown(report: ProbeReport): string {
 }
 
 async function main(): Promise<void> {
-  const baseUrl = process.env.SECURITY_PROBE_BASE_URL ?? 'http://localhost:3000';
-  const wsBaseUrl = process.env.SECURITY_PROBE_WS_URL ?? baseUrl.replace(/^http/i, 'ws');
+  const rawBaseUrl = process.env.SECURITY_PROBE_BASE_URL ?? 'http://localhost:3000';
+  const rawWsBaseUrl = process.env.SECURITY_PROBE_WS_URL;
+  const { httpOrigin, wsOrigin } = resolveProbeTargets({
+    baseUrl: rawBaseUrl,
+    wsBaseUrl: rawWsBaseUrl,
+    allowedHostsEnv: process.env.SECURITY_PROBE_ALLOWED_HOSTS,
+  });
   const outputPath = process.env.SECURITY_PROBE_OUTPUT
     ?? '../prd_dev_branch_one/PRD_CAT8/security-probe-report.json';
 
   const ctx: ProbeContext = {
-    baseUrl,
-    wsBaseUrl,
+    httpOrigin,
+    wsOrigin,
+    baseUrl: httpOrigin,
+    wsBaseUrl: wsOrigin,
     timeoutMs: Number(process.env.SECURITY_PROBE_TIMEOUT_MS ?? 8000),
     memberEmail: process.env.SECURITY_PROBE_MEMBER_EMAIL ?? 'alice.chen@ship.local',
     memberPassword: process.env.SECURITY_PROBE_MEMBER_PASSWORD ?? 'admin123',
@@ -814,7 +838,7 @@ async function main(): Promise<void> {
 
   const report: ProbeReport = {
     generatedAt: new Date().toISOString(),
-    target: { baseUrl, wsBaseUrl },
+    target: { baseUrl: httpOrigin, wsBaseUrl: wsOrigin },
     summary: summarize(findings),
     findings,
   };

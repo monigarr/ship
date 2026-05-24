@@ -17,9 +17,33 @@ This executes `api/src/scripts/security-probe.ts` and writes:
 ## Environment Variables
 
 - `SECURITY_PROBE_BASE_URL` (default: `http://localhost:3000`)
-- `SECURITY_PROBE_WS_URL` (default: `ws://localhost:3000`)
+- `SECURITY_PROBE_WS_URL` (default: derived from base URL, `http` → `ws`)
 - `SECURITY_PROBE_TIMEOUT_MS` (default: `8000`)
 - `SECURITY_PROBE_OUTPUT` (default path above)
+- `SECURITY_PROBE_ALLOWED_HOSTS` (optional comma-separated extra hostnames merged with defaults)
+
+### Allowed probe targets (SSRF protection)
+
+Before any HTTP/WebSocket request, the probe validates the target hostname against
+an allowlist and rejects private/metadata addresses. Default allowed hosts:
+
+- `localhost`, `127.0.0.1`, `::1`
+- `ship-api-ejok.onrender.com`
+- `ship-web-jyqh.onrender.com`
+- `ship-docs.onrender.com`
+
+Add more hosts with `SECURITY_PROBE_ALLOWED_HOSTS` (comma-separated). Requests use
+`redirect: error` and only relative API paths under the validated origin.
+
+Probe against the deployed API:
+
+```bash
+SECURITY_PROBE_BASE_URL=https://ship-api-ejok.onrender.com pnpm security:probe
+```
+
+Use the **API** base URL for probe runs (not the web or docs hosts). The web/docs
+hosts are on the allowlist for related tooling but the probe exercises `/api/*`
+routes.
 
 Optional authenticated probes (defaults assume seeded local data):
 
