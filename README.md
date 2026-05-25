@@ -103,6 +103,9 @@ pnpm db:orphan-check
 # Remote wiki seed (bulk-upload markdown portfolio to a deployed Ship instance)
 pnpm --filter @ship/api seed:remote-wiki
 
+# Remote synthetic workspace seed (UC + edge-case dataset)
+pnpm --filter @ship/api seed:remote-synthetic
+
 # Build
 pnpm build
 pnpm build:api
@@ -157,6 +160,53 @@ After seeding, open **Documents** in Ship and look for the root portfolio title.
 - Only `.md` files are imported. Attach logs/JSON in the editor or keep them in git evidence folders.
 - Render’s edge firewall may block some payloads; the script sanitizes common patterns (angle brackets, `curl -i`).
 - For a new week, change `SHIP_SEED_ROOT_TITLE` and point `SHIP_SEED_SOURCE_DIR` at that week’s artifact folder.
+
+## Remote synthetic workspace seed (HITL + automated verification)
+
+Use this workflow to create a separate synthetic workspace on a deployed Ship instance with realistic UC1-UC4 data (manager accountability, engineer evidence, PM hypothesis validation, and compliance/security verification), including edge cases for future manual and automated experiments.
+
+**Script:** `api/src/scripts/seed-remote-synthetic-workspace.ts`
+
+```bash
+# Required: credentials and target instance (never commit these)
+export SHIP_BASE_URL=https://ship-web-jyqh.onrender.com
+export SHIP_EMAIL=you@example.com
+export SHIP_PASSWORD=your-password
+
+# First run: create isolated workspace + seed programs/projects/weeks/issues/docs
+pnpm --filter @ship/api seed:remote-synthetic
+
+# Re-run safely against the same synthetic workspace
+export SHIP_SYNTH_RESUME=1
+pnpm --filter @ship/api seed:remote-synthetic
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:SHIP_BASE_URL = "https://ship-web-jyqh.onrender.com"
+$env:SHIP_EMAIL = "you@example.com"
+$env:SHIP_PASSWORD = "your-password"
+$env:SHIP_SYNTH_WORKSPACE_NAME = "GFA Synthetic HITL Workspace"
+pnpm --filter @ship/api seed:remote-synthetic
+```
+
+**Useful options:**
+
+| Variable | Purpose |
+| --- | --- |
+| `SHIP_SYNTH_WORKSPACE_NAME` | Name of the isolated synthetic workspace |
+| `SHIP_SYNTH_RESUME=1` | Reuse existing synthetic workspace and add missing entities |
+| `SHIP_SYNTH_DRY_RUN=1` | Print actions without mutating remote data |
+| `SHIP_SYNTH_DELAY_MS` | Delay between mutating API calls (default `200`) |
+
+**Manual HITL validation checklist:**
+
+- Manager flow (UC1): confirm overdue/missing-plan style items appear in week/accountability views.
+- Engineer flow (UC2): verify standup + issue state + weekly artifact evidence traceability.
+- PM flow (UC3): compare hypothesis projects with contrasting ICE/risk conditions.
+- Compliance flow (UC4): validate remediation/open-gap issue states and related wiki evidence pages.
+- Edge cases: verify at least one missing retro, one template-only plan, one unassigned backlog issue, and one cancelled hypothesis issue.
 
 ## Security and compliance tooling
 
