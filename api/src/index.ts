@@ -20,6 +20,7 @@ async function main() {
   // Now import app after secrets are loaded
   const { createApp } = await import('./app.js');
   const { setupCollaboration } = await import('./collaboration/index.js');
+  const { startFleetGraphProactiveScheduler } = await import('./services/fleetgraph/proactive.js');
 
   const PORT = process.env.PORT || 3000;
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
@@ -34,12 +35,20 @@ async function main() {
 
   // Setup WebSocket collaboration server
   setupCollaboration(server);
+  const stopFleetGraphScheduler = startFleetGraphProactiveScheduler();
 
   // Start server
   server.listen(PORT, () => {
     console.log(`API server running on http://localhost:${PORT}`);
     console.log(`CORS origin: ${CORS_ORIGIN}`);
   });
+
+  const gracefulShutdown = () => {
+    stopFleetGraphScheduler();
+  };
+
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }
 
 main().catch((err) => {

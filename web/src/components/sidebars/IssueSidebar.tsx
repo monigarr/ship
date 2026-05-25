@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { isCascadeWarningError, type IncompleteChild } from '@/hooks/useIssuesQuery';
 import { apiPost, apiDelete } from '@/lib/api';
 import { formatDateRange } from '@/lib/date-utils';
+import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
 import type { BelongsTo, BelongsToType } from '@ship/shared';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -479,6 +480,11 @@ export function IssueSidebar({
           <span className="text-sm text-red-300">{issue.rejection_reason}</span>
         </PropertyRow>
       )}
+
+      <FleetGraphAssistant
+        documentId={issue.id}
+        documentType="issue"
+      />
 
       {/* Document Conversion */}
       {onConvert && (

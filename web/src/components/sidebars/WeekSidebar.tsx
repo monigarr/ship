@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PropertyRow } from '@/components/ui/PropertyRow';
 import { Combobox } from '@/components/ui/Combobox';
 import { ApprovalButton } from '@/components/ApprovalButton';
+import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
 import { apiPost } from '@/lib/api';
 import type { ApprovalTracking } from '@ship/shared';
 
@@ -297,6 +298,11 @@ export function WeekSidebar({
           </button>
         </PropertyRow>
       )}
+
+      <FleetGraphAssistant
+        documentId={sprint.id}
+        documentType="sprint"
+      />
 
       <div className="border-t border-border pt-4">
         <button

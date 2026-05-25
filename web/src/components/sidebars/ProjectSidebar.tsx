@@ -3,6 +3,7 @@ import { EmojiPickerPopover } from '@/components/EmojiPicker';
 import { PersonCombobox, Person } from '@/components/PersonCombobox';
 import { MultiPersonCombobox } from '@/components/MultiPersonCombobox';
 import { ProgramCombobox } from '@/components/ProgramCombobox';
+import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
 import { PropertyRow } from '@/components/ui/PropertyRow';
 import { ApprovalButton } from '@/components/ApprovalButton';
 import { computeICEScore, type ApprovalTracking } from '@ship/shared';
@@ -346,6 +347,11 @@ export function ProjectSidebar({
           <span className="text-foreground">{project.issue_count ?? 0}</span>
         </div>
       </div>
+
+      <FleetGraphAssistant
+        documentId={project.id}
+        documentType="project"
+      />
 
       {/* Document Conversion */}
       {onConvert && (

@@ -118,6 +118,9 @@ export function parseProbeWsOrigin(wsBaseUrl: string, allowedHosts: Set<string>)
 }
 
 export function buildProbeHttpUrl(origin: string, pathAndQuery: string): string {
+  if (pathAndQuery.startsWith('//') || /^[a-z][a-z0-9+.-]*:\/\//i.test(pathAndQuery)) {
+    throw new Error(`Probe path would escape allowed origin: ${pathAndQuery}`);
+  }
   if (!pathAndQuery.startsWith('/')) {
     throw new Error(`Probe path must start with /, got: ${pathAndQuery}`);
   }
