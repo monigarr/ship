@@ -5,6 +5,7 @@ export type FleetGraphBranch =
   | 'execution_risk'
   | 'planning_risk'
   | 'evidence_risk'
+  | 'hypothesis_risk'
   | 'compliance_risk';
 
 export interface FleetGraphSignal {

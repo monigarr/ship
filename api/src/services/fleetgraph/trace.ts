@@ -25,7 +25,7 @@ export function createFleetGraphTrace(input: FleetGraphTraceInput): FleetGraphTr
   const configuredBaseUrl = process.env.LANGSMITH_RUN_BASE_URL?.trim();
 
   const traceUrl = configuredBaseUrl
-    ? `${configuredBaseUrl.replace(/\/$/, '')}/${traceId}`
+    ? `${configuredBaseUrl.replace(/\/+$/, '')}/${traceId}`
     : `internal://fleetgraph/${traceId}`;
 
   // Structured logging keeps branch-level observability even without LangSmith.

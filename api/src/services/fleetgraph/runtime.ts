@@ -1,6 +1,10 @@
 import { randomUUID } from 'crypto';
 import { pool } from '../../db/client.js';
 import { extractText } from '../../utils/document-content.js';
+import {
+  extractHypothesisFromContent,
+  extractSuccessCriteriaFromContent,
+} from '../../utils/extractHypothesis.js';
 import { createFleetGraphTrace } from './trace.js';
 import type {
   FleetGraphBranch,
@@ -22,7 +26,7 @@ interface DocumentRow {
 const TOKEN_ESTIMATE_PER_SIGNAL = 3750;
 const COST_PER_RUN_ESTIMATE_USD = 0.006;
 
-async function ensureFleetGraphTables(): Promise<void> {
+export async function ensureFleetGraphTables(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS fleetgraph_runs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -210,6 +214,31 @@ function createSignalFromWeeklyRetro(row: DocumentRow): FleetGraphSignal | null 
   };
 }
 
+function createSignalFromProject(row: DocumentRow): FleetGraphSignal | null {
+  const hypothesis = extractHypothesisFromContent(row.content)?.trim() ?? '';
+  if (!hypothesis) return null;
+
+  const successCriteria = extractSuccessCriteriaFromContent(row.content)?.trim() ?? '';
+  if (successCriteria.length >= 20) return null;
+
+  return {
+    type: 'hypothesis_risk',
+    severity: 'medium',
+    confidence: successCriteria.length === 0 ? 0.85 : 0.7,
+    title: row.title ? `Hypothesis drift: ${row.title}` : 'Hypothesis drift',
+    summary:
+      'Project hypothesis exists without measurable success criteria; PM review recommended before further execution.',
+    entityType: 'project',
+    entityId: row.id,
+    evidence: [
+      `project_id:${row.id}`,
+      `hypothesis_length:${hypothesis.length}`,
+      `success_criteria_length:${successCriteria.length}`,
+    ],
+    requiresHitl: false,
+  };
+}
+
 function createComplianceSignal(context: FleetGraphContext, docs: DocumentRow[]): FleetGraphSignal | null {
   const prompt = normalizePrompt(context.prompt);
   if (!prompt.includes('compliance') && !prompt.includes('audit') && !prompt.includes('security')) {
@@ -245,6 +274,10 @@ function detectSignals(context: FleetGraphContext, docs: DocumentRow[]): FleetGr
     if (row.document_type === 'weekly_retro') {
       const retroSignal = createSignalFromWeeklyRetro(row);
       if (retroSignal) signals.push(retroSignal);
+    }
+    if (row.document_type === 'project') {
+      const projectSignal = createSignalFromProject(row);
+      if (projectSignal) signals.push(projectSignal);
     }
   }
 

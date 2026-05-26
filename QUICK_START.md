@@ -1,14 +1,130 @@
-# FleetGraph Quick Start Manual Verification
+# FleetGraph Quick Start
 
-Use this guide to manually test and visually confirm the FleetGraph features required by `PRD.md`.
+Use this guide to **run automated FleetGraph tests** (fast engineer onboarding) and **manually verify** PRD-critical behavior in Ship.
 
 Public app URL: `https://ship-web-jyqh.onrender.com/`
 
-Estimated time: 15-25 minutes
+Estimated time:
+- Automated tests: 5–10 minutes (first run, including Postgres setup)
+- Manual verification: 15–25 minutes
 
 ---
 
-## What You Will Verify
+## Part A — Automated Tests (Engineer Onboarding)
+
+Run these first to confirm FleetGraph runtime, routes, proactive polling, and PRD test cases (TC1–TC6) against **real Postgres-backed Ship documents** — no mocked agent responses.
+
+### What the suite covers
+
+| File | Tests | Purpose |
+| --- | --- | --- |
+| `api/src/services/fleetgraph/trace.test.ts` | 4 | Trace URL generation (`internal://fleetgraph/...` and LangSmith base URL) |
+| `api/src/services/fleetgraph/runtime.test.ts` | 13 | PRD TC1–TC6 + HITL, dedupe, metrics, latency, branch divergence |
+| `api/src/routes/fleetgraph.test.ts` | 9 | All `/api/fleetgraph/*` endpoints (auth, CSRF, JSON shape) |
+| `api/src/services/fleetgraph/proactive.test.ts` | 3 | Proactive poll + scheduler env guard |
+| `api/src/services/fleetgraph/__tests__/fixtures.ts` | — | Shared workspace/auth seeders and cleanup helpers |
+
+PRD test-case mapping lives in `runtime.test.ts` describe blocks (`TC1 weak weekly plan` … `TC6 context-aware on-demand`). Trace URLs from those runs are documented in `FLEETGRAPH.md` → **Test Cases**.
+
+### Prerequisites
+
+- Node.js 20+ and pnpm 9+ (from repo root)
+- Docker (for local Postgres used by API integration tests)
+- Repo dependencies installed: `pnpm install`
+
+### One-time test database setup
+
+From repo root (`GitHub/ship`), in PowerShell:
+
+```powershell
+# Start Postgres (skip if you already have ship_dev on localhost:5432)
+docker run -d --name ship-test-postgres `
+  -e POSTGRES_DB=ship_dev `
+  -e POSTGRES_USER=ship `
+  -e POSTGRES_PASSWORD=ship_dev_password `
+  -p 5432:5432 postgres:16
+
+docker exec ship-test-postgres pg_isready -U ship -d ship_dev
+
+# Apply migrations
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+pnpm --filter @ship/api db:migrate
+```
+
+Optional: put `DATABASE_URL` in `api/.env.local` so you do not need to set it every session.
+
+### Run FleetGraph tests only
+
+```powershell
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts
+```
+
+**Pass criteria:** 29 tests, 4 files, all green.
+
+### Run the full API test suite
+
+Root `pnpm test` runs all API Vitest tests (includes FleetGraph):
+
+```powershell
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+pnpm test
+```
+
+**Pass criteria:** all API test files green (501+ tests including FleetGraph).
+
+### Watch mode while developing
+
+```powershell
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+pnpm --filter @ship/api test:watch -- src/services/fleetgraph
+```
+
+### What each PRD test case asserts
+
+| TC | Ship state seeded | Expected branch |
+| --- | --- | --- |
+| 1 | Empty or short weekly plan | `planning_risk` |
+| 2 | Retro text under 120 characters | `evidence_risk` |
+| 3 | Project with Hypothesis but no Success Criteria | `hypothesis_risk` |
+| 4 | Prompt containing `compliance` / `audit` / `security` | `compliance_risk` + HITL `pending_approval` |
+| 5 | Issue stale 25+ hours, high priority | `execution_risk` |
+| 6 | On-demand run scoped to a single issue `documentId` | signals reference that issue only |
+
+Cross-cutting tests also verify: `no_action` when data is healthy, approve/reject HITL lifecycle, finding dedupe, metrics/traces endpoints, and detection latency under 5 minutes (`latencyMs < 300_000`).
+
+### Adding a new detector or test case
+
+1. Implement detector logic in `api/src/services/fleetgraph/runtime.ts`.
+2. Add a seeder in `api/src/services/fleetgraph/__tests__/fixtures.ts` if needed.
+3. Add a `describe('TCn ...')` block in `runtime.test.ts` with `cleanupFleetGraphTables()` at the start.
+4. Optionally add route coverage in `fleetgraph.test.ts`.
+5. Re-run the FleetGraph test command above, then paste the new `run.traceUrl` into `FLEETGRAPH.md` → **Test Cases**.
+
+### Automated test troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `relation "fleetgraph_*" does not exist` | Run `pnpm --filter @ship/api db:migrate`, or rely on `ensureFleetGraphTables()` (called on first FleetGraph run in tests) |
+| `ECONNREFUSED` / connection errors | Confirm Postgres is running: `docker exec ship-test-postgres pg_isready -U ship -d ship_dev` |
+| Wrong branch / unexpected signals | Tests share a workspace per file; ensure `cleanupFleetGraphTables()` runs before each case (clears documents + fleetgraph rows) |
+| Port 5432 already in use | Use a different host port or stop the conflicting Postgres instance |
+| Stale container name | `docker rm -f ship-test-postgres` then re-run the `docker run` command |
+
+### Cleanup (optional)
+
+```powershell
+docker stop ship-test-postgres
+docker rm ship-test-postgres
+```
+
+---
+
+## Part B — Manual Verification (PRD Signoff)
+
+Use this section when you need browser-visible confirmation on the deployed app or before submission evidence.
+
+### What You Will Verify
 
 You will confirm all PRD-critical outcomes:
 
@@ -18,9 +134,7 @@ You will confirm all PRD-critical outcomes:
 4. Runtime evidence exists (findings/traces/metrics endpoints).
 5. Detection latency can be verified as under 5 minutes.
 
----
-
-## Prerequisites
+### Manual prerequisites
 
 Before starting:
 
@@ -30,9 +144,8 @@ Before starting:
 
 Optional but recommended:
 
+- Run **Part A** automated tests first so runtime behavior is green locally.
 - Open `FLEETGRAPH_EVIDENCE_INDEX.md` in your editor while testing so you can cross-check run IDs and evidence fields.
-
----
 
 ## Step 1 - Confirm Context-Embedded On-Demand Mode
 
@@ -142,7 +255,7 @@ If all items are checked, the manual verification package is ready for PRD revie
 
 ---
 
-## Troubleshooting
+## Troubleshooting (Manual)
 
 - No findings appear:
   - Verify test data actually matches a detector condition.

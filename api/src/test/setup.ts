@@ -8,6 +8,15 @@ beforeAll(async () => {
   // Ensure test environment
   process.env.NODE_ENV = 'test'
 
+  // Clean up FleetGraph tables first when migration 034 has been applied
+  await pool.query(`
+    DO $$ BEGIN
+      IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'fleetgraph_runs') THEN
+        TRUNCATE TABLE fleetgraph_hitl_requests, fleetgraph_findings, fleetgraph_runs CASCADE;
+      END IF;
+    END $$;
+  `)
+
   // Clean up test data from previous runs to prevent duplicate key errors
   // Use TRUNCATE CASCADE which is faster and bypasses row-level triggers
   // (audit_logs has AU-9 compliance triggers preventing DELETE)
