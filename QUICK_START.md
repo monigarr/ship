@@ -63,6 +63,27 @@ pnpm --filter @ship/api db:migrate
 
 Optional: put `DATABASE_URL` in `api/.env.local` so you do not need to set it every session.
 
+### Seed PRD + USERS.md demo data (local UI verification)
+
+After migrations, load base workspace data and FleetGraph PRD test-case states (TC1–TC8) aligned with `USERS.md` personas:
+
+```powershell
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+pnpm --filter @ship/api db:seed
+pnpm --filter @ship/api db:seed:fleetgraph
+```
+
+Login: `dev@ship.local` / `admin123`. Open program **`[FG-PRD] FleetGraph PRD Evidence Program`** (`FGPRD`) and filter documents by prefix `[FG-PRD]`.
+
+For the **deployed** app, use the remote synthetic workspace seeder (USERS UC1–UC4 + HITL edge cases):
+
+```powershell
+$env:SHIP_BASE_URL='https://ship-web-jyqh.onrender.com'
+$env:SHIP_EMAIL='your@email.com'
+$env:SHIP_PASSWORD='your-password'
+pnpm --filter @ship/api seed:remote-synthetic
+```
+
 ### Run FleetGraph tests only
 
 ```powershell

@@ -18,6 +18,7 @@
     "seed:remote-wiki": "tsx src/scripts/seed-remote-wiki-docs.ts",
     "seed:remote-synthetic": "tsx src/scripts/seed-remote-synthetic-workspace.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:fleetgraph": "tsx src/db/seed-fleetgraph-demo.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:orphan-check": "tsx src/db/scripts/orphan-diagnostic.ts",
     "openapi:generate": "tsx src/scripts/generate-openapi.ts",
