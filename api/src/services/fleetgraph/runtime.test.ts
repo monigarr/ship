@@ -50,7 +50,7 @@ describe('FleetGraph runtime', () => {
       expect(result.signals[0]?.notificationDrafts?.length).toBeGreaterThan(0);
       expect(result.summary.toLowerCase()).toContain('planning_risk');
       expect(result.findings[0]?.status).toBe('open');
-      expect(result.run.traceUrl).toMatch(/^internal:\/\/fleetgraph\//);
+      expect(result.run.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
     });
 
     it('detects short weekly plan as planning_risk', async () => {
@@ -447,7 +447,7 @@ describe('FleetGraph runtime', () => {
 
       const runs = await listFleetGraphRecentRuns(ctx.workspaceId);
       expect(runs.length).toBeGreaterThanOrEqual(1);
-      expect(runs[0]?.traceUrl).toMatch(/^internal:\/\/fleetgraph\//);
+      expect(runs[0]?.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
 
       const findings = await listFleetGraphOpenFindings(ctx.workspaceId);
       expect(findings.length).toBeGreaterThanOrEqual(1);

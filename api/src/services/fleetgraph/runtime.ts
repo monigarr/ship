@@ -33,11 +33,30 @@ interface IssueExecutionContext {
   assigneeMissingStandup: boolean;
 }
 
+type FleetGraphTracePhase =
+  | 'start'
+  | 'context'
+  | 'detection'
+  | 'synthesis'
+  | 'branch'
+  | 'persistence'
+  | 'hitl'
+  | 'complete';
+
+interface FleetGraphTraceEventInput {
+  phase: FleetGraphTracePhase;
+  name: string;
+  status: 'ok' | 'error';
+  latencyMs?: number;
+  metadata?: Record<string, unknown>;
+}
+
 const TOKEN_ESTIMATE_PER_SIGNAL = 3750;
 const COST_PER_RUN_ESTIMATE_USD = 0.006;
 const DEFAULT_SNOOZE_HOURS = 24;
 const MAX_SNOOZE_HOURS = 168;
 const STANDUP_GAP_DAYS = 2;
+const PRD_LATENCY_BUDGET_MS = 300_000;
 
 export async function ensureFleetGraphTables(): Promise<void> {
   await pool.query(`
@@ -80,6 +99,26 @@ export async function ensureFleetGraphTables(): Promise<void> {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS fleetgraph_trace_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      trace_id TEXT NOT NULL,
+      run_id UUID REFERENCES fleetgraph_runs(id) ON DELETE CASCADE,
+      phase TEXT NOT NULL,
+      event_name TEXT NOT NULL,
+      event_status TEXT NOT NULL,
+      latency_ms INTEGER,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_fleetgraph_trace_events_workspace_trace_created
+      ON fleetgraph_trace_events(workspace_id, trace_id, created_at ASC);
+  `);
+
+  await pool.query(`
     ALTER TABLE fleetgraph_findings
       ADD COLUMN IF NOT EXISTS snoozed_until TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS snoozed_by UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -101,6 +140,56 @@ export async function ensureFleetGraphTables(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+}
+
+async function persistFleetGraphTraceEvents(
+  workspaceId: string,
+  traceId: string,
+  runId: string,
+  events: FleetGraphTraceEventInput[]
+): Promise<void> {
+  if (events.length === 0) {
+    return;
+  }
+
+  await pool.query(
+    `INSERT INTO fleetgraph_trace_events (
+       workspace_id, trace_id, run_id, phase, event_name, event_status, latency_ms, metadata
+     )
+     SELECT
+       $1::uuid,
+       $2::text,
+       $3::uuid,
+       item.phase::text,
+       item.event_name::text,
+       item.event_status::text,
+       NULLIF(item.latency_ms, '')::int,
+       COALESCE(item.metadata::jsonb, '{}'::jsonb)
+     FROM jsonb_to_recordset($4::jsonb) AS item(
+       phase text,
+       event_name text,
+       event_status text,
+       latency_ms text,
+       metadata jsonb
+     )`,
+    [
+      workspaceId,
+      traceId,
+      runId,
+      JSON.stringify(
+        events.map((event) => ({
+          phase: event.phase,
+          event_name: event.name,
+          event_status: event.status,
+          latency_ms:
+            typeof event.latencyMs === 'number' && Number.isFinite(event.latencyMs)
+              ? String(Math.max(0, Math.round(event.latencyMs)))
+              : '',
+          metadata: event.metadata ?? {},
+        }))
+      ),
+    ]
+  );
 }
 
 function toIsoString(input: string): string {
@@ -987,9 +1076,29 @@ export async function executeFleetGraphRun(
 ): Promise<FleetGraphRunResult> {
   const startedAtMs = Date.now();
   const startedAtIso = new Date(startedAtMs).toISOString();
+  const traceEvents: FleetGraphTraceEventInput[] = [];
+  const markEvent = (
+    phase: FleetGraphTracePhase,
+    name: string,
+    status: 'ok' | 'error',
+    metadata?: Record<string, unknown>,
+    phaseStartedAtMs?: number
+  ): void => {
+    traceEvents.push({
+      phase,
+      name,
+      status,
+      latencyMs:
+        typeof phaseStartedAtMs === 'number' && Number.isFinite(phaseStartedAtMs)
+          ? Math.max(0, Date.now() - phaseStartedAtMs)
+          : undefined,
+      metadata,
+    });
+  };
 
   await ensureFleetGraphTables();
 
+  const traceStartPhaseMs = Date.now();
   const traceStart = await startFleetGraphTrace({
     trigger,
     workspaceId: context.workspaceId,
@@ -1000,12 +1109,58 @@ export async function executeFleetGraphRun(
       prompt: context.prompt,
     },
   });
+  markEvent(
+    'start',
+    'trace_started',
+    'ok',
+    {
+      trigger,
+      documentId: context.documentId ?? null,
+      documentType: context.documentType ?? null,
+      hasPrompt: Boolean(context.prompt?.trim()),
+    },
+    traceStartPhaseMs
+  );
 
+  const contextPhaseMs = Date.now();
   const docs = await fetchContextDocuments(context);
+  markEvent(
+    'context',
+    'documents_loaded',
+    'ok',
+    {
+      documentCount: docs.length,
+      contextDocumentId: context.documentId ?? null,
+      contextDocumentType: context.documentType ?? null,
+    },
+    contextPhaseMs
+  );
+  const detectionPhaseMs = Date.now();
   let signals = await detectSignals(context, docs);
+  markEvent(
+    'detection',
+    'signals_detected',
+    'ok',
+    {
+      signalCount: signals.length,
+      signalTypes: [...new Set(signals.map((signal) => signal.type))],
+    },
+    detectionPhaseMs
+  );
   signals = enrichSignalsWithNotificationDrafts(signals);
   const branch = computeSignalBranch(signals);
   const signalTypes = [...new Set(signals.map((signal) => signal.type))];
+  markEvent(
+    'branch',
+    'branch_selected',
+    'ok',
+    {
+      branch,
+      signalCount: signals.length,
+      signalTypes,
+    },
+    detectionPhaseMs
+  );
 
   const fallbackSummary = buildRunSummary(trigger, signals);
   let summary = fallbackSummary;
@@ -1016,6 +1171,7 @@ export async function executeFleetGraphRun(
   let synthesized = false;
 
   if (trigger === 'on_demand' && signals.length > 0) {
+    const synthesisPhaseMs = Date.now();
     const synthesis = await synthesizeFleetGraphResponse({
       prompt: context.prompt,
       signals,
@@ -1028,10 +1184,23 @@ export async function executeFleetGraphRun(
       costEstimateUsd = synthesis.costEstimateUsd;
       synthesized = true;
     }
+    markEvent(
+      'synthesis',
+      'response_synthesized',
+      'ok',
+      {
+        synthesized: synthesis.synthesized,
+        inputTokens: synthesis.inputTokens,
+        outputTokens: synthesis.outputTokens,
+        usedFallbackSummary: !synthesis.synthesized,
+      },
+      synthesisPhaseMs
+    );
   }
 
   const latencyMs = Math.max(1, Date.now() - startedAtMs);
 
+  const traceFinishPhaseMs = Date.now();
   const trace = await finishFleetGraphTrace({
     traceId: traceStart.traceId,
     trigger,
@@ -1045,10 +1214,22 @@ export async function executeFleetGraphRun(
     signalCount: signals.length,
     summary,
   });
+  markEvent(
+    'complete',
+    'trace_completed',
+    'ok',
+    {
+      traceId: trace.traceId,
+      traceUrl: trace.traceUrl,
+      withinPrdLatencyBudget: latencyMs < PRD_LATENCY_BUDGET_MS,
+    },
+    traceFinishPhaseMs
+  );
 
   const runId = randomUUID();
   const completedAtIso = new Date().toISOString();
 
+  const persistencePhaseMs = Date.now();
   await pool.query(
     `INSERT INTO fleetgraph_runs (
        id, workspace_id, user_id, trigger, branch, trace_id, trace_url,
@@ -1083,10 +1264,23 @@ export async function executeFleetGraphRun(
       }),
     ]
   );
+  markEvent(
+    'persistence',
+    'run_persisted',
+    'ok',
+    {
+      runId,
+      signalCount: signals.length,
+      tokenEstimate,
+      costEstimateUsd,
+    },
+    persistencePhaseMs
+  );
 
   const findings: FleetGraphRunResult['findings'] = [];
   let hitlRequestId: string | undefined;
 
+  const findingsPhaseMs = Date.now();
   for (const signal of signals) {
     const finding = await upsertFinding(context.workspaceId, runId, signal);
     findings.push({
@@ -1097,8 +1291,24 @@ export async function executeFleetGraphRun(
 
     if (signal.requiresHitl && !hitlRequestId) {
       hitlRequestId = await createHitlRequest(context.workspaceId, finding.id, context.userId, signal);
+      markEvent('hitl', 'hitl_request_created', 'ok', {
+        findingId: finding.id,
+        signalType: signal.type,
+      });
     }
   }
+  markEvent(
+    'persistence',
+    'findings_persisted',
+    'ok',
+    {
+      findingCount: findings.length,
+      hitlRequestCreated: Boolean(hitlRequestId),
+    },
+    findingsPhaseMs
+  );
+
+  await persistFleetGraphTraceEvents(context.workspaceId, trace.traceId, runId, traceEvents);
 
   return {
     run: {
@@ -1443,4 +1653,215 @@ export async function listFleetGraphRecentRuns(workspaceId: string): Promise<Arr
     latencyMs: row.latency_ms,
     createdAt: toIsoString(row.created_at),
   }));
+}
+
+export async function getFleetGraphTraceDetail(
+  workspaceId: string,
+  traceId: string
+): Promise<{
+  traceId: string;
+  traceUrl: string;
+  run: {
+    runId: string;
+    trigger: string;
+    branch: string;
+    latencyMs: number;
+    tokenEstimate: number;
+    costEstimateUsd: number;
+    createdAt: string;
+    runInput: Record<string, unknown>;
+    runOutput: Record<string, unknown>;
+  };
+  observability: {
+    latencyBudgetMs: number;
+    withinLatencyBudget: boolean;
+    signalCount: number;
+    signalTypes: string[];
+    branchDivergenceMarker: string;
+    hitlPendingCount: number;
+  };
+  timeline: Array<{
+    phase: string;
+    eventName: string;
+    status: string;
+    latencyMs: number | null;
+    createdAt: string;
+    metadata: Record<string, unknown>;
+  }>;
+  findings: Array<{
+    id: string;
+    status: string;
+    signalType: string;
+    severity: string;
+    confidence: number;
+    title: string;
+    summary: string;
+    entityType: string;
+    entityId: string | null;
+    evidence: string[];
+    hitlRequestId: string | null;
+    hitlDecisionStatus: string | null;
+  }>;
+}> {
+  await ensureFleetGraphTables();
+
+  const runResult = await pool.query<{
+    id: string;
+    trigger: string;
+    branch: string;
+    trace_url: string;
+    latency_ms: number;
+    token_estimate: number;
+    cost_estimate_usd: string;
+    created_at: string;
+    run_input: Record<string, unknown> | string;
+    run_output: Record<string, unknown> | string;
+  }>(
+    `SELECT
+       id,
+       trigger,
+       branch,
+       trace_url,
+       latency_ms,
+       token_estimate,
+       cost_estimate_usd::text,
+       created_at::text,
+       run_input,
+       run_output
+     FROM fleetgraph_runs
+     WHERE workspace_id = $1
+       AND trace_id = $2
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [workspaceId, traceId]
+  );
+
+  const run = runResult.rows[0];
+  if (!run) {
+    throw new Error('Trace not found');
+  }
+
+  const timelineResult = await pool.query<{
+    phase: string;
+    event_name: string;
+    event_status: string;
+    latency_ms: number | null;
+    metadata: Record<string, unknown> | string;
+    created_at: string;
+  }>(
+    `SELECT
+       phase,
+       event_name,
+       event_status,
+       latency_ms,
+       metadata,
+       created_at::text
+     FROM fleetgraph_trace_events
+     WHERE workspace_id = $1
+       AND trace_id = $2
+     ORDER BY created_at ASC`,
+    [workspaceId, traceId]
+  );
+
+  const findingsResult = await pool.query<{
+    id: string;
+    status: string;
+    signal_type: string;
+    severity: string;
+    confidence: string;
+    title: string;
+    summary: string;
+    entity_type: string;
+    entity_id: string | null;
+    evidence: string[] | string;
+    hitl_request_id: string | null;
+    hitl_decision_status: string | null;
+  }>(
+    `SELECT
+       f.id,
+       f.status,
+       f.signal_type,
+       f.severity,
+       f.confidence::text,
+       f.title,
+       f.summary,
+       f.entity_type,
+       f.entity_id::text,
+       f.evidence,
+       h.id::text AS hitl_request_id,
+       h.decision_status AS hitl_decision_status
+     FROM fleetgraph_findings f
+     LEFT JOIN fleetgraph_hitl_requests h
+       ON h.finding_id = f.id
+     WHERE f.workspace_id = $1
+       AND f.run_id = $2
+     ORDER BY f.updated_at DESC`,
+    [workspaceId, run.id]
+  );
+
+  const findings = findingsResult.rows.map((row) => ({
+    id: row.id,
+    status: row.status,
+    signalType: row.signal_type,
+    severity: row.severity,
+    confidence: Number(row.confidence),
+    title: row.title,
+    summary: row.summary,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    evidence:
+      Array.isArray(row.evidence)
+        ? row.evidence
+        : typeof row.evidence === 'string'
+          ? (JSON.parse(row.evidence) as string[])
+          : [],
+    hitlRequestId: row.hitl_request_id,
+    hitlDecisionStatus: row.hitl_decision_status,
+  }));
+
+  const signalTypes = [...new Set(findings.map((finding) => finding.signalType))];
+  const hitlPendingCount = findings.filter((finding) => finding.hitlDecisionStatus === 'pending').length;
+  const runOutput =
+    typeof run.run_output === 'string'
+      ? (JSON.parse(run.run_output) as Record<string, unknown>)
+      : run.run_output;
+
+  return {
+    traceId,
+    traceUrl: run.trace_url,
+    run: {
+      runId: run.id,
+      trigger: run.trigger,
+      branch: run.branch,
+      latencyMs: run.latency_ms,
+      tokenEstimate: run.token_estimate,
+      costEstimateUsd: Number(run.cost_estimate_usd),
+      createdAt: toIsoString(run.created_at),
+      runInput:
+        typeof run.run_input === 'string'
+          ? (JSON.parse(run.run_input) as Record<string, unknown>)
+          : run.run_input,
+      runOutput,
+    },
+    observability: {
+      latencyBudgetMs: PRD_LATENCY_BUDGET_MS,
+      withinLatencyBudget: run.latency_ms < PRD_LATENCY_BUDGET_MS,
+      signalCount: findings.length,
+      signalTypes,
+      branchDivergenceMarker: `${run.trigger}:${run.branch}:${signalTypes.join(',') || 'no_signals'}`,
+      hitlPendingCount,
+    },
+    timeline: timelineResult.rows.map((row) => ({
+      phase: row.phase,
+      eventName: row.event_name,
+      status: row.event_status,
+      latencyMs: row.latency_ms,
+      createdAt: toIsoString(row.created_at),
+      metadata:
+        typeof row.metadata === 'string'
+          ? (JSON.parse(row.metadata) as Record<string, unknown>)
+          : row.metadata,
+    })),
+    findings,
+  };
 }

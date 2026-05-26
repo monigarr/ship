@@ -36,6 +36,7 @@ interface FleetGraphFinding {
 interface FleetGraphRunResponse {
   summary: string;
   run: {
+    traceId: string;
     traceUrl: string;
     latencyMs: number;
     branch: string;
@@ -126,6 +127,23 @@ function severityClass(severity: string): string {
 function formatEntityType(documentType: string): string {
   if (documentType === 'sprint') return 'sprint';
   return documentType.replace(/_/g, ' ');
+}
+
+function resolveInternalTraceHref(traceUrl: string, traceId?: string): string {
+  if (traceUrl.startsWith('/')) {
+    return traceUrl;
+  }
+  if (traceUrl.startsWith('http://') || traceUrl.startsWith('https://')) {
+    return traceUrl;
+  }
+  const legacyPrefix = 'internal://fleetgraph/';
+  if (traceUrl.startsWith(legacyPrefix)) {
+    return `/fleetgraph/traces/${traceUrl.slice(legacyPrefix.length)}`;
+  }
+  if (traceId) {
+    return `/fleetgraph/traces/${traceId}`;
+  }
+  return traceUrl;
 }
 
 function proposedActionLabel(signalType: string, title: string): string {
@@ -563,12 +581,12 @@ export function FleetGraphAssistant({
                   Branch: {message.run.branch} | Latency: {message.run.latencyMs}ms
                 </p>
                 <a
-                  href={message.run.traceUrl}
+                  href={resolveInternalTraceHref(message.run.traceUrl, message.run.traceId)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[10px] text-accent hover:underline"
                 >
-                  Open trace
+                  Open trace details
                 </a>
               </div>
               {message.signals.map((signal, signalIndex) => (
@@ -742,12 +760,12 @@ export function FleetGraphAssistant({
                 </button>
               )}
               <a
-                href={finding.traceUrl}
+                href={resolveInternalTraceHref(finding.traceUrl)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-[10px] text-accent hover:underline self-center"
               >
-                Trace
+                Trace details
               </a>
             </div>
           </div>
@@ -782,7 +800,7 @@ export function FleetGraphAssistant({
               {tracesQuery.data.runs.slice(0, 2).map((run) => (
                 <a
                   key={run.runId}
-                  href={run.traceUrl}
+                  href={resolveInternalTraceHref(run.traceUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="block rounded border border-border px-2 py-1 text-[11px] text-accent hover:bg-border/30"

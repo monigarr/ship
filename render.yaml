@@ -32,16 +32,12 @@ services:
         sync: false
       - key: CDN_DOMAIN
         sync: false
-      - key: LANGSMITH_API_KEY
-        sync: false
-      - key: LANGSMITH_PROJECT
-        value: fleetgraph-ship
-      - key: LANGSMITH_RUN_BASE_URL
-        value: https://smith.langchain.com/public/run
       - key: FLEETGRAPH_PROACTIVE_ENABLED
         value: "1"
       - key: FLEETGRAPH_POLL_INTERVAL_MS
         value: "180000"
+      - key: FLEETGRAPH_TRACE_BASE_PATH
+        value: /fleetgraph/traces
       - key: FLEETGRAPH_SYNTHESIS_ENABLED
         value: "1"
 

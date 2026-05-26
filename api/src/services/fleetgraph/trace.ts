@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { Client } from 'langsmith';
 import type { FleetGraphBranch, FleetGraphContext, FleetGraphTrigger } from './types.js';
 
 export interface FleetGraphTraceStartInput {
@@ -28,35 +27,20 @@ export interface FleetGraphTraceOutput {
   traceUrl: string;
 }
 
-const DEFAULT_LANGSMITH_RUN_BASE_URL = 'https://smith.langchain.com/public/run';
+const DEFAULT_INTERNAL_TRACE_BASE_PATH = '/fleetgraph/traces';
 
-function resolveLangSmithRunBaseUrl(): string | null {
-  const configured = process.env.LANGSMITH_RUN_BASE_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/+$/, '');
+function resolveInternalTraceBasePath(): string {
+  const configured = process.env.FLEETGRAPH_TRACE_BASE_PATH?.trim();
+  if (!configured) {
+    return DEFAULT_INTERNAL_TRACE_BASE_PATH;
   }
-
-  if (process.env.LANGSMITH_API_KEY?.trim()) {
-    return DEFAULT_LANGSMITH_RUN_BASE_URL;
-  }
-
-  return null;
+  const prefixed = configured.startsWith('/') ? configured : `/${configured}`;
+  const normalized = prefixed.replace(/\/+$/, '');
+  return normalized.length > 0 ? normalized : DEFAULT_INTERNAL_TRACE_BASE_PATH;
 }
 
 function buildTraceUrl(traceId: string): string {
-  const baseUrl = resolveLangSmithRunBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/${traceId}`;
-  }
-  return `internal://fleetgraph/${traceId}`;
-}
-
-function getLangSmithClient(): Client | null {
-  const apiKey = process.env.LANGSMITH_API_KEY?.trim();
-  if (!apiKey) {
-    return null;
-  }
-  return new Client({ apiKey });
+  return `${resolveInternalTraceBasePath()}/${traceId}`;
 }
 
 function logTraceEvent(payload: Record<string, unknown>): void {
@@ -64,41 +48,11 @@ function logTraceEvent(payload: Record<string, unknown>): void {
 }
 
 /**
- * Starts a FleetGraph trace. When LANGSMITH_API_KEY is set, creates a LangSmith run.
+ * Starts an internal FleetGraph trace and returns shareable in-app trace URL.
  */
 export async function startFleetGraphTrace(input: FleetGraphTraceStartInput): Promise<FleetGraphTraceOutput> {
   const traceId = randomUUID();
   const traceUrl = buildTraceUrl(traceId);
-  const projectName = process.env.LANGSMITH_PROJECT?.trim() || 'fleetgraph-ship';
-
-  const client = getLangSmithClient();
-  if (client) {
-    try {
-      await client.createRun({
-        id: traceId,
-        name: 'FleetGraph',
-        run_type: 'chain',
-        project_name: projectName,
-        inputs: {
-          trigger: input.trigger,
-          workspaceId: input.workspaceId,
-          userId: input.userId,
-          documentId: input.context?.documentId ?? null,
-          documentType: input.context?.documentType ?? null,
-          prompt: input.context?.prompt ?? null,
-        },
-        extra: {
-          metadata: {
-            workspace_id: input.workspaceId,
-            user_id: input.userId,
-            tags: ['fleetgraph', input.trigger],
-          },
-        },
-      });
-    } catch (error) {
-      console.error('FleetGraph LangSmith createRun failed:', error);
-    }
-  }
 
   logTraceEvent({
     trace_id: traceId,
@@ -113,37 +67,10 @@ export async function startFleetGraphTrace(input: FleetGraphTraceStartInput): Pr
 }
 
 /**
- * Completes a FleetGraph trace with branch outputs. Updates LangSmith when configured.
+ * Completes an internal FleetGraph trace with branch outputs.
  */
 export async function finishFleetGraphTrace(input: FleetGraphTraceFinishInput): Promise<FleetGraphTraceOutput> {
   const traceUrl = buildTraceUrl(input.traceId);
-  const client = getLangSmithClient();
-
-  if (client) {
-    try {
-      await client.updateRun(input.traceId, {
-        outputs: {
-          branch: input.branch,
-          signalTypes: input.signalTypes,
-          signalCount: input.signalCount,
-          summary: input.summary,
-          latencyMs: input.latencyMs,
-          tokenEstimate: input.tokenEstimate,
-          costEstimateUsd: input.costEstimateUsd,
-        },
-        end_time: Date.now(),
-        tags: ['fleetgraph', input.trigger, input.branch, ...input.signalTypes],
-        extra: {
-          metadata: {
-            branch: input.branch,
-            signal_types: input.signalTypes.join(','),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('FleetGraph LangSmith updateRun failed:', error);
-    }
-  }
 
   logTraceEvent({
     trace_id: input.traceId,
@@ -197,20 +124,13 @@ export async function createFleetGraphTrace(input: {
   });
 }
 
-/** Safe runtime diagnostics for LangSmith wiring (no secrets returned). */
+/** Safe runtime diagnostics for internal trace wiring. */
 export function getFleetGraphTraceConfig(): {
-  traceUrlMode: 'internal' | 'langsmith';
-  langsmithApiKeyConfigured: boolean;
-  langsmithProject: string;
-  langsmithRunBaseUrl: string | null;
+  traceUrlMode: 'internal';
+  internalTraceBasePath: string;
 } {
-  const langsmithApiKeyConfigured = Boolean(process.env.LANGSMITH_API_KEY?.trim());
-  const langsmithRunBaseUrl = resolveLangSmithRunBaseUrl();
-
   return {
-    traceUrlMode: langsmithRunBaseUrl ? 'langsmith' : 'internal',
-    langsmithApiKeyConfigured,
-    langsmithProject: process.env.LANGSMITH_PROJECT?.trim() || 'fleetgraph-ship',
-    langsmithRunBaseUrl,
+    traceUrlMode: 'internal',
+    internalTraceBasePath: resolveInternalTraceBasePath(),
   };
 }

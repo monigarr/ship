@@ -295,7 +295,7 @@ No explicit Indigenous-data governance scope is defined in current FleetGraph ar
 
 ## Observability Stack
 
-- LangSmith shared traces (required evidence)
+- Internal FleetGraph trace links (required evidence)
 - structured logging for trigger intake and branch decisions
 - run-level latency, token, and cost telemetry
 - failure tags for degraded fetch/reasoning paths
@@ -309,8 +309,8 @@ No explicit Indigenous-data governance scope is defined in current FleetGraph ar
 
 ## Shared Trace Links (Placeholders)
 
-- [LangSmith Trace 1 - Divergent Path A](https://REPLACE_WITH_SHARED_LANGSMITH_TRACE_URL_1)
-- [LangSmith Trace 2 - Divergent Path B](https://REPLACE_WITH_SHARED_LANGSMITH_TRACE_URL_2)
+- [FleetGraph Trace 1 - Divergent Path A](/fleetgraph/traces/REPLACE_WITH_TRACE_ID_1)
+- [FleetGraph Trace 2 - Divergent Path B](/fleetgraph/traces/REPLACE_WITH_TRACE_ID_2)
 
 ---
 

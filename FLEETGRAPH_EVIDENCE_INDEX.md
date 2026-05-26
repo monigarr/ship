@@ -18,11 +18,11 @@ This file is the single packaging checklist for PRD submission evidence on branc
 | Shared graph architecture for both modes | Complete | `api/src/services/fleetgraph/runtime.ts` |
 | Context-embedded chat (no standalone bot) | Complete | FleetGraph panel embedded in `IssueSidebar`, `ProjectSidebar`, `WeekSidebar` |
 | HITL gate for protected actions | Complete | `fleetgraph_hitl_requests`, `/api/fleetgraph/hitl/:requestId/approve|reject`, snooze via `/api/fleetgraph/findings/:findingId/snooze` |
-| LangSmith shared traces | Complete (SDK wired) | `api/src/services/fleetgraph/trace.ts` + env `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `LANGSMITH_RUN_BASE_URL` |
+| Internal FleetGraph trace links | Complete | Internal trace detail endpoint `/api/fleetgraph/traces/:traceId` with in-app route `/fleetgraph/traces/:traceId` |
 | Snooze lifecycle | Complete | `fleetgraph_findings.snoozed_until`, UI snooze buttons in `FleetGraphAssistant.tsx` |
 | Standup + approval overdue detectors | Complete | `accountability_risk` + overdue `planning_risk` in `runtime.ts` (TC7/TC8) |
 | Real Ship data usage | Complete | Runtime reads from `documents` and related workspace records |
-| Divergent trace paths | Complete | TC1 `planning_risk`: `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2` vs TC7 `accountability_risk`: `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17` |
+| Divergent trace paths | Complete | Divergent internal traces captured for TC1 (`d543c205-754e-44d8-8ffd-ef7c95f8a75c`) vs TC7 (`aac37d8f-711c-43c9-a4a7-aa3817b1c614`) |
 | Deployed and accessible | Complete | Public deployment URL above |
 | Trigger model documented and defended | Complete | `FLEETGRAPH.md` Trigger Model section |
 | Cost per run + runs/day documented | Complete | `FLEETGRAPH.md` Cost Analysis + `/api/fleetgraph/metrics` |
@@ -30,15 +30,15 @@ This file is the single packaging checklist for PRD submission evidence on branc
 
 ## 3) Shared Trace Links To Submit
 
-Replace placeholders with shared URLs from `/api/fleetgraph/traces` after setting `LANGSMITH_API_KEY` on Render.
+Internal policy: keep observability links inside Ship and verify they resolve for authenticated workspace members.
 
 | Checkpoint | Trace A (Path 1) | Trace B (Path 2) | Notes |
 | --- | --- | --- | --- |
-| MVP | `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2` | `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17` | TC1 `planning_risk` vs TC7 `accountability_risk` |
-| Early Submission | same as MVP | same as MVP | Captured via `capture-fleetgraph-traces.ts` |
-| Final Submission | same as MVP | same as MVP | Public LangSmith URL format; set `LANGSMITH_API_KEY` on Render for live dashboard sync |
+| MVP | `/fleetgraph/traces/d543c205-754e-44d8-8ffd-ef7c95f8a75c` | `/fleetgraph/traces/aac37d8f-711c-43c9-a4a7-aa3817b1c614` | Fresh TC1 vs TC7 capture on 2026-05-26; verification target is authenticated in-app accessibility |
+| Early Submission | `/fleetgraph/traces/{replace_with_divergent_trace_a}` | `/fleetgraph/traces/{replace_with_divergent_trace_b}` | Replace with current internal links after rerun |
+| Final Submission | `/fleetgraph/traces/{replace_with_divergent_trace_a}` | `/fleetgraph/traces/{replace_with_divergent_trace_b}` | Replace with current internal links after rerun |
 
-Local fallback (no API key): `internal://fleetgraph/{uuid}` from test output.
+Local fallback (if link unavailable): use `/api/fleetgraph/traces` to fetch recent runs and open `/fleetgraph/traces/{traceId}`.
 
 ## 4) Timed Latency Test Protocol
 

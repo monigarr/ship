@@ -7,7 +7,7 @@ Use this guide to **run automated FleetGraph tests** (fast engineer onboarding) 
 | **Branch** | `gfa2_wk5` |
 | **Public app** | `https://ship-web-jyqh.onrender.com/` |
 | **Last updated** | 2026-05-26 |
-| **Alias** | Same guide also available as [`QUICK_START.md`](./QUICK_START.md) |
+| **Source of truth** | This file is the canonical quick start |
 
 Estimated time:
 
@@ -35,32 +35,28 @@ Run these first to confirm FleetGraph runtime, routes, proactive polling, and PR
 
 | File | Tests | Purpose |
 | --- | --- | --- |
-| `api/src/services/fleetgraph/trace.test.ts` | 6 | LangSmith SDK runs + trace URL generation (`internal://` fallback and public base URL) |
+| `api/src/services/fleetgraph/trace.test.ts` | 4 | Internal trace URL generation + safe trace config diagnostics |
 | `api/src/services/fleetgraph/runtime.test.ts` | 18 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence |
-| `api/src/routes/fleetgraph.test.ts` | 10 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
-| `api/src/services/fleetgraph/proactive.test.ts` | 8 | Proactive poll, webhook debounce, scan tiers, scheduler env guard |
-| `api/src/services/fleetgraph/notifications.test.ts` | 4 | Role-based notification draft routing |
+| `api/src/routes/fleetgraph.test.ts` | 11 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
+| `api/src/services/fleetgraph/proactive.test.ts` | 9 | Proactive poll, webhook debounce, scan tiers, scheduler env guard |
+| `api/src/services/fleetgraph/notifications.test.ts` | 2 | Role-based notification draft routing |
 | `api/src/services/fleetgraph/seed-helpers.ts` | — | Shared document seed helpers (used by tests and `db:seed:fleetgraph`) |
 | `api/src/services/fleetgraph/__tests__/fixtures.ts` | — | Test workspace/auth helpers and cleanup |
 
 PRD test-case mapping lives in `runtime.test.ts` describe blocks (`TC1 weak weekly plan` … `TC8 overdue plan approval`). Trace URLs from those runs are documented in `FLEETGRAPH.md` → **Test Cases**.
 
-### LangSmith shared trace setup
+### Internal trace setup
 
-1. Create a LangSmith project (for example `fleetgraph-ship`).
-2. Set API env vars (local: `api/.env.local`; Render: `ship-api` service in [`render.yaml`](./render.yaml)):
-   - `LANGSMITH_API_KEY`
-   - `LANGSMITH_PROJECT=fleetgraph-ship`
-   - `LANGSMITH_RUN_BASE_URL=https://smith.langchain.com/public/run`
+1. Ensure FleetGraph traces are enabled in Ship API (default internal path is `/fleetgraph/traces/:traceId`).
+2. Optionally set `FLEETGRAPH_TRACE_BASE_PATH` if you need a custom internal route prefix.
 3. Run two divergent graph paths (for example TC1 `planning_risk` and TC7 `accountability_risk`).
-4. Copy HTTPS trace URLs from `/api/fleetgraph/traces` or LangSmith dashboard into `FLEETGRAPH.md` and `FLEETGRAPH_EVIDENCE_INDEX.md`.
+4. Copy internal trace URLs from `/api/fleetgraph/traces` into `FLEETGRAPH.md` and `FLEETGRAPH_EVIDENCE_INDEX.md`.
 
 **Capture all TC1–TC8 trace URLs in one script run:**
 
 ```powershell
 $env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
 $env:FLEETGRAPH_SYNTHESIS_ENABLED='0'
-$env:LANGSMITH_RUN_BASE_URL='https://smith.langchain.com/public/run'
 pnpm --filter @ship/api exec tsx src/scripts/capture-fleetgraph-traces.ts
 ```
 
@@ -179,7 +175,7 @@ $env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
 pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts
 ```
 
-**Pass criteria:** 46 tests, 5 files, all green.
+**Pass criteria:** targeted FleetGraph service + route tests pass with no failures.
 
 ### Run the full API test suite
 
@@ -190,7 +186,7 @@ $env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
 pnpm test
 ```
 
-**Pass criteria:** all API test files green (470+ tests including FleetGraph).
+**Pass criteria:** full API suite passes with no failures.
 
 ### Watch mode while developing
 
@@ -368,10 +364,20 @@ Pass if:
 - Endpoints respond successfully with recent FleetGraph run data.
 - You can identify at least one recent finding and at least two distinct trace runs.
 
-**Example divergent traces (from automated TC runs):**
+**Example divergent internal traces (from automated TC runs):**
 
-- TC1 `planning_risk`: `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2`
-- TC7 `accountability_risk`: `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17`
+- TC1 `planning_risk`: `/fleetgraph/traces/d543c205-754e-44d8-8ffd-ef7c95f8a75c`
+- TC7 `accountability_risk`: `/fleetgraph/traces/aac37d8f-711c-43c9-a4a7-aa3817b1c614`
+
+Internal observability policy (2026-05-26): keep trace links inside Ship and verify they open for authenticated workspace members.
+
+To regenerate current internal trace URLs, run:
+
+```powershell
+$env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
+$env:FLEETGRAPH_SYNTHESIS_ENABLED='0'
+pnpm --filter @ship/api exec tsx src/scripts/capture-fleetgraph-traces.ts
+```
 
 Full index: [`FLEETGRAPH_EVIDENCE_INDEX.md`](./FLEETGRAPH_EVIDENCE_INDEX.md) and [`FLEETGRAPH.md`](./FLEETGRAPH.md) → **Test Cases**.
 
@@ -407,7 +413,7 @@ Use this checklist as final signoff:
 - [x] Same FleetGraph architecture supports both triggers.
 - [x] HITL gate protects sensitive actions.
 - [x] Real Ship data is used (not mock-only responses).
-- [x] At least two divergent trace runs exist.
+- [x] At least two divergent **internally resolvable** trace runs exist.
 - [x] Detection latency evidence is under 5 minutes.
 - [x] UI visibly exposes chat and proactive findings.
 
@@ -418,7 +424,7 @@ Verified on deployed app `https://ship-web-jyqh.onrender.com/` (2026-05-26):
 - Proactive mode enabled via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](./render.yaml).
 - Remote synthetic workspace **`GFA Synthetic HITL Workspace`** seeded with `[SYNTH-HITL]` UC1–UC4 data (`seed:remote-synthetic`).
 - Local **`Ship Workspace`** supports `[FG-PRD]` TC1–TC8 demo data via `db:seed:fleetgraph`.
-- Automated signoff: **46** FleetGraph Vitest tests green; `capture-fleetgraph-traces.ts` produces TC1–TC8 public LangSmith URL format.
+- Automated signoff: FleetGraph Vitest suite verifies TC1–TC8 paths and `capture-fleetgraph-traces.ts` produces internal trace links.
 
 If all items are checked, the manual verification package is ready for PRD review.
 
@@ -439,7 +445,7 @@ pnpm --filter @ship/web dev
 
 Copy `api/.env.example` → `api/.env.local` and set `CORS_ORIGIN=http://localhost:5173`.
 
-FleetGraph env vars (optional): see `api/.env.example` → FleetGraph / LangSmith section.
+FleetGraph env vars (optional): see `api/.env.example` → FleetGraph / Observability section.
 
 ---
 
@@ -454,7 +460,7 @@ FleetGraph env vars (optional): see `api/.env.example` → FleetGraph / LangSmit
   - Use seeded TC6 issue or a `[SYNTH-HITL]` issue with clear state.
 - Missing traces:
   - Execute at least two different run paths (for example, on-demand and proactive) and refresh traces endpoint.
-  - Set `LANGSMITH_API_KEY` locally or on Render for public URLs.
+  - Open `/api/fleetgraph/traces` and navigate to `/fleetgraph/traces/{traceId}` for details.
 - HITL not appearing:
   - Use a compliance/audit/security prompt (TC4) or a finding marked `requiresHitl`.
 

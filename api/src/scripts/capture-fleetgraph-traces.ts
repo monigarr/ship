@@ -6,7 +6,7 @@
  * Purpose: Execute PRD FleetGraph test-case seeds and print trace URLs for documentation.
  *
  * Usage:
- *   DATABASE_URL=... LANGSMITH_API_KEY=... pnpm --filter @ship/api exec tsx src/scripts/capture-fleetgraph-traces.ts
+ *   DATABASE_URL=... pnpm --filter @ship/api exec tsx src/scripts/capture-fleetgraph-traces.ts
  */
 
 import { config } from 'dotenv';

@@ -4,6 +4,7 @@ import { runFleetGraphProactiveWebhook } from '../services/fleetgraph/proactive.
 import {
   decideFleetGraphHitlRequest,
   executeFleetGraphRun,
+  getFleetGraphTraceDetail,
   getFleetGraphMetrics,
   listFleetGraphRecentRuns,
   listFleetGraphOpenFindings,
@@ -144,6 +145,32 @@ router.get('/traces', authMiddleware, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('FleetGraph trace list failed:', error);
     res.status(500).json({ error: 'fleetgraph_traces_failed' });
+  }
+});
+
+router.get('/traces/:traceId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const workspaceId = getWorkspaceId(req);
+    if (!workspaceId) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+
+    const traceId = req.params.traceId;
+    if (!traceId) {
+      res.status(400).json({ error: 'trace_id_required' });
+      return;
+    }
+
+    const detail = await getFleetGraphTraceDetail(workspaceId, traceId);
+    res.json(detail);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Trace not found') {
+      res.status(404).json({ error: 'fleetgraph_trace_not_found' });
+      return;
+    }
+    console.error('FleetGraph trace detail failed:', error);
+    res.status(500).json({ error: 'fleetgraph_trace_detail_failed' });
   }
 });
 

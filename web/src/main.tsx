@@ -37,6 +37,7 @@ import { UnifiedDocumentPage } from '@/pages/UnifiedDocumentPage';
 import { StatusOverviewPage } from '@/pages/StatusOverviewPage';
 import { ReviewsPage } from '@/pages/ReviewsPage';
 import { OrgChartPage } from '@/pages/OrgChartPage';
+import { FleetGraphTracePage } from '@/pages/FleetGraphTracePage';
 import { ReviewQueueProvider } from '@/contexts/ReviewQueueContext';
 
 import { InviteAcceptPage } from '@/pages/InviteAccept';
@@ -238,6 +239,7 @@ function AppRoutes() {
         <Route path="team/status" element={<StatusOverviewPage />} />
         <Route path="team/reviews" element={<ReviewsPage />} />
         <Route path="team/org-chart" element={<OrgChartPage />} />
+        <Route path="fleetgraph/traces/:traceId" element={<FleetGraphTracePage />} />
         {/* Person profile stays in Teams context - no redirect to /documents */}
         <Route path="team/:id" element={<PersonEditorPage />} />
         <Route path="feedback/:id" element={<FeedbackEditorPage />} />

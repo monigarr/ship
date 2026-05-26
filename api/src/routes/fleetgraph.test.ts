@@ -165,8 +165,41 @@ describe('FleetGraph API', () => {
       expect(response.body.runs[0]).toMatchObject({
         runId: expect.any(String),
         trigger: 'on_demand',
-        traceUrl: expect.stringMatching(/^internal:\/\/fleetgraph\//),
+        traceUrl: expect.stringMatching(/^\/fleetgraph\/traces\//),
       });
+    });
+  });
+
+  describe('GET /api/fleetgraph/traces/:traceId', () => {
+    it('returns internal observability detail for a trace', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const runResponse = await request(ctx.app)
+        .post('/api/fleetgraph/run')
+        .set('Cookie', ctx.sessionCookie)
+        .set('x-csrf-token', ctx.csrfToken)
+        .send({});
+
+      const traceId = runResponse.body.run.traceId as string;
+      expect(traceId).toBeTruthy();
+
+      const response = await request(ctx.app)
+        .get(`/api/fleetgraph/traces/${traceId}`)
+        .set('Cookie', ctx.sessionCookie);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        traceId,
+        run: {
+          trigger: 'on_demand',
+        },
+        observability: {
+          latencyBudgetMs: 300000,
+        },
+      });
+      expect(Array.isArray(response.body.timeline)).toBe(true);
+      expect(Array.isArray(response.body.findings)).toBe(true);
     });
   });
 
