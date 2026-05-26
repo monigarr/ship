@@ -180,7 +180,7 @@ FleetGraph is a thin decision layer on top of existing Ship core:
 8. Output writeback to Ship surfaces
 9. Trace/cost telemetry
 
-Recommended runtime is LangGraph with LangSmith traceability, or an equivalent implementation that produces comparable branch-level traces.
+Recommended runtime is LangGraph, or an equivalent implementation that produces comparable branch-level internal FleetGraph traces.
 
 ---
 

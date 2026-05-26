@@ -27,6 +27,40 @@ Estimated time:
 
 ---
 
+## Part 0 — Fast Observability Onboarding and Visual Trace Verification
+
+Use this when a human needs a quick orientation to FleetGraph observability and a fast visual/manual confirmation path.
+
+### Fast onboarding bullets (internal observability)
+
+- FleetGraph traces are **internal to Ship**, not LangSmith; every run emits `traceId` + `traceUrl`.
+- Trace execution data is persisted in API runtime tables (`fleetgraph_runs`, `fleetgraph_trace_events`) and exposed in authenticated endpoints.
+- Humans can inspect traces in three places:
+  - FleetGraph assistant links (**Open trace details**)
+  - Trace list API (`/api/fleetgraph/traces`)
+  - Trace detail page (`/fleetgraph/traces/:traceId`)
+- Divergent branches (for example `planning_risk` vs `accountability_risk`) are required evidence for grading.
+- Canonical evidence packaging lives in [`FLEETGRAPH_EVIDENCE_INDEX.md`](./FLEETGRAPH_EVIDENCE_INDEX.md); TC mappings live in [`FLEETGRAPH.md`](./FLEETGRAPH.md).
+
+### Visual/manual verification quick path (Local and Deployed)
+
+| Step | Local path | Deployed path |
+| --- | --- | --- |
+| 1. Run or trigger FleetGraph | Seed + run via local API (`db:seed:fleetgraph` + on-demand or proactive trigger) | Use `[SYNTH-HITL]` workspace and run on-demand/proactive scenarios |
+| 2. Open trace list | `http://localhost:5173/api/fleetgraph/traces` (authenticated) | `https://ship-web-jyqh.onrender.com/api/fleetgraph/traces` (authenticated) |
+| 3. Open trace detail | Click a `traceUrl` to `/fleetgraph/traces/{traceId}` | Click a `traceUrl` to `/fleetgraph/traces/{traceId}` |
+| 4. Visually confirm fields | Branch, trigger, latency budget, timeline events, findings | Branch, trigger, latency budget, timeline events, findings |
+| 5. Confirm divergence | Capture at least two traces with different branches | Capture at least two traces with different branches |
+| 6. Record evidence | Paste links in `FLEETGRAPH.md` + Evidence Index | Paste links in `FLEETGRAPH.md` + Evidence Index |
+
+Pass criteria (both paths):
+
+- Trace links stay inside Ship (`/fleetgraph/traces/{traceId}`).
+- At least two branch-divergent traces are visible and shareable to authenticated workspace members.
+- Trace API (`/api/fleetgraph/traces`) and trace detail route are both accessible.
+
+---
+
 ## Part A — Automated Tests (Engineer Onboarding)
 
 Run these first to confirm FleetGraph runtime, routes, proactive polling, and PRD test cases (TC1–TC8) against **real Postgres-backed Ship documents** — no mocked agent responses.

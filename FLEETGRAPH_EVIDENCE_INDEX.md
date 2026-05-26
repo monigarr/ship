@@ -9,6 +9,14 @@ This file is the single packaging checklist for PRD submission evidence on branc
 - FleetGraph traces endpoint: `/api/fleetgraph/traces`
 - FleetGraph metrics endpoint: `/api/fleetgraph/metrics`
 
+### Fast human onboarding and visual verification
+
+Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Part 0 — Fast Observability Onboarding and Visual Trace Verification** for:
+
+- Internal observability orientation (no LangSmith dependency)
+- Local and deployed side-by-side manual trace verification steps
+- Pass/fail criteria for branch-divergent internal trace evidence
+
 ## 2) PRD Requirement Checklist (Pass/Fail)
 
 | PRD Requirement | Status | Evidence |

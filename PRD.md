@@ -78,7 +78,7 @@ You will submit shared observability trace links as part of every deliverable. T
 All items required to pass:
 
 - ☐ Graph running with at least one proactive detection wired end-to-end
-- ☐ LangSmith tracing enabled with at least two shared trace links submitted showing different execution paths
+- ☐ Internal FleetGraph tracing enabled with at least two shared in-app trace links submitted showing different execution paths
 - ☐ FLEETGRAPH.md submitted with Agent Responsibility and Use Cases sections completed - at least 5 use cases defined
 - ☐ Graph outline complete - node types, edges, and branching conditions documented in FLEETGRAPH.md
 - ☐ At least one human-in-the-loop gate implemented
@@ -103,7 +103,7 @@ You define your own test cases. For each use case in your use case document, pro
 
 - The Ship state that should trigger the agent
 - What the agent should detect or produce
-- The LangSmith trace from a run against that state
+- The internal FleetGraph trace link from a run against that state
 
 You own the test cases. The grader verifies that your agent does what you said it would do, given the conditions you defined. Document all test cases and trace links in FLEETGRAPH.md.
 
@@ -150,8 +150,8 @@ FLEETGRAPH.md must contain the following completed sections at final submission:
 
 ## Constraints
 
-- LangGraph is recommended; any other framework requires manual LangSmith instrumentation
-- LangSmith tracing required from day one
+- LangGraph is recommended; any other framework must still produce equivalent internal FleetGraph branch-divergent traces
+- Internal FleetGraph tracing required from day one
 - Chat interface must be embedded in context - no standalone chatbot pages
 
 # PRESEARCH
@@ -251,7 +251,7 @@ Document your trigger model decision - poll, webhook, or hybrid. Explain the tra
 
 ## Test Cases
 
-For each use case above, provide: the Ship state that should trigger the agent, what the agent should detect or produce, and the LangSmith trace link from a run against that state.
+For each use case above, provide: the Ship state that should trigger the agent, what the agent should detect or produce, and the internal FleetGraph trace link from a run against that state.
 
 | # | Ship State | Expected Output | Trace Link |
 | --- | --- | --- | --- |
