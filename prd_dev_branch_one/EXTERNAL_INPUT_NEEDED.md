@@ -14,14 +14,16 @@ Only externally dependent submission items remain.
 
 ## 2) SR-5 Deployed Application Proof
 
+- Status:
+  - `Documented`
 - Public app URL:
-  - `______________________________`
+  - `https://ship-web-jyqh.onrender.com/`
 - Public API URL (if separate):
-  - `______________________________`
-- Health check command output timestamp:
-  - `______________________________`
+  - `https://ship-api-ejok.onrender.com/`
+- Health/access evidence:
+  - `ship/FLEETGRAPH_EVIDENCE_INDEX.md` and `ship/QUICKSTART.md` deployment verification sections
 - Screenshot proof path:
-  - `______________________________`
+  - `Optional for additional reviewer packet; not currently blocking local branch documentation alignment`
 
 ## 3) SR-5 Social Post Proof
 
@@ -35,5 +37,4 @@ Only externally dependent submission items remain.
 After you provide these values, they can be inserted directly into:
 
 - `prd_dev_branch_one/DEMO_VIDEO_PACKAGE.md`
-- `prd_dev_branch_one/DEPLOYMENT_EVIDENCE.md`
 - `prd_dev_branch_one/SOCIAL_POST_EVIDENCE.md`

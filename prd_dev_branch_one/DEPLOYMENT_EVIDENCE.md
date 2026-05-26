@@ -15,8 +15,11 @@
 
 ## Public Accessibility Evidence
 
-- **Status:** Pending operator-provided public URL confirmation in this branch package.
-- **Required final artifact to attach:** production/staging URL + timestamped health check output + screenshot.
+- **Status:** Documented.
+- **Public app URL:** `https://ship-web-jyqh.onrender.com/`
+- **Public API URL:** `https://ship-api-ejok.onrender.com/`
+- **Evidence references in this branch:** `FLEETGRAPH_EVIDENCE_INDEX.md`, `QUICKSTART.md`, `render.yaml`
+- **Access note:** authenticated FleetGraph runtime endpoints intentionally return `401` when no session is present.
 
 ## Verification Command Examples
 

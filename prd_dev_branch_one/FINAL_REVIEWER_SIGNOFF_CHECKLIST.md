@@ -77,7 +77,7 @@ Pass criteria:
 Pass criteria:
 
 - Local deliverable package exists and is review-ready
-- Remaining external dependencies are explicitly marked (demo link/file, public deploy URL proof, social post URL/screenshot)
+- Remaining external dependencies are explicitly marked (demo link/file, social post URL/screenshot)
 
 ## Reviewer Decision Record
 

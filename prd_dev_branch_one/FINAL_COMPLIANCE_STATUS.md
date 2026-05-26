@@ -1,6 +1,6 @@
 # Final Compliance Status Snapshot
 
-Generated: 2026-05-22
+Generated: 2026-05-26
 
 ## Fully Met in this pass
 
@@ -26,7 +26,7 @@ Generated: 2026-05-22
 ## Still Not Fully Met (external publication dependencies only)
 
 - SR-4 (final recorded demo URL/file + timestamped proof attachment)
-- SR-5 (public deployed URL evidence and published social post URL/screenshot)
+- SR-5 (published social post URL/screenshot)
 
 ## Source of Truth
 

@@ -35,8 +35,8 @@ Internal policy: keep observability links inside Ship and verify they resolve fo
 | Checkpoint | Trace A (Path 1) | Trace B (Path 2) | Notes |
 | --- | --- | --- | --- |
 | MVP | `/fleetgraph/traces/d543c205-754e-44d8-8ffd-ef7c95f8a75c` | `/fleetgraph/traces/aac37d8f-711c-43c9-a4a7-aa3817b1c614` | Fresh TC1 vs TC7 capture on 2026-05-26; verification target is authenticated in-app accessibility |
-| Early Submission | `/fleetgraph/traces/{replace_with_divergent_trace_a}` | `/fleetgraph/traces/{replace_with_divergent_trace_b}` | Replace with current internal links after rerun |
-| Final Submission | `/fleetgraph/traces/{replace_with_divergent_trace_a}` | `/fleetgraph/traces/{replace_with_divergent_trace_b}` | Replace with current internal links after rerun |
+| Early Submission | `/fleetgraph/traces/449ccd4f-99db-4aed-903c-ea835f717d1d` | `/fleetgraph/traces/d0f25512-b219-4766-afaa-5c0888e2a9f1` | TC2 vs TC4 divergent internal traces |
+| Final Submission | `/fleetgraph/traces/5b4a47f1-c766-40d8-a005-e6f3cd18f50b` | `/fleetgraph/traces/d7cdaac0-6352-49d8-b395-84f6bc9da39a` | TC3 vs TC8 divergent internal traces |
 
 Local fallback (if link unavailable): use `/api/fleetgraph/traces` to fetch recent runs and open `/fleetgraph/traces/{traceId}`.
 
@@ -172,6 +172,7 @@ docker stop ship-test-postgres; docker rm ship-test-postgres
   - `web/src/components/sidebars/FleetGraphAssistant.tsx`
   - `api/src/db/migrations/034_add_fleetgraph_runtime_tables.sql`
   - `api/src/db/migrations/039_fleetgraph_notification_drafts.sql`
+  - `api/src/db/migrations/040_add_fleetgraph_trace_events.sql`
   - `api/src/services/fleetgraph/synthesis.ts`
   - `api/src/services/fleetgraph/notifications.ts`
   - `api/src/services/fleetgraph/hitl-actions.ts`

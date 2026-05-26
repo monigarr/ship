@@ -193,7 +193,7 @@ FleetGraph should initially plug into these surfaces rather than introducing a n
 ### Implemented (2026-05-25) — see `FLEETGRAPH_EVIDENCE_INDEX.md`
 
 - Unified proactive trigger pipeline (webhook hooks on Ship mutations + tiered scheduler in `proactive.ts`)
-- Custom graph orchestrator with branchable execution traces (`runtime.ts` + LangSmith SDK)
+- Custom graph orchestrator with branchable internal execution traces (`runtime.ts` + FleetGraph trace events)
 - Persisted finding lifecycle (open, pending_approval, snoozed, resolved, rejected)
 - Embedded context-aware FleetGraph chat in Issue, Project, and Week sidebars
 - HITL confirmation UX with approve/reject/snooze and approved action execution (`hitl-actions.ts`)

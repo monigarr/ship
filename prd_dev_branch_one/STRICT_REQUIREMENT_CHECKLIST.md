@@ -48,7 +48,7 @@ Status values:
 | SR-2 | Improvement documentation for all 7 categories (before/root cause/fix/after/reproducibility) | Met | `prd_dev_branch_one/PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` | N/A |
 | SR-3 | Discovery write-up deliverable | Met | `prd_dev_branch_one/DISCOVERY_WRITEUP.md` | N/A |
 | SR-4 | Demo video (3-5 min) artifact evidence | Not Met | `prd_dev_branch_one/DEMO_VIDEO_PACKAGE.md`, `prd_dev_branch_one/EXTERNAL_INPUT_NEEDED.md` | Need final recorded demo URL/file + timestamped proof attachment |
-| SR-5 | AI cost analysis + deployed app proof + social post evidence | Not Met | `prd_dev_branch_one/AI_COST_ANALYSIS.md`, `prd_dev_branch_one/DEPLOYMENT_EVIDENCE.md`, `prd_dev_branch_one/SOCIAL_POST_EVIDENCE.md`, `prd_dev_branch_one/EXTERNAL_INPUT_NEEDED.md` | Need public deploy URL evidence and published social post URL/screenshot (AI cost section already complete) |
+| SR-5 | AI cost analysis + deployed app proof + social post evidence | Not Met | `prd_dev_branch_one/AI_COST_ANALYSIS.md`, `prd_dev_branch_one/DEPLOYMENT_EVIDENCE.md`, `prd_dev_branch_one/SOCIAL_POST_EVIDENCE.md`, `prd_dev_branch_one/EXTERNAL_INPUT_NEEDED.md` | Deployment evidence now documented; remaining gap is published social post URL/screenshot |
 | SR-6 | GitHub repo fork with improvements on clearly labeled branches + setup guide in README | Met | `README.md`, `prd_dev_branch_one/REPO_FORK_BRANCH_EVIDENCE.md` | N/A |
 
 ## D) Cat8 PRD - Security Probe Tool Requirements

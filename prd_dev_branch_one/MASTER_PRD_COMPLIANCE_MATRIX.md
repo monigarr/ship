@@ -49,7 +49,7 @@ Status legend: `Met` | `Partial` | `Missing` | `Pending Regeneration`
 | SR-2 | Improvement documentation for all categories | Met | `PHASE_2_PRD_BUNDLE/IMPROVEMENT_DOCUMENTATION.md` |
 | SR-3 | Discovery write-up (3 discoveries) | Met | `DISCOVERY_WRITEUP.md` |
 | SR-4 | Demo/presentation artifacts | Partial | `DEMO_VIDEO_PACKAGE.md`, `EXTERNAL_INPUT_NEEDED.md` (final recording URL/file pending) |
-| SR-5 | AI cost analysis + deployment evidence | Partial | `AI_COST_ANALYSIS.md`, `DEPLOYMENT_EVIDENCE.md`, `SOCIAL_POST_EVIDENCE.md`, `EXTERNAL_INPUT_NEEDED.md` (public deploy URL + published social link pending) |
+| SR-5 | AI cost analysis + deployment evidence + social post evidence | Partial | `AI_COST_ANALYSIS.md`, `DEPLOYMENT_EVIDENCE.md`, `SOCIAL_POST_EVIDENCE.md`, `EXTERNAL_INPUT_NEEDED.md` (deployment evidence documented; published social link/screenshot pending) |
 | SR-6 | Forked repo with clear branches and setup guide | Met | `README.md`, `REPO_FORK_BRANCH_EVIDENCE.md` |
 
 ## Consolidation Notes
