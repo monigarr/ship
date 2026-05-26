@@ -12,6 +12,7 @@ import {
   type BelongsToEntry,
 } from '../utils/document-crud.js';
 import { broadcastToUser } from '../collaboration/index.js';
+import { emitFleetGraphDocumentMutation, emitFleetGraphShipEvent } from '../services/fleetgraph/proactive-ship-hooks.js';
 
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
@@ -720,6 +721,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     const row = result.rows[0];
     const issue = extractIssueFromRow(row);
+    emitFleetGraphShipEvent(req, 'issue_updated', newIssueId, 'issue');
     res.status(201).json({
       ...issue,
       display_id: `#${ticketNumber}`,
@@ -1060,6 +1062,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
       }
     }
 
+    emitFleetGraphShipEvent(req, 'issue_updated', id, 'issue');
     res.json({ ...issue, display_id: displayId, belongs_to: belongsTo });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -1380,6 +1383,10 @@ router.post('/bulk', authMiddleware, async (req: Request, res: Response) => {
       };
     });
 
+    for (const issue of updated) {
+      emitFleetGraphShipEvent(req, 'issue_updated', issue.id, 'issue');
+    }
+
     res.json({ updated, failed });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -1551,6 +1558,13 @@ router.post('/:id/iterations', authMiddleware, async (req: Request, res: Respons
 
     const iteration = result.rows[0];
     const author = authorResult.rows[0];
+
+    emitFleetGraphShipEvent(
+      req,
+      blockers_encountered?.trim() ? 'blocker_created' : 'issue_updated',
+      issueId as string,
+      'issue'
+    );
 
     res.status(201).json({
       id: iteration.id,

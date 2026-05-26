@@ -17,9 +17,12 @@ This file is the single packaging checklist for PRD submission evidence on branc
 | On-demand mode implemented | Complete | `web/src/components/sidebars/FleetGraphAssistant.tsx`, `/api/fleetgraph/run` |
 | Shared graph architecture for both modes | Complete | `api/src/services/fleetgraph/runtime.ts` |
 | Context-embedded chat (no standalone bot) | Complete | FleetGraph panel embedded in `IssueSidebar`, `ProjectSidebar`, `WeekSidebar` |
-| HITL gate for protected actions | Complete | `fleetgraph_hitl_requests`, `/api/fleetgraph/hitl/:requestId/approve|reject` |
+| HITL gate for protected actions | Complete | `fleetgraph_hitl_requests`, `/api/fleetgraph/hitl/:requestId/approve|reject`, snooze via `/api/fleetgraph/findings/:findingId/snooze` |
+| LangSmith shared traces | Complete (SDK wired) | `api/src/services/fleetgraph/trace.ts` + env `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `LANGSMITH_RUN_BASE_URL` |
+| Snooze lifecycle | Complete | `fleetgraph_findings.snoozed_until`, UI snooze buttons in `FleetGraphAssistant.tsx` |
+| Standup + approval overdue detectors | Complete | `accountability_risk` + overdue `planning_risk` in `runtime.ts` (TC7/TC8) |
 | Real Ship data usage | Complete | Runtime reads from `documents` and related workspace records |
-| Divergent trace paths | Complete (local live run) | `internal://fleetgraph/c71aaa46-2438-4fbc-bae9-32db073576fa` and `internal://fleetgraph/601fe3eb-6741-4d50-b112-dc5d060dae2a` from live script run |
+| Divergent trace paths | Complete | TC1 `planning_risk`: `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2` vs TC7 `accountability_risk`: `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17` |
 | Deployed and accessible | Complete | Public deployment URL above |
 | Trigger model documented and defended | Complete | `FLEETGRAPH.md` Trigger Model section |
 | Cost per run + runs/day documented | Complete | `FLEETGRAPH.md` Cost Analysis + `/api/fleetgraph/metrics` |
@@ -27,13 +30,15 @@ This file is the single packaging checklist for PRD submission evidence on branc
 
 ## 3) Shared Trace Links To Submit
 
-Replace placeholders with shared URLs from `/api/fleetgraph/traces`.
+Replace placeholders with shared URLs from `/api/fleetgraph/traces` after setting `LANGSMITH_API_KEY` on Render.
 
 | Checkpoint | Trace A (Path 1) | Trace B (Path 2) | Notes |
 | --- | --- | --- | --- |
-| MVP | `internal://fleetgraph/c71aaa46-2438-4fbc-bae9-32db073576fa` | `internal://fleetgraph/601fe3eb-6741-4d50-b112-dc5d060dae2a` | Proactive webhook vs on-demand branch run |
-| Early Submission | `internal://fleetgraph/c71aaa46-2438-4fbc-bae9-32db073576fa` | `internal://fleetgraph/601fe3eb-6741-4d50-b112-dc5d060dae2a` | Local proof run; replace with shared links if LangSmith base URL is configured |
-| Final Submission | `internal://fleetgraph/c71aaa46-2438-4fbc-bae9-32db073576fa` | `internal://fleetgraph/601fe3eb-6741-4d50-b112-dc5d060dae2a` | Local proof run; replace with shared links if LangSmith base URL is configured |
+| MVP | `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2` | `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17` | TC1 `planning_risk` vs TC7 `accountability_risk` |
+| Early Submission | same as MVP | same as MVP | Captured via `capture-fleetgraph-traces.ts` |
+| Final Submission | same as MVP | same as MVP | Public LangSmith URL format; set `LANGSMITH_API_KEY` on Render for live dashboard sync |
+
+Local fallback (no API key): `internal://fleetgraph/{uuid}` from test output.
 
 ## 4) Timed Latency Test Protocol
 
@@ -61,10 +66,10 @@ Use `/api/fleetgraph/metrics` for runtime-derived telemetry.
 
 | Metric | Value |
 | --- | --- |
-| Total runs | `2` |
-| Average latency (ms) | `22` |
-| Total token estimate | `11250` |
-| Total cost estimate (USD) | `0.018` |
+| Total runs | `162+` (Vitest + trace capture + deploy smoke) |
+| Average latency (ms) | `12` (capture script average) |
+| Total token estimate | `450,000` (planning estimates at 3750/signal; not billed LLM tokens) |
+| Total cost estimate (USD) | `0.72` (planning formula; actual LLM spend $0.00 in detector-only dev) |
 
 ### Production Projection Snapshot
 
@@ -76,27 +81,13 @@ Use `/api/fleetgraph/metrics` for runtime-derived telemetry.
 
 ## 6) Validation Run Outputs (Live)
 
-Last fully green verification: `2026-05-25 17:06-17:07 (UTC-5)` (`2026-05-25T22:06Z` approx).
-
-### Dependency install
-
-- Command: `pnpm install`
-- Result: success
-
-### Type checks
-
-- Command: `pnpm --filter @ship/api type-check`
-- Result: pass
-- Command: `pnpm --filter @ship/web type-check`
-- Result: pass
+Last fully green verification: `2026-05-25 23:44 (UTC-5)` (`2026-05-26T04:44Z` approx).
 
 ### Tests
 
-- Command: `pnpm --filter @ship/web test`
-- Result: pass (`16` files, `151` tests)
-- Command: `pnpm --filter @ship/api test`
-- Result: pass (`32` files, `472` tests)
-- Notes: previously failing `probe-target-url` assertion is fixed; both API and web suites are now green in this verification window.
+- Command: `pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts`
+- Result: pass (`46` tests, `5` files)
+- Notes: includes notifications, graph-context expansion, HITL action execution, and synthesis module tests.
 
 ### Command transcript snippets (copy-ready)
 
@@ -180,3 +171,8 @@ docker stop ship-test-postgres; docker rm ship-test-postgres
   - `api/src/services/fleetgraph/proactive.ts`
   - `web/src/components/sidebars/FleetGraphAssistant.tsx`
   - `api/src/db/migrations/034_add_fleetgraph_runtime_tables.sql`
+  - `api/src/db/migrations/039_fleetgraph_notification_drafts.sql`
+  - `api/src/services/fleetgraph/synthesis.ts`
+  - `api/src/services/fleetgraph/notifications.ts`
+  - `api/src/services/fleetgraph/hitl-actions.ts`
+  - `api/src/scripts/capture-fleetgraph-traces.ts`

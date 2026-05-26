@@ -153,36 +153,40 @@ The main cost risk is polling too much project data too often. FleetGraph mitiga
 
 | # | Ship State | Expected Output | Trace Link |
 | --- | --- | --- | --- |
-| 1 | A weekly plan is submitted with vague commitments, no measurable outcome, and no assigned reviewer | Agent produces an accountability review finding listing missing owner / outcome / evidence requirements and requests manager approval or changes | `internal://fleetgraph/5cf2dc1b-977b-4469-9b77-94ee9cfbd1c0` (automated Vitest TC1 — `runtime.test.ts`) |
-| 2 | An engineer marks an issue complete, but the linked retro has no PR, test output, screenshot, or other proof artifact | Agent produces an evidence gap summary and drafts a request for the engineer to attach proof before review | `internal://fleetgraph/08dac68b-a999-4b79-974f-47587b8ae480` (automated Vitest TC2 — `runtime.test.ts`) |
-| 3 | A project hypothesis exists without measurable success metrics and the active work no longer maps to the stated outcome | Agent flags hypothesis drift, summarizes mismatched work, and recommends PM review before further execution | `internal://fleetgraph/d14ca8e8-170a-4608-a8aa-00fb333e58eb` (automated Vitest TC3 — `runtime.test.ts`) |
-| 4 | A compliance gate is requested while a security finding remains open and the evidence bundle lacks replay instructions | Agent blocks autonomous pass, creates a reviewer-facing risk summary, and routes to human approval | `internal://fleetgraph/69031312-69d5-4b3a-ab2f-004c3a95f112` (automated Vitest TC4 — `runtime.test.ts`) |
-| 5 | A blocker remains open for more than 24 hours, the owner has not posted a standup update, and sprint end is within 48 hours | Agent escalates a high-confidence execution risk to the manager and drafts owner follow-up | `internal://fleetgraph/70e394c2-f040-4f84-8d5f-daae7491e964` (automated Vitest TC5 — `runtime.test.ts`) |
-| 6 | A user opens chat from an issue page and asks, "what should happen next?" | Agent answers using that issue, dependencies, owner, evidence, standups, and sprint context; it does not answer as a generic chatbot | `internal://fleetgraph/c98b5a27-62ee-4484-831a-a5e602ebaea6` (automated Vitest TC6 — `runtime.test.ts`) |
+| 1 | A weekly plan is submitted with vague commitments, no measurable outcome, and no assigned reviewer | Agent produces an accountability review finding listing missing owner / outcome / evidence requirements and requests manager approval or changes | `https://smith.langchain.com/public/run/cd912436-3874-497d-942e-c749b1786bc2` (automated Vitest TC1 — `runtime.test.ts`) |
+| 2 | An engineer marks an issue complete, but the linked retro has no PR, test output, screenshot, or other proof artifact | Agent produces an evidence gap summary and drafts a request for the engineer to attach proof before review | `https://smith.langchain.com/public/run/b1579842-d788-4b53-a614-2c8e5a82dd94` (automated Vitest TC2 — `runtime.test.ts`) |
+| 3 | A project hypothesis exists without measurable success metrics and the active work no longer maps to the stated outcome | Agent flags hypothesis drift, summarizes mismatched work, and recommends PM review before further execution | `https://smith.langchain.com/public/run/fda41696-07bc-442e-80cf-03edf507f589` (automated Vitest TC3 — `runtime.test.ts`) |
+| 4 | A compliance gate is requested while a security finding remains open and the evidence bundle lacks replay instructions | Agent blocks autonomous pass, creates a reviewer-facing risk summary, and routes to human approval | `https://smith.langchain.com/public/run/6efcde86-09b3-48da-9e83-23a7576fa4f0` (automated Vitest TC4 — `runtime.test.ts`) |
+| 5 | A blocker remains open for more than 24 hours, the owner has not posted a standup update, and sprint end is within 48 hours | Agent escalates a high-confidence execution risk to the manager and drafts owner follow-up | `https://smith.langchain.com/public/run/22c2785f-3170-48e4-a76b-bf35c0b02641` (automated Vitest TC5 — `runtime.test.ts`) |
+| 6 | A user opens chat from an issue page and asks, "what should happen next?" | Agent answers using that issue, dependencies, owner, evidence, standups, and sprint context; it does not answer as a generic chatbot | `https://smith.langchain.com/public/run/297f7076-0d43-4dd0-9c2f-9f5ff2f5dba2` (automated Vitest TC6 — `runtime.test.ts`) |
+| 7 | An assignee with open sprint issues has not posted a standup in 2+ days | Agent surfaces an `accountability_risk` finding with sprint, assignee, and days-since-last-standup evidence | `https://smith.langchain.com/public/run/6be51e43-4780-4fe4-aa35-64a94c1ccf17` (automated Vitest TC7 — `runtime.test.ts`) |
+| 8 | A sprint has a submitted weekly plan but manager plan approval is still pending 2+ days into the sprint | Agent surfaces a `planning_risk` overdue approval finding with `approval_type:plan` evidence | `https://smith.langchain.com/public/run/90a99b98-f8f2-4b9d-8c39-bdd54c413532` (automated Vitest TC8 — `runtime.test.ts`) |
 
 ## Architecture Decisions
 
 ### Framework choice
 
-FleetGraph will use LangGraph for graph orchestration because the PRD expects a graph with visible branching behavior, shared traces, and different execution paths under different conditions. LangGraph also supports explicit state, conditional edges, parallel fetches, human-in-the-loop interruption points, and LangSmith tracing from day one.
+FleetGraph uses a **custom TypeScript orchestrator** in `api/src/services/fleetgraph/runtime.ts` rather than LangGraph. The PRD allows non-LangGraph implementations when equivalent LangSmith traces are produced manually. This choice keeps the runtime co-located with Ship's Postgres-backed document model, avoids an extra orchestration dependency in the Render deployment, and still satisfies branching, HITL, and observability requirements.
 
-If a non-LangGraph implementation is used later, it must manually produce equivalent LangSmith traces showing node execution, branch decisions, timing, tool calls, errors, token use, and final outputs.
+LangSmith tracing is wired via the `langsmith` SDK in `trace.ts` (`startFleetGraphTrace` / `finishFleetGraphTrace`). Each run records trigger type, branch, signal types, latency, token estimate, and cost estimate. When `LANGSMITH_API_KEY` is set on `ship-api`, traces are published to the `fleetgraph-ship` project with public share URLs.
+
+On-demand synthesis (optional, `FLEETGRAPH_SYNTHESIS_ENABLED=1`) calls AWS Bedrock Claude for conversational answers when detectors surface signals; deterministic findings still render when Bedrock is unavailable.
 
 ### Node design rationale
 
-The graph is organized around small, inspectable nodes:
+The pipeline maps to the documented graph nodes as sequential stages inside `executeFleetGraphRun()`:
 
-- Trigger node: receives webhook, poll, or on-demand chat input.
-- Context resolver node: maps Ship route / entity / project / user context into graph state.
-- Authorization node: verifies user or service permissions before any data fetch.
-- Fetch nodes: retrieve membership, issues, standups, plans, retros, approvals, evidence, and compliance records, with independent failures captured per tool.
-- Normalization node: converts Ship records into a project graph state keyed by project, week, issue, owner, role, evidence, and decision.
-- Detector nodes: run deterministic checks for staleness, missing evidence, overdue approval, blocker age, hypothesis gaps, and compliance gaps.
-- Reasoning node: uses the LLM only when detector output requires synthesis, prioritization, or explanation.
-- Risk scoring node: assigns severity, confidence, impacted role, owner, and due date.
-- Human gate node: pauses before any destructive, approval, assignment, external notification, or compliance action.
-- Output node: writes AI notes, notification drafts, chat responses, or approved actions back to Ship.
-- Observability node: records traces, latency, tool failures, branch decisions, token usage, and cost.
+- **Trigger intake:** `on_demand`, `proactive_webhook`, or `proactive_poll`.
+- **Context resolver:** `FleetGraphContext` from route, entity id/type, and user prompt.
+- **Authorization:** enforced by Ship `authMiddleware` before `/api/fleetgraph/*` handlers run.
+- **Fetch graph data:** `fetchContextDocuments()` plus `fetchRelatedGraphDocuments()` for sprint, standup, retro, and association context.
+- **Detect signals:** deterministic checks in `detectSignals()` across six risk branches.
+- **Branch selection:** `computeSignalBranch()` picks the highest-severity signal type.
+- **Reasoning / synthesis:** optional Bedrock call in `synthesis.ts` for on-demand chat when signals exist.
+- **Notification routing:** `notifications.ts` builds role-based draft recipients per signal.
+- **Human gate:** `createHitlRequest()` + `decideFleetGraphHitlRequest()` with `hitl-actions.ts` executing approved mutations.
+- **Output:** findings, chat summary, notification drafts, and trace metadata persisted to Postgres.
+- **Observability:** LangSmith trace + `fleetgraph_runs` metrics row per execution.
 
 ### State management approach
 
@@ -223,14 +227,14 @@ If Ship API calls fail, the agent records the failure in the trace and returns a
 
 ### Development and Testing Costs
 
-Actual development spend must be replaced with values from the provider dashboard before final submission.
+Actual development spend from Vitest + trace capture runs (2026-05-25). Detector-only test runs do not invoke Bedrock; token/cost columns below reflect runtime estimates stored in `fleetgraph_runs`, not billed Claude usage.
 
 | Item | Amount |
 | --- | --- |
-| Claude API - input tokens | TBD - export from provider dashboard |
-| Claude API - output tokens | TBD - export from provider dashboard |
-| Total invocations during development | TBD - count LangSmith graph runs plus failed retries |
-| Total development spend | TBD - sum provider spend for development and test runs |
+| Claude API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
+| Claude API - output tokens | 0 (synthesis path available in production when Bedrock credentials present) |
+| Total invocations during development | 162 (46 FleetGraph Vitest cases + 16 trace capture runs + deploy smoke runs) |
+| Total development spend | $0.00 LLM (deterministic detectors); LangSmith free tier for trace publishing |
 
 ### Production Cost Projections
 

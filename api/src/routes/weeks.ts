@@ -11,6 +11,7 @@ import {
 import { logDocumentChange, getLatestDocumentFieldHistory } from '../utils/document-crud.js';
 import { broadcastToUser } from '../collaboration/index.js';
 import { extractText } from '../utils/document-content.js';
+import { emitFleetGraphShipEvent } from '../services/fleetgraph/proactive-ship-hooks.js';
 
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
@@ -1372,6 +1373,7 @@ router.post('/:id/start', authMiddleware, async (req: Request, res: Response) =>
 
     const sprint = extractSprintFromRow(result.rows[0]);
 
+    emitFleetGraphShipEvent(req, 'sprint_boundary', id as string, 'sprint');
     res.json({
       ...sprint,
       snapshot_issue_count: plannedIssueIds.length,
@@ -1578,6 +1580,7 @@ router.patch('/:id/plan', authMiddleware, async (req: Request, res: Response) =>
       [id]
     );
 
+    emitFleetGraphShipEvent(req, 'plan_submitted', id as string, 'sprint');
     res.json(extractSprintFromRow(result.rows[0]));
   } catch (err) {
     console.error('Update sprint plan error:', err);
@@ -2082,6 +2085,7 @@ router.post('/:id/standups', authMiddleware, async (req: Request, res: Response)
     // Broadcast celebration when standup is created
     broadcastToUser(userId, 'accountability:updated', { type: 'standup', targetId: id as string });
 
+    emitFleetGraphShipEvent(req, 'issue_updated', standup.id, 'standup');
     res.status(201).json({
       id: standup.id,
       sprint_id: standup.parent_id,
@@ -2480,6 +2484,7 @@ router.post('/:id/review', authMiddleware, async (req: Request, res: Response) =
 
     const owner = ownerResult.rows[0];
 
+    emitFleetGraphShipEvent(req, 'retro_submitted', review.id, 'weekly_review');
     res.status(201).json({
       id: review.id,
       sprint_id: id,
@@ -2641,6 +2646,7 @@ router.patch('/:id/review', authMiddleware, async (req: Request, res: Response) 
     const review = result.rows[0];
     const reviewProps = review.properties || {};
 
+    emitFleetGraphShipEvent(req, 'retro_submitted', review.id, 'weekly_review');
     res.json({
       id: review.id,
       sprint_id: id,
@@ -2889,6 +2895,7 @@ router.post('/:id/approve-plan', authMiddleware, async (req: Request, res: Respo
       'plan_approved'
     );
 
+    emitFleetGraphShipEvent(req, 'approval_changed', id as string, 'sprint');
     res.json({
       success: true,
       approval: newApproval,
@@ -3076,6 +3083,7 @@ router.post('/:id/approve-review', authMiddleware, async (req: Request, res: Res
       'review_approved'
     );
 
+    emitFleetGraphShipEvent(req, 'approval_changed', id as string, 'sprint');
     res.json({
       success: true,
       approval: newApproval,
@@ -3170,6 +3178,7 @@ router.post('/:id/request-plan-changes', authMiddleware, async (req: Request, re
       }
     }
 
+    emitFleetGraphShipEvent(req, 'approval_changed', id as string, 'sprint');
     res.json({
       success: true,
       approval: newProps.plan_approval,
@@ -3262,6 +3271,7 @@ router.post('/:id/request-retro-changes', authMiddleware, async (req: Request, r
       }
     }
 
+    emitFleetGraphShipEvent(req, 'approval_changed', id as string, 'sprint');
     res.json({
       success: true,
       approval: newProps.review_approval,

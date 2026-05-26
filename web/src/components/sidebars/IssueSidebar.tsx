@@ -13,6 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface Issue {
   id: string;
+  title?: string;
   state: string;
   priority: string;
   estimate: number | null;
@@ -484,6 +485,7 @@ export function IssueSidebar({
       <FleetGraphAssistant
         documentId={issue.id}
         documentType="issue"
+        contextLabel={issue.title}
       />
 
       {/* Document Conversion */}

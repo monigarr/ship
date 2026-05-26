@@ -190,14 +190,21 @@ FleetGraph should initially plug into these surfaces rather than introducing a n
 - Real UI surfaces for action items, week workflows, and dashboard context
 - Security and auth middleware stack mature enough for gated actions
 
-### Key missing pieces for FleetGraph completion
+### Implemented (2026-05-25) — see `FLEETGRAPH_EVIDENCE_INDEX.md`
 
-- unified proactive trigger pipeline (webhook + scheduler + queue semantics)
-- explicit graph orchestration runtime with branchable execution traces
-- persisted finding lifecycle management (new/ack/snoozed/escalated/resolved)
-- embedded context-aware FleetGraph chat entrypoints in targeted views
-- standardized HITL confirmation UX for all protected actions
-- productionized run/token/cost accounting for final reporting
+- Unified proactive trigger pipeline (webhook hooks on Ship mutations + tiered scheduler in `proactive.ts`)
+- Custom graph orchestrator with branchable execution traces (`runtime.ts` + LangSmith SDK)
+- Persisted finding lifecycle (open, pending_approval, snoozed, resolved, rejected)
+- Embedded context-aware FleetGraph chat in Issue, Project, and Week sidebars
+- HITL confirmation UX with approve/reject/snooze and approved action execution (`hitl-actions.ts`)
+- Runtime token/cost telemetry + optional Bedrock synthesis (`synthesis.ts`)
+- Role-based notification draft routing (`notifications.ts`)
+
+### Remaining stretch goals (post-submission)
+
+- Evidence bundle sidebar embedding
+- Cross-program drift detector
+- External notification delivery (in-product drafts only today)
 
 ---
 

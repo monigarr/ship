@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 import { extractText } from '../utils/document-content.js';
+import { emitFleetGraphShipEvent } from '../services/fleetgraph/proactive-ship-hooks.js';
 
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
@@ -283,6 +284,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     const doc = insertResult.rows[0];
     // Compute full title with person name for entity reference
     const computedTitle = personName ? `${doc.title} - ${personName}` : doc.title;
+    emitFleetGraphShipEvent(req, 'plan_submitted', doc.id, 'weekly_plan');
     res.status(201).json({
       id: doc.id,
       title: computedTitle,
@@ -678,6 +680,7 @@ weeklyRetrosRouter.post('/', authMiddleware, async (req: Request, res: Response)
     const doc = insertResult.rows[0];
     // Compute full title with person name for entity reference
     const computedTitle = personName ? `${doc.title} - ${personName}` : doc.title;
+    emitFleetGraphShipEvent(req, 'retro_submitted', doc.id, 'weekly_retro');
     res.status(201).json({
       id: doc.id,
       title: computedTitle,

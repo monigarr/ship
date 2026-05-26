@@ -302,6 +302,7 @@ export function WeekSidebar({
       <FleetGraphAssistant
         documentId={sprint.id}
         documentType="sprint"
+        contextLabel={sprint.title ?? sprint.name}
       />
 
       <div className="border-t border-border pt-4">

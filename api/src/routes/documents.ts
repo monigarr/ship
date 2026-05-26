@@ -6,6 +6,7 @@ import { isWorkspaceAdmin } from '../middleware/visibility.js';
 import { handleVisibilityChange, handleDocumentConversion, invalidateDocumentCache, broadcastToUser } from '../collaboration/index.js';
 import { extractHypothesisFromContent, extractSuccessCriteriaFromContent, extractVisionFromContent, extractGoalsFromContent, checkDocumentCompleteness } from '../utils/extractHypothesis.js';
 import { loadContentFromYjsState } from '../utils/yjsConverter.js';
+import { emitFleetGraphDocumentMutation } from '../services/fleetgraph/proactive-ship-hooks.js';
 
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
@@ -1064,6 +1065,8 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
         });
       }
     }
+
+    emitFleetGraphDocumentMutation(req, id, existing.document_type, { contentUpdated });
 
     // Flatten properties for backwards compatibility (match GET endpoint format)
     const updatedDoc = result.rows[0];

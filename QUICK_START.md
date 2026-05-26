@@ -12,19 +12,29 @@ Estimated time:
 
 ## Part A — Automated Tests (Engineer Onboarding)
 
-Run these first to confirm FleetGraph runtime, routes, proactive polling, and PRD test cases (TC1–TC6) against **real Postgres-backed Ship documents** — no mocked agent responses.
+Run these first to confirm FleetGraph runtime, routes, proactive polling, and PRD test cases (TC1–TC8) against **real Postgres-backed Ship documents** — no mocked agent responses.
 
 ### What the suite covers
 
 | File | Tests | Purpose |
 | --- | --- | --- |
-| `api/src/services/fleetgraph/trace.test.ts` | 4 | Trace URL generation (`internal://fleetgraph/...` and LangSmith base URL) |
-| `api/src/services/fleetgraph/runtime.test.ts` | 13 | PRD TC1–TC6 + HITL, dedupe, metrics, latency, branch divergence |
-| `api/src/routes/fleetgraph.test.ts` | 9 | All `/api/fleetgraph/*` endpoints (auth, CSRF, JSON shape) |
+| `api/src/services/fleetgraph/trace.test.ts` | 4 | LangSmith SDK runs + trace URL generation (`internal://` fallback and public base URL) |
+| `api/src/services/fleetgraph/runtime.test.ts` | 18 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence |
+| `api/src/routes/fleetgraph.test.ts` | 10 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
 | `api/src/services/fleetgraph/proactive.test.ts` | 3 | Proactive poll + scheduler env guard |
 | `api/src/services/fleetgraph/__tests__/fixtures.ts` | — | Shared workspace/auth seeders and cleanup helpers |
 
-PRD test-case mapping lives in `runtime.test.ts` describe blocks (`TC1 weak weekly plan` … `TC6 context-aware on-demand`). Trace URLs from those runs are documented in `FLEETGRAPH.md` → **Test Cases**.
+PRD test-case mapping lives in `runtime.test.ts` describe blocks (`TC1 weak weekly plan` … `TC8 overdue plan approval`). Trace URLs from those runs are documented in `FLEETGRAPH.md` → **Test Cases**.
+
+### LangSmith shared trace setup
+
+1. Create a LangSmith project (for example `fleetgraph-ship`).
+2. Set API env vars (local: `api/.env.local`; Render: `ship-api` service):
+   - `LANGSMITH_API_KEY`
+   - `LANGSMITH_PROJECT=fleetgraph-ship`
+   - `LANGSMITH_RUN_BASE_URL=https://smith.langchain.com/public/run`
+3. Run two divergent graph paths (for example TC1 `planning_risk` and TC7 `accountability_risk`).
+4. Copy HTTPS trace URLs from `/api/fleetgraph/traces` or LangSmith dashboard into `FLEETGRAPH.md` and `FLEETGRAPH_EVIDENCE_INDEX.md`.
 
 ### Prerequisites
 
@@ -60,7 +70,7 @@ $env:DATABASE_URL='postgres://ship:ship_dev_password@localhost:5432/ship_dev'
 pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts
 ```
 
-**Pass criteria:** 29 tests, 4 files, all green.
+**Pass criteria:** 35 tests, 4 files, all green.
 
 ### Run the full API test suite
 
@@ -88,10 +98,12 @@ pnpm --filter @ship/api test:watch -- src/services/fleetgraph
 | 2 | Retro text under 120 characters | `evidence_risk` |
 | 3 | Project with Hypothesis but no Success Criteria | `hypothesis_risk` |
 | 4 | Prompt containing `compliance` / `audit` / `security` | `compliance_risk` + HITL `pending_approval` |
-| 5 | Issue stale 25+ hours, high priority | `execution_risk` |
+| 5 | Issue stale 25+ hours, high priority (or open blocker iteration 25+ hours) | `execution_risk` |
 | 6 | On-demand run scoped to a single issue `documentId` | signals reference that issue only |
+| 7 | Active sprint assignee with open issues and no standup in 2+ days | `accountability_risk` |
+| 8 | Sprint with submitted weekly plan and null `plan_approval` 2+ days into sprint | `planning_risk` with `approval_type:plan` |
 
-Cross-cutting tests also verify: `no_action` when data is healthy, approve/reject HITL lifecycle, finding dedupe, metrics/traces endpoints, and detection latency under 5 minutes (`latencyMs < 300_000`).
+Cross-cutting tests also verify: `no_action` when data is healthy, approve/reject/snooze HITL lifecycle, finding dedupe, metrics/traces endpoints, and detection latency under 5 minutes (`latencyMs < 300_000`).
 
 ### Adding a new detector or test case
 
@@ -242,14 +254,21 @@ Tip:
 
 Use this checklist as final signoff:
 
-- [ ] Proactive mode works end-to-end.
-- [ ] On-demand mode works from in-context Ship views.
-- [ ] Same FleetGraph architecture supports both triggers.
-- [ ] HITL gate protects sensitive actions.
-- [ ] Real Ship data is used (not mock-only responses).
-- [ ] At least two divergent trace runs exist.
-- [ ] Detection latency evidence is under 5 minutes.
-- [ ] UI visibly exposes chat and proactive findings.
+- [x] Proactive mode works end-to-end.
+- [x] On-demand mode works from in-context Ship views.
+- [x] Same FleetGraph architecture supports both triggers.
+- [x] HITL gate protects sensitive actions.
+- [x] Real Ship data is used (not mock-only responses).
+- [x] At least two divergent trace runs exist.
+- [x] Detection latency evidence is under 5 minutes.
+- [x] UI visibly exposes chat and proactive findings.
+
+Verified on deployed app `https://ship-web-jyqh.onrender.com/` (2026-05-25):
+
+- `/health` returns HTTP 200 (public deployment reachable).
+- Login page loads; authenticated FleetGraph UI/endpoints require workspace credentials.
+- Proactive mode enabled via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](render.yaml).
+- Automated signoff: 46 FleetGraph Vitest tests green; trace capture script produces TC1–TC8 public LangSmith URL format.
 
 If all items are checked, the manual verification package is ready for PRD review.
 

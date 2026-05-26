@@ -351,6 +351,7 @@ export function ProjectSidebar({
       <FleetGraphAssistant
         documentId={project.id}
         documentType="project"
+        contextLabel={project.title}
       />
 
       {/* Document Conversion */}

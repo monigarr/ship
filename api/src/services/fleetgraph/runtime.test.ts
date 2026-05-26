@@ -6,13 +6,18 @@ import {
   getFleetGraphMetrics,
   listFleetGraphOpenFindings,
   listFleetGraphRecentRuns,
+  snoozeFleetGraphFinding,
 } from './runtime.js';
 import {
   cleanupFleetGraphTables,
   createFleetGraphTestContext,
   destroyFleetGraphTestContext,
   seedHealthyIssue,
+  seedIssueWithOpenBlocker,
   seedProjectWithHypothesis,
+  seedSprintContextForIssue,
+  seedSprintMissingStandup,
+  seedSprintOverduePlanApproval,
   seedStaleIssue,
   seedWeeklyPlan,
   seedWeeklyRetro,
@@ -42,6 +47,7 @@ describe('FleetGraph runtime', () => {
 
       expect(result.run.branch).toBe('planning_risk');
       expect(result.signals.some((s) => s.type === 'planning_risk')).toBe(true);
+      expect(result.signals[0]?.notificationDrafts?.length).toBeGreaterThan(0);
       expect(result.summary.toLowerCase()).toContain('planning_risk');
       expect(result.findings[0]?.status).toBe('open');
       expect(result.run.traceUrl).toMatch(/^internal:\/\/fleetgraph\//);
@@ -144,6 +150,38 @@ describe('FleetGraph runtime', () => {
       expect(result.signals[0]?.summary).toContain('hours');
       expect(result.run.trigger).toBe('proactive_poll');
     });
+
+    it('detects open blocker iteration even when issue was recently updated', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      const issueId = await seedIssueWithOpenBlocker({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        blockerText: 'Blocked on dependency review from platform team.',
+      });
+      await seedSprintContextForIssue({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        issueId,
+      });
+
+      const result = await executeFleetGraphRun('proactive_webhook', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        documentId: issueId,
+        documentType: 'issue',
+        prompt: 'webhook-triggered proactive scan',
+      });
+
+      expect(result.run.branch).toBe('execution_risk');
+      expect(result.signals[0]?.title.toLowerCase()).toContain('blocker');
+      expect(result.signals[0]?.evidence.some((entry) => entry.startsWith('blocker_age_hours:'))).toBe(
+        true
+      );
+      expect(result.signals[0]?.evidence.some((entry) => entry.startsWith('sprint_end_within_hours:'))).toBe(
+        true
+      );
+      expect(result.signals[0]?.evidence).toContain('assignee_missing_recent_standup:true');
+    });
   });
 
   describe('TC6 context-aware on-demand', () => {
@@ -174,6 +212,50 @@ describe('FleetGraph runtime', () => {
         true
       );
       expect(result.signals.some((s) => s.entityId === issueId)).toBe(true);
+    });
+  });
+
+  describe('TC7 missing standup accountability', () => {
+    it('detects workspace standup gap as accountability_risk', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedSprintMissingStandup({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+      });
+
+      const result = await executeFleetGraphRun('proactive_poll', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        prompt: 'scheduled proactive scan',
+      });
+
+      expect(result.run.branch).toBe('accountability_risk');
+      expect(result.signals.some((s) => s.type === 'accountability_risk')).toBe(true);
+      expect(result.signals[0]?.evidence.some((e) => e.startsWith('days_since_last_standup:'))).toBe(
+        true
+      );
+    });
+  });
+
+  describe('TC8 overdue plan approval', () => {
+    it('detects pending plan approval as planning_risk', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedSprintOverduePlanApproval({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+      });
+
+      const result = await executeFleetGraphRun('proactive_webhook', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        prompt: 'webhook-triggered proactive scan',
+      });
+
+      expect(result.run.branch).toBe('planning_risk');
+      expect(result.signals.some((s) => s.title.toLowerCase().includes('overdue plan approval'))).toBe(
+        true
+      );
+      expect(result.signals[0]?.evidence).toContain('approval_type:plan');
     });
   });
 
@@ -236,6 +318,7 @@ describe('FleetGraph runtime', () => {
         'Approved for test'
       );
       expect(approveDecision.decisionStatus).toBe('approved');
+      expect(approveDecision.actionExecuted).toBe(true);
 
       const approvedFinding = await pool.query(
         `SELECT status FROM fleetgraph_findings WHERE id = $1`,
@@ -267,6 +350,61 @@ describe('FleetGraph runtime', () => {
         [rejectDecision.findingId]
       );
       expect(rejectedFinding.rows[0].status).toBe('rejected');
+    });
+
+    it('snoozes findings and suppresses them until expiry', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const runResult = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+      const findingId = runResult.findings[0]?.id as string;
+      expect(findingId).toBeTruthy();
+
+      await snoozeFleetGraphFinding(ctx.workspaceId, findingId, ctx.userId, 24, 'Snooze for test');
+
+      const openAfterSnooze = await listFleetGraphOpenFindings(ctx.workspaceId);
+      expect(openAfterSnooze.some((f) => f.id === findingId)).toBe(false);
+
+      await pool.query(
+        `UPDATE fleetgraph_findings
+         SET snoozed_until = NOW() - INTERVAL '1 minute', status = 'snoozed'
+         WHERE id = $1`,
+        [findingId]
+      );
+
+      await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+
+      const openAfterExpiry = await listFleetGraphOpenFindings(ctx.workspaceId);
+      expect(openAfterExpiry.some((f) => f.id === findingId)).toBe(true);
+    });
+
+    it('preserves snoozed findings during dedupe upsert within snooze window', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const runResult = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+      const findingId = runResult.findings[0]?.id as string;
+
+      await snoozeFleetGraphFinding(ctx.workspaceId, findingId, ctx.userId, 24);
+
+      await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+
+      const statusResult = await pool.query(`SELECT status FROM fleetgraph_findings WHERE id = $1`, [
+        findingId,
+      ]);
+      expect(statusResult.rows[0].status).toBe('snoozed');
     });
 
     it('dedupes findings on repeated runs with the same signal', async () => {

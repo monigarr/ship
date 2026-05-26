@@ -6,7 +6,13 @@ export type FleetGraphBranch =
   | 'planning_risk'
   | 'evidence_risk'
   | 'hypothesis_risk'
-  | 'compliance_risk';
+  | 'compliance_risk'
+  | 'accountability_risk';
+
+export interface FleetGraphNotificationDraft {
+  role: string;
+  reason: string;
+}
 
 export interface FleetGraphSignal {
   type: FleetGraphBranch;
@@ -14,10 +20,11 @@ export interface FleetGraphSignal {
   confidence: number;
   title: string;
   summary: string;
-  entityType: 'issue' | 'project' | 'sprint' | 'weekly_plan' | 'weekly_retro' | 'workspace';
+  entityType: 'issue' | 'project' | 'sprint' | 'weekly_plan' | 'weekly_retro' | 'workspace' | 'user';
   entityId: string | null;
   evidence: string[];
   requiresHitl: boolean;
+  notificationDrafts?: FleetGraphNotificationDraft[];
 }
 
 export interface FleetGraphContext {

@@ -92,6 +92,31 @@ describe('FleetGraph API', () => {
       const response = await request(ctx.app).get('/api/fleetgraph/findings');
       expect(response.status).toBe(401);
     });
+
+    it('returns evidence and hitlRequestId for pending compliance findings', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedHealthyIssue({ workspaceId: ctx.workspaceId, userId: ctx.userId });
+
+      await request(ctx.app)
+        .post('/api/fleetgraph/run')
+        .set('Cookie', ctx.sessionCookie)
+        .set('x-csrf-token', ctx.csrfToken)
+        .send({ prompt: 'compliance gate review' });
+
+      const response = await request(ctx.app)
+        .get('/api/fleetgraph/findings')
+        .set('Cookie', ctx.sessionCookie);
+
+      expect(response.status).toBe(200);
+      const pendingFinding = response.body.findings.find(
+        (finding: { status: string }) => finding.status === 'pending_approval'
+      );
+      expect(pendingFinding).toBeDefined();
+      expect(Array.isArray(pendingFinding.evidence)).toBe(true);
+      expect(pendingFinding.evidence.length).toBeGreaterThan(0);
+      expect(pendingFinding.hitlRequestId).toBeTruthy();
+      expect(pendingFinding.entityType).toBeTruthy();
+    });
   });
 
   describe('GET /api/fleetgraph/metrics', () => {
@@ -195,6 +220,39 @@ describe('FleetGraph API', () => {
 
       expect(rejectResponse.status).toBe(200);
       expect(rejectResponse.body.decisionStatus).toBe('rejected');
+    });
+  });
+
+  describe('POST /api/fleetgraph/findings/:findingId/snooze', () => {
+    it('snoozes an open finding', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const runResponse = await request(ctx.app)
+        .post('/api/fleetgraph/run')
+        .set('Cookie', ctx.sessionCookie)
+        .set('x-csrf-token', ctx.csrfToken)
+        .send({});
+
+      const findingId = runResponse.body.findings[0].id as string;
+
+      const snoozeResponse = await request(ctx.app)
+        .post(`/api/fleetgraph/findings/${findingId}/snooze`)
+        .set('Cookie', ctx.sessionCookie)
+        .set('x-csrf-token', ctx.csrfToken)
+        .send({ hours: 24, note: 'Snoozed in route test' });
+
+      expect(snoozeResponse.status).toBe(200);
+      expect(snoozeResponse.body.status).toBe('snoozed');
+      expect(snoozeResponse.body.snoozedUntil).toBeTruthy();
+
+      const findingsResponse = await request(ctx.app)
+        .get('/api/fleetgraph/findings')
+        .set('Cookie', ctx.sessionCookie);
+
+      expect(findingsResponse.body.findings.some((f: { id: string }) => f.id === findingId)).toBe(
+        false
+      );
     });
   });
 });

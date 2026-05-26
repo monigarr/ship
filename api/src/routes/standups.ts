@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { getVisibilityContext, VISIBILITY_FILTER_SQL } from '../middleware/visibility.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { emitFleetGraphShipEvent } from '../services/fleetgraph/proactive-ship-hooks.js';
 
 type RouterType = ReturnType<typeof Router>;
 const router: RouterType = Router();
@@ -116,6 +117,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     );
 
     const doc = insertResult.rows[0];
+    emitFleetGraphShipEvent(req, 'issue_updated', doc.id, 'standup');
     res.status(201).json({
       id: doc.id,
       title: doc.title,
@@ -417,6 +419,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     );
 
     const standup = result.rows[0];
+    emitFleetGraphShipEvent(req, 'issue_updated', standup.id, 'standup');
     res.json({
       id: standup.id,
       sprint_id: standup.parent_id,
