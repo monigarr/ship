@@ -7,7 +7,7 @@ Use this guide to **run automated FleetGraph tests** (fast engineer onboarding) 
 | **Branch** | `gfa2_wk5` |
 | **Public app** | `https://ship-web-jyqh.onrender.com/` |
 | **Last updated** | 2026-05-26 |
-| **Alias** | Same guide also available as [`QUICKSTART.md`](./QUICKSTART.md) |
+| **Alias** | Same guide also available as [`QUICK_START.md`](./QUICK_START.md) |
 
 Estimated time:
 

@@ -286,9 +286,23 @@ function buildManifest(): SeedManifest {
   return {
     people: [
       {
+        key: 'dir',
+        name: `${MARKER} Engineering Director`,
+        email: 'synthetic.director@ship.local',
+        role: 'director',
+        useCase: 'UC1',
+      },
+      {
         key: 'mgr',
         name: `${MARKER} Engineering Manager`,
         email: 'synthetic.manager@ship.local',
+        role: 'manager',
+        useCase: 'UC1',
+      },
+      {
+        key: 'mgr2',
+        name: `${MARKER} Team Lead`,
+        email: 'synthetic.teamlead@ship.local',
         role: 'manager',
         useCase: 'UC1',
       },
@@ -300,9 +314,30 @@ function buildManifest(): SeedManifest {
         useCase: 'UC2',
       },
       {
+        key: 'eng2',
+        name: `${MARKER} Staff Engineer`,
+        email: 'synthetic.staff@ship.local',
+        role: 'engineer',
+        useCase: 'UC2',
+      },
+      {
+        key: 'eng3',
+        name: `${MARKER} New Engineer`,
+        email: 'synthetic.new-engineer@ship.local',
+        role: 'engineer',
+        useCase: 'UC2',
+      },
+      {
         key: 'pm',
         name: `${MARKER} Product Manager`,
         email: 'synthetic.pm@ship.local',
+        role: 'pm',
+        useCase: 'UC3',
+      },
+      {
+        key: 'pm2',
+        name: `${MARKER} Program Manager`,
+        email: 'synthetic.program@ship.local',
         role: 'pm',
         useCase: 'UC3',
       },
@@ -311,6 +346,20 @@ function buildManifest(): SeedManifest {
         name: `${MARKER} Compliance Reviewer`,
         email: 'synthetic.audit@ship.local',
         role: 'auditor',
+        useCase: 'UC4',
+      },
+      {
+        key: 'qa',
+        name: `${MARKER} QA Lead`,
+        email: 'synthetic.qa@ship.local',
+        role: 'qa',
+        useCase: 'UC4',
+      },
+      {
+        key: 'sec',
+        name: `${MARKER} Security Lead`,
+        email: 'synthetic.security@ship.local',
+        role: 'security',
         useCase: 'UC4',
       },
     ],
@@ -330,6 +379,24 @@ function buildManifest(): SeedManifest {
             ease: 3,
             plan: 'Ensure managers can quickly identify overdue plans, missing reviews, and high-risk weekly slippage.',
             targetOffsetDays: 21,
+          },
+          {
+            key: 'uc1-reviews',
+            title: `${MARKER} UC1 Approval SLA and Review Cadence`,
+            impact: 5,
+            confidence: 4,
+            ease: 4,
+            plan: 'Reduce approval latency by enforcing explicit review SLAs and surfacing bottlenecks before sprint midpoint.',
+            targetOffsetDays: 28,
+          },
+          {
+            key: 'uc1-coaching',
+            title: `${MARKER} UC1 Coaching Signals for 1:1 Preparation`,
+            impact: 4,
+            confidence: 3,
+            ease: 3,
+            plan: 'Bundle accountability signals into manager-ready coaching prompts so quality feedback is fast and specific.',
+            targetOffsetDays: 35,
           },
         ],
         issues: [
@@ -363,6 +430,56 @@ function buildManifest(): SeedManifest {
             estimateHours: 3,
             edgeCase: 'carryover',
           },
+          {
+            key: 'uc1-tc8-overdue-approval',
+            title: `${MARKER} UC1 TC8 Plan submitted but approval pending 2+ days`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc1-reviews',
+            estimateHours: 5,
+            edgeCase: 'overdue_plan_approval',
+          },
+          {
+            key: 'uc1-tc7-standup-gap',
+            title: `${MARKER} UC1 TC7 Assignee with open sprint work has no standup for 2 days`,
+            state: 'in_progress',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc1-grid',
+            estimateHours: 4,
+            edgeCase: 'missing_standup',
+          },
+          {
+            key: 'uc1owner',
+            title: `${MARKER} UC1 Accountability signal has no clear owner of follow-up`,
+            state: 'triage',
+            priority: 'medium',
+            sprintOffset: 1,
+            projectKey: 'uc1-coaching',
+            estimateHours: 2,
+            edgeCase: 'missing_owner',
+          },
+          {
+            key: 'uc1-review-rejected',
+            title: `${MARKER} UC1 Weekly plan rejected with revision requested by manager`,
+            state: 'in_review',
+            priority: 'medium',
+            sprintOffset: 0,
+            projectKey: 'uc1-reviews',
+            estimateHours: 3,
+            edgeCase: 'changes_requested',
+          },
+          {
+            key: 'uc1snooze',
+            title: `${MARKER} UC1 Low severity reminder repeatedly snoozed by lead`,
+            state: 'backlog',
+            priority: 'low',
+            sprintOffset: null,
+            projectKey: 'uc1-coaching',
+            estimateHours: 1,
+            edgeCase: 'snoozed_noise',
+          },
         ],
       },
       {
@@ -380,6 +497,24 @@ function buildManifest(): SeedManifest {
             ease: 3,
             plan: 'Validate that weekly execution has standups, issue states, and retro evidence trails reviewers can inspect.',
             targetOffsetDays: 14,
+          },
+          {
+            key: 'uc2-iteration',
+            title: `${MARKER} UC2 Blocker and Iteration Freshness`,
+            impact: 4,
+            confidence: 4,
+            ease: 3,
+            plan: 'Detect stale execution and blocker age so sprint-end risk is surfaced before commitments fail.',
+            targetOffsetDays: 17,
+          },
+          {
+            key: 'uc2-context',
+            title: `${MARKER} UC2 Context-aware Assistant Prompting`,
+            impact: 4,
+            confidence: 5,
+            ease: 4,
+            plan: 'Ensure issue-level on-demand prompts remain entity scoped and avoid generic chat responses.',
+            targetOffsetDays: 20,
           },
         ],
         issues: [
@@ -412,6 +547,56 @@ function buildManifest(): SeedManifest {
             estimateHours: 2,
             edgeCase: 'unassigned',
           },
+          {
+            key: 'uc2-tc5-stale-blocker',
+            title: `${MARKER} UC2 TC5 High-priority issue blocked for 30+ hours near sprint end`,
+            state: 'in_progress',
+            priority: 'urgent',
+            sprintOffset: 0,
+            projectKey: 'uc2-iteration',
+            estimateHours: 9,
+            edgeCase: 'stale_blocker',
+          },
+          {
+            key: 'uc2-tc6-context-next-step',
+            title: `${MARKER} UC2 TC6 Context issue asking "what should happen next?"`,
+            state: 'in_progress',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc2-context',
+            estimateHours: 5,
+            edgeCase: 'context_scoped_on_demand',
+          },
+          {
+            key: 'uc2-retro-too-short',
+            title: `${MARKER} UC2 Weekly retro content is "Done." and lacks supporting proof`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: -1,
+            projectKey: 'uc2-proof',
+            estimateHours: 2,
+            edgeCase: 'retro_too_short',
+          },
+          {
+            key: 'uc2-reopened-after-done',
+            title: `${MARKER} UC2 Issue reopened after done due to failed verification replay`,
+            state: 'in_review',
+            priority: 'medium',
+            sprintOffset: 0,
+            projectKey: 'uc2-iteration',
+            estimateHours: 6,
+            edgeCase: 'reopened_issue',
+          },
+          {
+            key: 'uc2-cross-team-block',
+            title: `${MARKER} UC2 External dependency blocks merge despite active coding`,
+            state: 'in_progress',
+            priority: 'high',
+            sprintOffset: 1,
+            projectKey: 'uc2-iteration',
+            estimateHours: 7,
+            edgeCase: 'dependency_blocked',
+          },
         ],
       },
       {
@@ -438,6 +623,15 @@ function buildManifest(): SeedManifest {
             ease: 4,
             plan: 'Compare a lower-risk implementation path to evaluate confidence-adjusted value outcomes.',
             targetOffsetDays: 35,
+          },
+          {
+            key: 'uc3-portfolio',
+            title: `${MARKER} UC3 Portfolio Drift and ICE Governance`,
+            impact: 5,
+            confidence: 3,
+            ease: 2,
+            plan: 'Reconcile roadmap promises, ICE scoring, and actual delivery evidence across active programs.',
+            targetOffsetDays: 42,
           },
         ],
         issues: [
@@ -470,6 +664,56 @@ function buildManifest(): SeedManifest {
             estimateHours: 6,
             edgeCase: 'cross_program_dependency',
           },
+          {
+            key: 'uc3hypo',
+            title: `${MARKER} UC3 TC3 Hypothesis includes statement but no measurable success criteria`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc3a',
+            estimateHours: 5,
+            edgeCase: 'missing_success_criteria',
+          },
+          {
+            key: 'uc3-ice-tie-break',
+            title: `${MARKER} UC3 Two initiatives tie on ICE score and require PM tie-break`,
+            state: 'triage',
+            priority: 'medium',
+            sprintOffset: 1,
+            projectKey: 'uc3-portfolio',
+            estimateHours: 3,
+            edgeCase: 'ice_tie',
+          },
+          {
+            key: 'uc3drift',
+            title: `${MARKER} UC3 Project deliverables no longer map to declared PM outcome`,
+            state: 'in_progress',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc3-portfolio',
+            estimateHours: 8,
+            edgeCase: 'hypothesis_drift',
+          },
+          {
+            key: 'uc3-duplicate-initiative',
+            title: `${MARKER} UC3 Duplicate initiatives across two programs create reporting confusion`,
+            state: 'backlog',
+            priority: 'low',
+            sprintOffset: null,
+            projectKey: 'uc3-portfolio',
+            estimateHours: 2,
+            edgeCase: 'duplicate_work',
+          },
+          {
+            key: 'uc3-scope-creep',
+            title: `${MARKER} UC3 Scope increase without confidence update`,
+            state: 'in_review',
+            priority: 'medium',
+            sprintOffset: 0,
+            projectKey: 'uc3b',
+            estimateHours: 4,
+            edgeCase: 'scope_creep',
+          },
         ],
       },
       {
@@ -487,6 +731,24 @@ function buildManifest(): SeedManifest {
             ease: 3,
             plan: 'Provide reproducible remediation proof and gate status visibility for compliance reviewers.',
             targetOffsetDays: 18,
+          },
+          {
+            key: 'uc4-cve',
+            title: `${MARKER} UC4 Open Findings Triage and Exception Aging`,
+            impact: 5,
+            confidence: 4,
+            ease: 3,
+            plan: 'Track unresolved security findings, exception expiry, and replay quality before closeout.',
+            targetOffsetDays: 24,
+          },
+          {
+            key: 'uc4-attestation',
+            title: `${MARKER} UC4 Security Attestation and Probe Coverage`,
+            impact: 4,
+            confidence: 4,
+            ease: 2,
+            plan: 'Ensure security policies, attestation freshness, and probe artifacts remain complete and reviewable.',
+            targetOffsetDays: 31,
           },
         ],
         issues: [
@@ -518,6 +780,56 @@ function buildManifest(): SeedManifest {
             projectKey: 'uc4-gates',
             estimateHours: 4,
             edgeCase: 'missing_probe',
+          },
+          {
+            key: 'uc4-tc4-hitl',
+            title: `${MARKER} UC4 TC4 Compliance gate review requested with open risk`,
+            state: 'in_review',
+            priority: 'urgent',
+            sprintOffset: 0,
+            projectKey: 'uc4-gates',
+            estimateHours: 6,
+            edgeCase: 'hitl_required',
+          },
+          {
+            key: 'uc4-expired-exception',
+            title: `${MARKER} UC4 Security exception expired but remediation evidence still incomplete`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc4-cve',
+            estimateHours: 5,
+            edgeCase: 'expired_exception',
+          },
+          {
+            key: 'uc4-replay-missing',
+            title: `${MARKER} UC4 Evidence bundle missing replay instructions for auditor`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: -1,
+            projectKey: 'uc4-gates',
+            estimateHours: 3,
+            edgeCase: 'non_replayable_evidence',
+          },
+          {
+            key: 'uc4-secrets-scan',
+            title: `${MARKER} UC4 Secrets scan failure blocks release readiness`,
+            state: 'in_progress',
+            priority: 'urgent',
+            sprintOffset: 1,
+            projectKey: 'uc4-attestation',
+            estimateHours: 8,
+            edgeCase: 'secret_scan_failure',
+          },
+          {
+            key: 'uc4-attestation-missing',
+            title: `${MARKER} UC4 Security attestation not refreshed at branch HEAD`,
+            state: 'todo',
+            priority: 'high',
+            sprintOffset: 0,
+            projectKey: 'uc4-attestation',
+            estimateHours: 4,
+            edgeCase: 'attestation_stale',
           },
         ],
       },
@@ -1057,45 +1369,108 @@ async function ensureWeeklyArtifacts(
   projects: Map<string, ProjectRecord>,
   currentSprintNumber: number,
 ): Promise<void> {
+  const director = people.get('dir');
   const manager = people.get('mgr');
+  const manager2 = people.get('mgr2');
   const engineer = people.get('eng');
+  const engineer2 = people.get('eng2');
   const pm = people.get('pm');
+  const pm2 = people.get('pm2');
   const auditor = people.get('audit');
+  const qa = people.get('qa');
+  const sec = people.get('sec');
 
   const uc1Project = projects.get('uc1:uc1-grid');
+  const uc1ReviewProject = projects.get('uc1:uc1-reviews');
   const uc2Project = projects.get('uc2:uc2-proof');
+  const uc2ContextProject = projects.get('uc2:uc2-context');
   const uc3Project = projects.get('uc3:uc3a');
+  const uc3PortfolioProject = projects.get('uc3:uc3-portfolio');
   const uc4Project = projects.get('uc4:uc4-gates');
+  const uc4AttestationProject = projects.get('uc4:uc4-attestation');
 
-  if (!manager || !engineer || !pm || !auditor || !uc1Project || !uc2Project || !uc3Project || !uc4Project) {
+  if (
+    !director
+    || !manager
+    || !manager2
+    || !engineer
+    || !engineer2
+    || !pm
+    || !pm2
+    || !auditor
+    || !qa
+    || !sec
+    || !uc1Project
+    || !uc1ReviewProject
+    || !uc2Project
+    || !uc2ContextProject
+    || !uc3Project
+    || !uc3PortfolioProject
+    || !uc4Project
+    || !uc4AttestationProject
+  ) {
     bump(counters.failed, 'weekly-artifacts-prereq');
     return;
   }
 
-  // Current-week plans (one intentionally left template-only as edge case).
+  // Current-week plans (two intentionally weak/missing for edge-case coverage).
+  await upsertWeeklyPlan(session, director.id, uc1ReviewProject.id, currentSprintNumber, [
+    'Review escalation queue for overdue approvals and assign final decision owner.',
+    'Validate manager coaching notes include measurable outcome guidance.',
+  ]);
   await upsertWeeklyPlan(session, manager.id, uc1Project.id, currentSprintNumber, [
     'Review all overdue accountability items and enforce escalation policy.',
     'Approve or request changes on weekly plans before Tuesday.',
+  ]);
+  await upsertWeeklyPlan(session, manager2.id, uc1ReviewProject.id, currentSprintNumber, [
+    'Triage pending approvals older than two days and route to backup reviewer.',
   ]);
   await upsertWeeklyPlan(session, engineer.id, uc2Project.id, currentSprintNumber, [
     'Close in-progress evidence-linked issue and post standup updates daily.',
     'Attach reproducible artifact references to retro draft.',
   ]);
+  await upsertWeeklyPlan(session, engineer2.id, uc2ContextProject.id, currentSprintNumber, [
+    'Finish stuff.', // Intentional weak wording to emulate TC1-style ambiguity.
+  ]);
   await upsertWeeklyPlan(session, pm.id, uc3Project.id, currentSprintNumber, null); // Edge: due/late plan.
+  await upsertWeeklyPlan(session, pm2.id, uc3PortfolioProject.id, currentSprintNumber, [
+    'Compare ICE tie-break initiatives and flag outcome drift with evidence references.',
+  ]);
   await upsertWeeklyPlan(session, auditor.id, uc4Project.id, currentSprintNumber, [
     'Replay compliance probes and verify remediation closeout evidence.',
   ]);
+  await upsertWeeklyPlan(session, qa.id, uc4AttestationProject.id, currentSprintNumber, [
+    'Re-run misconfiguration and secret scanners, capture command output in evidence index.',
+  ]);
+  await upsertWeeklyPlan(session, sec.id, uc4AttestationProject.id, currentSprintNumber, [
+    'Confirm attestation freshness and ensure release gate exceptions are documented.',
+  ]);
 
-  // Previous-week retros (one intentionally missing as edge case).
+  // Previous-week retros (one intentionally missing, one intentionally too short).
   await upsertWeeklyRetro(session, manager.id, uc1Project.id, currentSprintNumber - 1, [
     'Accountability review cadence improved after enforcing Monday checkpoints.',
   ]);
+  await upsertWeeklyRetro(session, manager2.id, uc1ReviewProject.id, currentSprintNumber - 1, [
+    'Approval SLA remained uneven; one reviewer queue exceeded threshold.',
+  ]);
   await upsertWeeklyRetro(session, engineer.id, uc2Project.id, currentSprintNumber - 1, null); // Edge: missing retro.
+  await upsertWeeklyRetro(session, engineer2.id, uc2ContextProject.id, currentSprintNumber - 1, [
+    'Done.', // Intentional short retro for evidence quality edge case.
+  ]);
   await upsertWeeklyRetro(session, pm.id, uc3Project.id, currentSprintNumber - 1, [
     'Hypothesis B was cancelled due to low confidence and poor evidence quality.',
   ]);
+  await upsertWeeklyRetro(session, pm2.id, uc3PortfolioProject.id, currentSprintNumber - 1, [
+    'ICE tie-break lacked explicit business rationale and delayed decision by one cycle.',
+  ]);
   await upsertWeeklyRetro(session, auditor.id, uc4Project.id, currentSprintNumber - 1, [
     'Security closeout package passed reproducibility review.',
+  ]);
+  await upsertWeeklyRetro(session, qa.id, uc4AttestationProject.id, currentSprintNumber - 1, [
+    'One scanner false positive required triage; evidence remained reproducible.',
+  ]);
+  await upsertWeeklyRetro(session, sec.id, uc4AttestationProject.id, currentSprintNumber - 1, [
+    'Attestation file was stale at HEAD and required explicit refresh before sign-off.',
   ]);
 }
 
@@ -1209,10 +1584,16 @@ async function ensureEvidenceWiki(session: ShipSession): Promise<void> {
   }
 
   const children = [
+    `${MARKER} PRD TC1-TC8 Coverage Map`,
+    `${MARKER} USERS Persona Coverage`,
+    `${MARKER} Trigger Model (Webhook + Poll) Replay Notes`,
+    `${MARKER} Architecture Decisions and Risk Tradeoffs`,
     `${MARKER} UC1 Manager Accountability Evidence`,
     `${MARKER} UC2 Engineer Evidence Trace`,
     `${MARKER} UC3 Hypothesis Comparison Notes`,
     `${MARKER} UC4 Compliance Replay Checklist`,
+    `${MARKER} Security and Attestation Checklist`,
+    `${MARKER} Detection Latency Reproduction Log`,
     `${MARKER} Edge Case Matrix`,
   ];
 
@@ -1292,10 +1673,21 @@ async function main(): Promise<void> {
   console.log('\nEdge cases included');
   console.log('  - Overdue weekly plan');
   console.log('  - Approval gap on week review');
+  console.log('  - Overdue plan approval (TC8 style)');
+  console.log('  - Missing standup for active assignee (TC7 style)');
   console.log('  - Missing retro');
+  console.log('  - Short/weak retro content ("Done.")');
+  console.log('  - Weak weekly plan phrasing');
   console.log('  - Unassigned backlog issue');
+  console.log('  - Stale blocker near sprint end (TC5 style)');
+  console.log('  - Context-scoped issue prompt (TC6 style)');
+  console.log('  - Missing measurable success criteria (TC3 style)');
   console.log('  - Cancelled hypothesis');
+  console.log('  - Hypothesis drift and ICE tie-break uncertainty');
   console.log('  - Open security verification gap');
+  console.log('  - Compliance gate requires HITL approval (TC4 style)');
+  console.log('  - Missing replay instructions in evidence bundle');
+  console.log('  - Secret scan failure / stale attestation signal');
 }
 
 void main().catch((error) => {
