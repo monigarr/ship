@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
+  canonicalizeFleetGraphTraceUrl,
   createFleetGraphTrace,
   finishFleetGraphTrace,
   getFleetGraphTraceConfig,
@@ -62,6 +63,17 @@ describe('FleetGraph trace', () => {
     });
 
     expect(result.traceUrl).toBe(`/fleetgraph/internal-traces/${result.traceId}`);
+  });
+
+  it('canonicalizes persisted external trace URLs back to internal trace detail URLs', () => {
+    delete process.env.FLEETGRAPH_TRACE_BASE_PATH;
+
+    expect(
+      canonicalizeFleetGraphTraceUrl(
+        'trace-123',
+        'https://smith.langchain.com/public/not-the-ship-trace/r'
+      )
+    ).toBe('/fleetgraph/traces/trace-123');
   });
 
   it('exposes safe trace config diagnostics', () => {

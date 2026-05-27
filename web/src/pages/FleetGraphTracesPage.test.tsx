@@ -40,9 +40,10 @@ describe('FleetGraphTracesPage', () => {
         runs: [
           {
             runId: 'run-1',
+            traceId: 'trace-1',
             trigger: 'on_demand',
             branch: 'planning_risk',
-            traceUrl: '/fleetgraph/traces/trace-1',
+            traceUrl: 'https://smith.langchain.com/public/stale-external-trace/r',
             latencyMs: 1200,
             createdAt: '2026-05-26T21:00:00.000Z',
             status: 'pending_approval',
@@ -64,6 +65,13 @@ describe('FleetGraphTracesPage', () => {
     expect(await screen.findByText('Pending Approval')).toBeInTheDocument();
     expect(await screen.findByText('High')).toBeInTheDocument();
     expect(await screen.findByText('planning_risk (on_demand)')).toBeInTheDocument();
+  });
+
+  it('links trace rows to internal FleetGraph trace details even when stored URL is external', async () => {
+    renderPage();
+
+    const traceLink = await screen.findByRole('link', { name: 'planning_risk (on_demand)' });
+    expect(traceLink).toHaveAttribute('href', '/fleetgraph/traces/trace-1');
   });
 
   it('updates sorting query when clicking column header', async () => {

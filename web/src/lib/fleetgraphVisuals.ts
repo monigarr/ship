@@ -84,18 +84,27 @@ export function formatFleetGraphDateTime(value: string): string {
 }
 
 export function resolveInternalTraceHref(traceUrl: string, traceId?: string): string {
-  if (traceUrl.startsWith('/')) {
-    return traceUrl;
+  const normalizedTraceId = traceId?.trim();
+  if (normalizedTraceId) {
+    return `/fleetgraph/traces/${normalizedTraceId}`;
   }
-  if (traceUrl.startsWith('http://') || traceUrl.startsWith('https://')) {
+  if (traceUrl.startsWith('/')) {
     return traceUrl;
   }
   const legacyPrefix = 'internal://fleetgraph/';
   if (traceUrl.startsWith(legacyPrefix)) {
     return `/fleetgraph/traces/${traceUrl.slice(legacyPrefix.length)}`;
   }
-  if (traceId) {
-    return `/fleetgraph/traces/${traceId}`;
+  if (traceUrl.startsWith('http://') || traceUrl.startsWith('https://')) {
+    try {
+      const parsed = new URL(traceUrl);
+      if (parsed.pathname.startsWith('/fleetgraph/traces/')) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return traceUrl;
+    }
+    return traceUrl;
   }
   return traceUrl;
 }

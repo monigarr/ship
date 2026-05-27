@@ -4,6 +4,7 @@ import {
   decideFleetGraphHitlRequest,
   executeFleetGraphRun,
   getFleetGraphMetrics,
+  getFleetGraphTraceDetail,
   listFleetGraphOpenFindings,
   listFleetGraphRecentRuns,
   snoozeFleetGraphFinding,
@@ -435,23 +436,42 @@ describe('FleetGraph runtime', () => {
         text: 'Short retro.',
       });
 
-      await executeFleetGraphRun('on_demand', {
+      const result = await executeFleetGraphRun('on_demand', {
         userId: ctx.userId,
         workspaceId: ctx.workspaceId,
       });
 
+      await pool.query(
+        `UPDATE fleetgraph_runs
+         SET trace_url = $1
+         WHERE workspace_id = $2
+           AND trace_id = $3`,
+        [
+          'https://smith.langchain.com/public/stale-external-trace/r',
+          ctx.workspaceId,
+          result.run.traceId,
+        ]
+      );
+
       const metrics = await getFleetGraphMetrics(ctx.workspaceId);
       expect(metrics.runCount).toBeGreaterThanOrEqual(1);
       expect(metrics.recentTraceUrls.length).toBeGreaterThanOrEqual(1);
+      expect(metrics.recentTraceUrls[0]).toBe(`/fleetgraph/traces/${result.run.traceId}`);
       expect(metrics.monthlyProjectionUsd.users100).toBeGreaterThan(0);
 
       const runList = await listFleetGraphRecentRuns(ctx.workspaceId);
       expect(runList.runs.length).toBeGreaterThanOrEqual(1);
       expect(runList.total).toBeGreaterThanOrEqual(1);
-      expect(runList.runs[0]?.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
+      expect(runList.runs[0]?.traceId).toBe(result.run.traceId);
+      expect(runList.runs[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+
+      const traceDetail = await getFleetGraphTraceDetail(ctx.workspaceId, result.run.traceId);
+      expect(traceDetail.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
 
       const findings = await listFleetGraphOpenFindings(ctx.workspaceId);
       expect(findings.length).toBeGreaterThanOrEqual(1);
+      expect(findings[0]?.traceId).toBe(result.run.traceId);
+      expect(findings[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
     });
 
     it('surfaces findings within the PRD 5-minute latency window', async () => {

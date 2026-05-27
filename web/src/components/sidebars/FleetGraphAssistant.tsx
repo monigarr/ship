@@ -24,6 +24,7 @@ interface FleetGraphFinding {
   confidence: number;
   title: string;
   summary: string;
+  traceId?: string;
   traceUrl: string;
   updatedAt: string;
   snoozedUntil?: string | null;
@@ -69,6 +70,7 @@ interface FleetGraphMetrics {
 
 interface FleetGraphTraceRun {
   runId: string;
+  traceId?: string;
   trigger: string;
   branch: string;
   traceUrl: string;
@@ -742,7 +744,7 @@ export function FleetGraphAssistant({
                 </button>
               )}
               <a
-                href={resolveInternalTraceHref(finding.traceUrl)}
+                href={resolveInternalTraceHref(finding.traceUrl, finding.traceId)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-[10px] text-accent hover:underline self-center"
@@ -785,7 +787,7 @@ export function FleetGraphAssistant({
               {tracesQuery.data.runs.slice(0, 2).map((run) => (
                 <a
                   key={run.runId}
-                  href={resolveInternalTraceHref(run.traceUrl)}
+                  href={resolveInternalTraceHref(run.traceUrl, run.traceId)}
                   target="_blank"
                   rel="noreferrer"
                   className="block rounded border border-border px-2 py-1 text-[11px] text-accent hover:bg-border/30"

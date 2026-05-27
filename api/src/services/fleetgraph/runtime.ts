@@ -5,7 +5,12 @@ import {
   extractHypothesisFromContent,
   extractSuccessCriteriaFromContent,
 } from '../../utils/extractHypothesis.js';
-import { finishFleetGraphTrace, getFleetGraphTraceConfig, startFleetGraphTrace } from './trace.js';
+import {
+  canonicalizeFleetGraphTraceUrl,
+  finishFleetGraphTrace,
+  getFleetGraphTraceConfig,
+  startFleetGraphTrace,
+} from './trace.js';
 import { buildHitlActionPayload, executeApprovedHitlAction, type HitlActionPayload } from './hitl-actions.js';
 import { enrichSignalsWithNotificationDrafts } from './notifications.js';
 import { synthesizeFleetGraphResponse } from './synthesis.js';
@@ -1359,6 +1364,7 @@ export async function listFleetGraphOpenFindings(
   confidence: number;
   title: string;
   summary: string;
+  traceId: string;
   traceUrl: string;
   updatedAt: string;
   snoozedUntil: string | null;
@@ -1383,6 +1389,7 @@ export async function listFleetGraphOpenFindings(
     confidence: string;
     title: string;
     summary: string;
+    trace_id: string;
     trace_url: string;
     updated_at: string;
     snoozed_until: string | null;
@@ -1400,6 +1407,7 @@ export async function listFleetGraphOpenFindings(
        f.confidence::text,
        f.title,
        f.summary,
+       r.trace_id,
        r.trace_url,
        f.updated_at::text,
        f.snoozed_until::text,
@@ -1444,7 +1452,8 @@ export async function listFleetGraphOpenFindings(
       confidence: Number(row.confidence),
       title: row.title,
       summary: row.summary,
-      traceUrl: row.trace_url,
+      traceId: row.trace_id,
+      traceUrl: canonicalizeFleetGraphTraceUrl(row.trace_id, row.trace_url),
       updatedAt: toIsoString(row.updated_at),
       snoozedUntil: row.snoozed_until ? toIsoString(row.snoozed_until) : null,
       evidence,
@@ -1601,8 +1610,8 @@ export async function getFleetGraphMetrics(workspaceId: string): Promise<{
     [workspaceId]
   );
 
-  const recentTracesResult = await pool.query<{ trace_url: string }>(
-    `SELECT trace_url
+  const recentTracesResult = await pool.query<{ trace_id: string; trace_url: string }>(
+    `SELECT trace_id, trace_url
      FROM fleetgraph_runs
      WHERE workspace_id = $1
      ORDER BY created_at DESC
@@ -1632,7 +1641,9 @@ export async function getFleetGraphMetrics(workspaceId: string): Promise<{
       users1000,
       users10000,
     },
-    recentTraceUrls: recentTracesResult.rows.map((entry) => entry.trace_url),
+    recentTraceUrls: recentTracesResult.rows.map((entry) =>
+      canonicalizeFleetGraphTraceUrl(entry.trace_id, entry.trace_url)
+    ),
     traceConfig: getFleetGraphTraceConfig(),
   };
 }
@@ -1643,6 +1654,7 @@ export async function listFleetGraphRecentRuns(
 ): Promise<{
   runs: Array<{
     runId: string;
+    traceId: string;
     trigger: string;
     branch: string;
     traceUrl: string;
@@ -1721,6 +1733,7 @@ export async function listFleetGraphRecentRuns(
 
   const result = await pool.query<{
     id: string;
+    trace_id: string;
     trigger: string;
     branch: string;
     trace_url: string;
@@ -1759,6 +1772,7 @@ export async function listFleetGraphRecentRuns(
      runs_with_summary AS (
        SELECT
          r.id,
+         r.trace_id,
          r.trigger,
          r.branch,
          r.trace_url,
@@ -1784,6 +1798,7 @@ export async function listFleetGraphRecentRuns(
      )
      SELECT
        summary.id,
+       summary.trace_id,
        summary.trigger,
        summary.branch,
        summary.trace_url,
@@ -1805,9 +1820,10 @@ export async function listFleetGraphRecentRuns(
   return {
     runs: result.rows.map((row) => ({
       runId: row.id,
+      traceId: row.trace_id,
       trigger: row.trigger,
       branch: row.branch,
-      traceUrl: row.trace_url,
+      traceUrl: canonicalizeFleetGraphTraceUrl(row.trace_id, row.trace_url),
       latencyMs: row.latency_ms,
       createdAt: toIsoString(row.created_at),
       status: row.run_status,
@@ -1993,7 +2009,7 @@ export async function getFleetGraphTraceDetail(
 
   return {
     traceId,
-    traceUrl: run.trace_url,
+    traceUrl: canonicalizeFleetGraphTraceUrl(traceId, run.trace_url),
     run: {
       runId: run.id,
       trigger: run.trigger,

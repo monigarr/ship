@@ -14,6 +14,7 @@ type SortDir = 'asc' | 'desc';
 
 interface FleetGraphTraceRun {
   runId: string;
+  traceId?: string;
   trigger: string;
   branch: string;
   traceUrl: string;
@@ -297,7 +298,7 @@ export function FleetGraphTracesPage() {
                     <td className="px-3 py-2 text-muted">{run.signalCount}</td>
                     <td className="px-3 py-2">
                       <Link
-                        to={resolveInternalTraceHref(run.traceUrl)}
+                        to={resolveInternalTraceHref(run.traceUrl, run.traceId)}
                         className="text-accent hover:underline"
                       >
                         {run.branch} ({run.trigger})

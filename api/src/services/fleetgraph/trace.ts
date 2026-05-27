@@ -39,8 +39,22 @@ function resolveInternalTraceBasePath(): string {
   return normalized.length > 0 ? normalized : DEFAULT_INTERNAL_TRACE_BASE_PATH;
 }
 
-function buildTraceUrl(traceId: string): string {
+export function buildFleetGraphTraceUrl(traceId: string): string {
   return `${resolveInternalTraceBasePath()}/${traceId}`;
+}
+
+export function canonicalizeFleetGraphTraceUrl(traceId: string, traceUrl?: string | null): string {
+  const normalizedTraceId = traceId.trim();
+  if (normalizedTraceId) {
+    return buildFleetGraphTraceUrl(normalizedTraceId);
+  }
+
+  const legacyPrefix = 'internal://fleetgraph/';
+  if (traceUrl?.startsWith(legacyPrefix)) {
+    return buildFleetGraphTraceUrl(traceUrl.slice(legacyPrefix.length));
+  }
+
+  return traceUrl ?? resolveInternalTraceBasePath();
 }
 
 function logTraceEvent(payload: Record<string, unknown>): void {
@@ -52,7 +66,7 @@ function logTraceEvent(payload: Record<string, unknown>): void {
  */
 export async function startFleetGraphTrace(input: FleetGraphTraceStartInput): Promise<FleetGraphTraceOutput> {
   const traceId = randomUUID();
-  const traceUrl = buildTraceUrl(traceId);
+  const traceUrl = buildFleetGraphTraceUrl(traceId);
 
   logTraceEvent({
     trace_id: traceId,
@@ -70,7 +84,7 @@ export async function startFleetGraphTrace(input: FleetGraphTraceStartInput): Pr
  * Completes an internal FleetGraph trace with branch outputs.
  */
 export async function finishFleetGraphTrace(input: FleetGraphTraceFinishInput): Promise<FleetGraphTraceOutput> {
-  const traceUrl = buildTraceUrl(input.traceId);
+  const traceUrl = buildFleetGraphTraceUrl(input.traceId);
 
   logTraceEvent({
     trace_id: input.traceId,
