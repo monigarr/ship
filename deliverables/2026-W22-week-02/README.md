@@ -2,6 +2,14 @@
 
 This folder is the current FleetGraph client submission package.
 
+## Live Review
+
+| Item | Value |
+| --- | --- |
+| Source branch | `gfa2_wk5` |
+| Public review URL | `https://ship-web-jyqh.onrender.com/login` |
+| Source of truth | [`PRD.md`](./PRD.md) |
+
 ## Reviewer Entry Points
 
 | Artifact | Purpose |

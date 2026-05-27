@@ -79,6 +79,8 @@ If pre-commit reports `docker` not found from Bash/WSL:
 5. Re-run hook validation:
    - `bash .husky/pre-commit`
 
+The hook streams staged content into Dockerized scanners instead of bind-mounting the repository. This keeps Windows drive permissions from weakening the fail-closed scanner behavior.
+
 ### NEVER Bypass Security Checks
 
 **`git commit --no-verify` is prohibited.** This flag bypasses all pre-commit hooks and defeats the security scanning.
