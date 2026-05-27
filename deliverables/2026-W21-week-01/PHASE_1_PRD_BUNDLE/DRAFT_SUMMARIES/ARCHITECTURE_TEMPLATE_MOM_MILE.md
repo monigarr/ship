@@ -314,8 +314,8 @@ Define:
 * cloud inference
 * synthetic data generation
 * evaluation pipelines
-* managed agents orchestrated by observability (LangGraph)
-* LangGraph handles complex tasks with an agent runtime and low-level orchestration framework.
+* managed agents orchestrated by internal observability
+* A Ship-owned graph runtime handles complex tasks with an agent runtime and low-level orchestration framework.
 
 ---
 
@@ -850,7 +850,7 @@ The M.O.M. M.I.L.E. Architecture classifies all data, metadata, prompts, outputs
 
 Examples:
 
-* Langfuse or LangGraph
+* Internal trace dashboard
 * OpenTelemetry
 * structured logging
 * metrics

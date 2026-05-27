@@ -33,7 +33,7 @@ Use this when a human needs a quick orientation to FleetGraph observability and 
 
 ### Fast onboarding bullets (internal observability)
 
-- FleetGraph traces are **internal to Ship**, not LangSmith; every run emits `traceId` + `traceUrl`.
+- FleetGraph traces are **internal to Ship**, not a third-party trace host; every run emits `traceId` + `traceUrl`.
 - Trace execution data is persisted in API runtime tables (`fleetgraph_runs`, `fleetgraph_trace_events`) and exposed in authenticated endpoints.
 - Humans can inspect traces in three places:
   - FleetGraph assistant links (**Open trace details**)

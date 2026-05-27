@@ -101,7 +101,7 @@ Core requirement: FleetGraph should be an intelligence layer over Ship's project
 
 ## B. Graph Runtime
 
-- Recommended orchestrator: **LangGraph** (already anticipated in PRD/FLEETGRAPH).
+- Recommended orchestrator: **Ship-owned FleetGraph runtime** (already anticipated in PRD/FLEETGRAPH).
 - Common graph for both triggers:
   1. Trigger intake (event, poll, or chat invocation)
   2. Context + authorization resolution
@@ -249,4 +249,3 @@ FleetGraph should initially plug into these surfaces rather than introducing a n
 ## 9) Draft Decision Statement
 
 FleetGraph should be implemented as an **intelligence overlay** on the existing Ship architecture, not as a replacement platform. The current codebase already provides the essential substrate (document graph, accountability endpoints, context APIs, and embedded workflow UI). The next work is to add a graph runtime, proactive trigger infrastructure, HITL controls, and observability/cost instrumentation so Ship transitions from descriptive project tracking to proactive, role-aware project intelligence.
-

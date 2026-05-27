@@ -447,7 +447,7 @@ describe('FleetGraph runtime', () => {
          WHERE workspace_id = $2
            AND trace_id = $3`,
         [
-          'https://smith.langchain.com/public/stale-external-trace/r',
+          'https://external-observability.example/trace/stale-external-trace',
           ctx.workspaceId,
           result.run.traceId,
         ]

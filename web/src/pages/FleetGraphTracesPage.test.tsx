@@ -43,7 +43,7 @@ describe('FleetGraphTracesPage', () => {
             traceId: 'trace-1',
             trigger: 'on_demand',
             branch: 'planning_risk',
-            traceUrl: 'https://smith.langchain.com/public/stale-external-trace/r',
+            traceUrl: 'https://external-observability.example/trace/stale-external-trace',
             latencyMs: 1200,
             createdAt: '2026-05-26T21:00:00.000Z',
             status: 'pending_approval',

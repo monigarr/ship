@@ -54,7 +54,11 @@ export function canonicalizeFleetGraphTraceUrl(traceId: string, traceUrl?: strin
     return buildFleetGraphTraceUrl(traceUrl.slice(legacyPrefix.length));
   }
 
-  return traceUrl ?? resolveInternalTraceBasePath();
+  if (traceUrl?.startsWith('/')) {
+    return traceUrl;
+  }
+
+  return resolveInternalTraceBasePath();
 }
 
 function logTraceEvent(payload: Record<string, unknown>): void {

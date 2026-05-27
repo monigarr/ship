@@ -24,8 +24,11 @@ describe('fleetgraphVisuals', () => {
     expect(resolveInternalTraceHref('/fleetgraph/traces/trace-456')).toBe('/fleetgraph/traces/trace-456');
     expect(resolveInternalTraceHref('opaque-value', 'trace-789')).toBe('/fleetgraph/traces/trace-789');
     expect(
-      resolveInternalTraceHref('https://smith.langchain.com/public/stale-external-trace/r', 'trace-999')
+      resolveInternalTraceHref('https://external-observability.example/trace/stale-external-trace', 'trace-999')
     ).toBe('/fleetgraph/traces/trace-999');
+    expect(resolveInternalTraceHref('https://external-observability.example/trace/stale-external-trace')).toBe(
+      '/fleetgraph/traces'
+    );
   });
 
   it('formats datetime values safely', () => {

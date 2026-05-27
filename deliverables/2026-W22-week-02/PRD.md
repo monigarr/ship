@@ -69,7 +69,7 @@ There is no correct answer. There is a defensible one. Document your decision an
 
 ## Observability
 
-LangGraph traces automatically once these are set. If you are not using LangGraph, you are responsible for instrumenting your graph manually to produce equivalent traces.
+Ship-owned graph runtimes must emit internal traces once these are set. If you are not using the built-in FleetGraph runtime, you are responsible for instrumenting your graph manually to produce equivalent traces.
 
 You will submit shared observability trace links as part of every deliverable. Traces must demonstrate that the graph produces different execution paths under different conditions. A graph that looks identical across every run is a pipeline, not a graph.
 
@@ -150,7 +150,7 @@ FLEETGRAPH.md must contain the following completed sections at final submission:
 
 ## Constraints
 
-- LangGraph is recommended; any other framework must still produce equivalent internal FleetGraph branch-divergent traces
+- A Ship-owned graph runtime is recommended; any other framework must still produce equivalent internal FleetGraph branch-divergent traces
 - Internal FleetGraph tracing required from day one
 - Chat interface must be embedded in context - no standalone chatbot pages
 
@@ -231,7 +231,7 @@ Define what this agent monitors, what it reasons about, what it can do autonomou
 
 ## Graph Diagram
 
-Provide a visual map of your graph covering both proactive and on-demand modes. Include all nodes, edges, and conditional branches. Submit either a LangGraph Studio screenshot (embedded as an image) or a Mermaid diagram as a code block.
+Provide a visual map of your graph covering both proactive and on-demand modes. Include all nodes, edges, and conditional branches. Submit either an internal FleetGraph runtime screenshot (embedded as an image) or a Mermaid diagram as a code block.
 
 ## Use Cases
 

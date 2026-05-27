@@ -71,7 +71,7 @@ describe('FleetGraph trace', () => {
     expect(
       canonicalizeFleetGraphTraceUrl(
         'trace-123',
-        'https://smith.langchain.com/public/not-the-ship-trace/r'
+        'https://external-observability.example/trace/not-the-ship-trace'
       )
     ).toBe('/fleetgraph/traces/trace-123');
   });

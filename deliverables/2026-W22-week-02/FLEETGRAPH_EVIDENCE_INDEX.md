@@ -13,7 +13,7 @@ This file is the single packaging checklist for PRD submission evidence on branc
 
 Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Part 0 — Fast Observability Onboarding and Visual Trace Verification** for:
 
-- Internal observability orientation (no LangSmith dependency)
+- Internal observability orientation (no third-party trace-host dependency)
 - Local and deployed side-by-side manual trace verification steps
 - Pass/fail criteria for branch-divergent internal trace evidence
 

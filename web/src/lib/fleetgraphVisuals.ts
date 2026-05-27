@@ -102,9 +102,9 @@ export function resolveInternalTraceHref(traceUrl: string, traceId?: string): st
         return `${parsed.pathname}${parsed.search}${parsed.hash}`;
       }
     } catch {
-      return traceUrl;
+      return '/fleetgraph/traces';
     }
-    return traceUrl;
+    return '/fleetgraph/traces';
   }
   return traceUrl;
 }

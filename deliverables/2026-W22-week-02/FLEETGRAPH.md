@@ -168,7 +168,7 @@ Hard blocker gate: every internal trace URL below must resolve to an authenticat
 
 ### Framework choice
 
-FleetGraph uses a **custom TypeScript orchestrator** in `api/src/services/fleetgraph/runtime.ts` rather than LangGraph. The PRD allows non-LangGraph implementations when equivalent branch-divergent traces are produced manually. This choice keeps the runtime co-located with Ship's Postgres-backed document model, avoids an extra orchestration dependency in the Render deployment, and still satisfies branching, HITL, and observability requirements.
+FleetGraph uses a **custom TypeScript orchestrator** in `api/src/services/fleetgraph/runtime.ts` rather than a third-party graph runtime. The PRD allows custom implementations when equivalent branch-divergent traces are produced manually. This choice keeps the runtime co-located with Ship's Postgres-backed document model, avoids an extra orchestration dependency in the Render deployment, and still satisfies branching, HITL, and observability requirements.
 
 Tracing is internal to Ship via `trace.ts` (`startFleetGraphTrace` / `finishFleetGraphTrace`) plus `fleetgraph_trace_events` timeline persistence. Each run records trigger type, branch, signal types, latency, token estimate, and cost estimate, then exposes shareable in-app trace links under `/fleetgraph/traces/:traceId`.
 

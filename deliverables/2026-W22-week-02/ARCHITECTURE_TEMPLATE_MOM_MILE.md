@@ -179,7 +179,7 @@ Retries, idempotent dedupe keys, and fallback to deterministic outputs when mode
 ## Architectural Style
 
 - Brownfield augmentation of Ship core.
-- AI-native graph orchestration (LangGraph-recommended).
+- AI-native graph orchestration using Ship-owned runtime components.
 - Hybrid event-driven + scheduled proactive execution.
 - Embedded context-aware user interaction.
 
