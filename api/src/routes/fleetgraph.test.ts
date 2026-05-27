@@ -162,11 +162,39 @@ describe('FleetGraph API', () => {
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body.runs)).toBe(true);
+      expect(typeof response.body.total).toBe('number');
+      expect(typeof response.body.limit).toBe('number');
+      expect(typeof response.body.offset).toBe('number');
       expect(response.body.runs[0]).toMatchObject({
         runId: expect.any(String),
         trigger: 'on_demand',
         traceUrl: expect.stringMatching(/^\/fleetgraph\/traces\//),
       });
+    });
+
+    it('supports sorting, filtering, and pagination query params', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        text: 'Very short plan.',
+      });
+
+      await request(ctx.app)
+        .post('/api/fleetgraph/run')
+        .set('Cookie', ctx.sessionCookie)
+        .set('x-csrf-token', ctx.csrfToken)
+        .send({});
+
+      const response = await request(ctx.app)
+        .get('/api/fleetgraph/traces?sortBy=latencyMs&sortDir=desc&status=attention&limit=10&offset=0')
+        .set('Cookie', ctx.sessionCookie);
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body.runs)).toBe(true);
+      expect(response.body.limit).toBe(10);
+      expect(response.body.offset).toBe(0);
+      expect(response.body.runs.every((run: { status: string }) => run.status === 'attention')).toBe(true);
     });
   });
 

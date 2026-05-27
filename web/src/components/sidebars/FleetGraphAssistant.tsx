@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/lib/api';
+import { getFleetGraphSeverityTone, resolveInternalTraceHref } from '@/lib/fleetgraphVisuals';
 
 interface FleetGraphSignal {
   type: string;
@@ -119,31 +120,12 @@ const REQUEST_CHANGES_TEMPLATE =
   'Requesting changes before approval: please revise the proposed action and resubmit evidence.';
 
 function severityClass(severity: string): string {
-  if (severity === 'high') return 'text-red-400 border-red-500/30 bg-red-500/10';
-  if (severity === 'medium') return 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10';
-  return 'text-blue-400 border-blue-500/30 bg-blue-500/10';
+  return getFleetGraphSeverityTone(severity).className;
 }
 
 function formatEntityType(documentType: string): string {
   if (documentType === 'sprint') return 'sprint';
   return documentType.replace(/_/g, ' ');
-}
-
-function resolveInternalTraceHref(traceUrl: string, traceId?: string): string {
-  if (traceUrl.startsWith('/')) {
-    return traceUrl;
-  }
-  if (traceUrl.startsWith('http://') || traceUrl.startsWith('https://')) {
-    return traceUrl;
-  }
-  const legacyPrefix = 'internal://fleetgraph/';
-  if (traceUrl.startsWith(legacyPrefix)) {
-    return `/fleetgraph/traces/${traceUrl.slice(legacyPrefix.length)}`;
-  }
-  if (traceId) {
-    return `/fleetgraph/traces/${traceId}`;
-  }
-  return traceUrl;
 }
 
 function proposedActionLabel(signalType: string, title: string): string {
@@ -777,6 +759,9 @@ export function FleetGraphAssistant({
           Diagnostics
         </summary>
         <div className="mt-2 space-y-2">
+          <a href="/fleetgraph/traces" className="inline-block text-[11px] text-accent hover:underline">
+            Open full trace index
+          </a>
           {metricsQuery.data && (
             <div className="space-y-1">
               <p className="text-[11px] text-muted">

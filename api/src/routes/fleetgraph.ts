@@ -10,6 +10,7 @@ import {
   listFleetGraphOpenFindings,
   snoozeFleetGraphFinding,
 } from '../services/fleetgraph/runtime.js';
+import type { FleetGraphRecentRunsQuery } from '../services/fleetgraph/runtime.js';
 import type { ProactiveWebhookEventType } from '../services/fleetgraph/proactive.js';
 
 type RouterType = ReturnType<typeof Router>;
@@ -21,6 +22,72 @@ function getWorkspaceId(req: Request): string | null {
 
 function getUserId(req: Request): string | null {
   return req.userId ?? null;
+}
+
+function parseFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseRecentRunsQuery(req: Request): FleetGraphRecentRunsQuery {
+  const sortByRaw = typeof req.query.sortBy === 'string' ? req.query.sortBy.trim() : '';
+  const sortBy =
+    sortByRaw === 'createdAt' ||
+    sortByRaw === 'latencyMs' ||
+    sortByRaw === 'status' ||
+    sortByRaw === 'severity'
+      ? sortByRaw
+      : undefined;
+  const sortDirRaw = typeof req.query.sortDir === 'string' ? req.query.sortDir.trim().toLowerCase() : '';
+  const sortDir = sortDirRaw === 'asc' || sortDirRaw === 'desc' ? sortDirRaw : undefined;
+
+  const status =
+    typeof req.query.status === 'string' && req.query.status.trim() !== ''
+      ? req.query.status.trim()
+      : undefined;
+  const trigger =
+    typeof req.query.trigger === 'string' && req.query.trigger.trim() !== ''
+      ? req.query.trigger.trim()
+      : undefined;
+  const branch =
+    typeof req.query.branch === 'string' && req.query.branch.trim() !== ''
+      ? req.query.branch.trim()
+      : undefined;
+  const q = typeof req.query.q === 'string' && req.query.q.trim() !== '' ? req.query.q.trim() : undefined;
+  const from =
+    typeof req.query.from === 'string' && !Number.isNaN(new Date(req.query.from).getTime())
+      ? req.query.from
+      : undefined;
+  const to =
+    typeof req.query.to === 'string' && !Number.isNaN(new Date(req.query.to).getTime())
+      ? req.query.to
+      : undefined;
+
+  const limit = parseFiniteNumber(req.query.limit);
+  const offset = parseFiniteNumber(req.query.offset);
+  const minLatencyMs = parseFiniteNumber(req.query.minLatencyMs);
+  const maxLatencyMs = parseFiniteNumber(req.query.maxLatencyMs);
+
+  return {
+    sortBy,
+    sortDir,
+    status,
+    trigger,
+    branch,
+    minLatencyMs,
+    maxLatencyMs,
+    from,
+    to,
+    q,
+    limit,
+    offset,
+  };
 }
 
 router.post('/run', authMiddleware, async (req: Request, res: Response) => {
@@ -140,8 +207,8 @@ router.get('/traces', authMiddleware, async (req: Request, res: Response) => {
       return;
     }
 
-    const runs = await listFleetGraphRecentRuns(workspaceId);
-    res.json({ runs });
+    const result = await listFleetGraphRecentRuns(workspaceId, parseRecentRunsQuery(req));
+    res.json(result);
   } catch (error) {
     console.error('FleetGraph trace list failed:', error);
     res.status(500).json({ error: 'fleetgraph_traces_failed' });

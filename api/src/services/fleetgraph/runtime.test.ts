@@ -445,9 +445,10 @@ describe('FleetGraph runtime', () => {
       expect(metrics.recentTraceUrls.length).toBeGreaterThanOrEqual(1);
       expect(metrics.monthlyProjectionUsd.users100).toBeGreaterThan(0);
 
-      const runs = await listFleetGraphRecentRuns(ctx.workspaceId);
-      expect(runs.length).toBeGreaterThanOrEqual(1);
-      expect(runs[0]?.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
+      const runList = await listFleetGraphRecentRuns(ctx.workspaceId);
+      expect(runList.runs.length).toBeGreaterThanOrEqual(1);
+      expect(runList.total).toBeGreaterThanOrEqual(1);
+      expect(runList.runs[0]?.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
 
       const findings = await listFleetGraphOpenFindings(ctx.workspaceId);
       expect(findings.length).toBeGreaterThanOrEqual(1);

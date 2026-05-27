@@ -58,6 +58,24 @@ const MAX_SNOOZE_HOURS = 168;
 const STANDUP_GAP_DAYS = 2;
 const PRD_LATENCY_BUDGET_MS = 300_000;
 
+type FleetGraphTraceSortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity';
+type FleetGraphTraceSortDir = 'asc' | 'desc';
+
+export interface FleetGraphRecentRunsQuery {
+  sortBy?: FleetGraphTraceSortBy;
+  sortDir?: FleetGraphTraceSortDir;
+  status?: string;
+  trigger?: string;
+  branch?: string;
+  minLatencyMs?: number;
+  maxLatencyMs?: number;
+  from?: string;
+  to?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export async function ensureFleetGraphTables(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS fleetgraph_runs (
@@ -1619,15 +1637,87 @@ export async function getFleetGraphMetrics(workspaceId: string): Promise<{
   };
 }
 
-export async function listFleetGraphRecentRuns(workspaceId: string): Promise<Array<{
-  runId: string;
-  trigger: string;
-  branch: string;
-  traceUrl: string;
-  latencyMs: number;
-  createdAt: string;
-}>> {
+export async function listFleetGraphRecentRuns(
+  workspaceId: string,
+  query: FleetGraphRecentRunsQuery = {}
+): Promise<{
+  runs: Array<{
+    runId: string;
+    trigger: string;
+    branch: string;
+    traceUrl: string;
+    latencyMs: number;
+    createdAt: string;
+    status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
+    severity: 'high' | 'medium' | 'low' | 'none';
+    signalCount: number;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+}> {
   await ensureFleetGraphTables();
+
+  const limit = Number.isFinite(query.limit) ? Math.min(100, Math.max(1, Math.floor(query.limit ?? 50))) : 50;
+  const offset = Number.isFinite(query.offset)
+    ? Math.max(0, Math.floor(query.offset ?? 0))
+    : 0;
+  const sortBy = query.sortBy ?? 'createdAt';
+  const sortDir = query.sortDir === 'asc' ? 'ASC' : 'DESC';
+
+  const params: Array<string | number | null> = [workspaceId];
+  const whereClauses: string[] = ['r.workspace_id = $1'];
+
+  if (query.status && query.status.trim() !== '') {
+    params.push(query.status.trim());
+    whereClauses.push(`summary.run_status = $${params.length}`);
+  }
+  if (query.trigger && query.trigger.trim() !== '') {
+    params.push(query.trigger.trim());
+    whereClauses.push(`r.trigger = $${params.length}`);
+  }
+  if (query.branch && query.branch.trim() !== '') {
+    params.push(query.branch.trim());
+    whereClauses.push(`r.branch = $${params.length}`);
+  }
+  if (typeof query.minLatencyMs === 'number' && Number.isFinite(query.minLatencyMs)) {
+    params.push(Math.max(0, Math.floor(query.minLatencyMs)));
+    whereClauses.push(`r.latency_ms >= $${params.length}`);
+  }
+  if (typeof query.maxLatencyMs === 'number' && Number.isFinite(query.maxLatencyMs)) {
+    params.push(Math.max(0, Math.floor(query.maxLatencyMs)));
+    whereClauses.push(`r.latency_ms <= $${params.length}`);
+  }
+  if (query.from && !Number.isNaN(new Date(query.from).getTime())) {
+    params.push(new Date(query.from).toISOString());
+    whereClauses.push(`r.created_at >= $${params.length}::timestamptz`);
+  }
+  if (query.to && !Number.isNaN(new Date(query.to).getTime())) {
+    params.push(new Date(query.to).toISOString());
+    whereClauses.push(`r.created_at <= $${params.length}::timestamptz`);
+  }
+  if (query.q && query.q.trim() !== '') {
+    params.push(`%${query.q.trim()}%`);
+    const qParam = `$${params.length}`;
+    whereClauses.push(
+      `(r.trace_id ILIKE ${qParam} OR r.branch ILIKE ${qParam} OR r.trigger ILIKE ${qParam})`
+    );
+  }
+
+  const orderByClause =
+    sortBy === 'latencyMs'
+      ? `r.latency_ms ${sortDir}, r.created_at DESC`
+      : sortBy === 'status'
+        ? `summary.run_status_rank ${sortDir}, r.created_at DESC`
+        : sortBy === 'severity'
+          ? `summary.max_severity_rank ${sortDir}, r.created_at DESC`
+          : `r.created_at ${sortDir}`;
+
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  params.push(limit);
+  const limitParam = `$${params.length}`;
+  params.push(offset);
+  const offsetParam = `$${params.length}`;
 
   const result = await pool.query<{
     id: string;
@@ -1636,23 +1726,98 @@ export async function listFleetGraphRecentRuns(workspaceId: string): Promise<Arr
     trace_url: string;
     latency_ms: number;
     created_at: string;
+    run_status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
+    max_severity: 'high' | 'medium' | 'low' | 'none';
+    signal_count: string;
+    total_count: string;
   }>(
-    `SELECT id, trigger, branch, trace_url, latency_ms, created_at::text
-     FROM fleetgraph_runs
-     WHERE workspace_id = $1
-     ORDER BY created_at DESC
-     LIMIT 50`,
-    [workspaceId]
+    `WITH finding_summary AS (
+       SELECT
+         f.run_id,
+         COUNT(*)::int AS signal_count,
+         MAX(
+           CASE f.severity
+             WHEN 'high' THEN 3
+             WHEN 'medium' THEN 2
+             WHEN 'low' THEN 1
+             ELSE 0
+           END
+         ) AS max_severity_rank,
+         MAX(
+           CASE f.status
+             WHEN 'pending_approval' THEN 3
+             WHEN 'open' THEN 2
+             WHEN 'rejected' THEN 2
+             WHEN 'resolved' THEN 1
+             ELSE 0
+           END
+         ) AS run_status_rank
+       FROM fleetgraph_findings f
+       WHERE f.workspace_id = $1
+       GROUP BY f.run_id
+     ),
+     runs_with_summary AS (
+       SELECT
+         r.id,
+         r.trigger,
+         r.branch,
+         r.trace_url,
+         r.latency_ms,
+         r.created_at::text,
+         COALESCE(fs.signal_count, 0)::text AS signal_count,
+         CASE COALESCE(fs.max_severity_rank, 0)
+           WHEN 3 THEN 'high'
+           WHEN 2 THEN 'medium'
+           WHEN 1 THEN 'low'
+           ELSE 'none'
+         END AS max_severity,
+         CASE COALESCE(fs.run_status_rank, 0)
+           WHEN 3 THEN 'pending_approval'
+           WHEN 2 THEN 'attention'
+           WHEN 1 THEN 'resolved'
+           ELSE 'no_findings'
+         END AS run_status,
+         COALESCE(fs.max_severity_rank, 0) AS max_severity_rank,
+         COALESCE(fs.run_status_rank, 0) AS run_status_rank
+       FROM fleetgraph_runs r
+       LEFT JOIN finding_summary fs ON fs.run_id = r.id
+     )
+     SELECT
+       summary.id,
+       summary.trigger,
+       summary.branch,
+       summary.trace_url,
+       summary.latency_ms,
+       summary.created_at,
+       summary.run_status,
+       summary.max_severity,
+       summary.signal_count,
+       COUNT(*) OVER()::text AS total_count
+     FROM runs_with_summary summary
+     JOIN fleetgraph_runs r ON r.id = summary.id
+     ${whereSql}
+     ORDER BY ${orderByClause}
+     LIMIT ${limitParam}
+     OFFSET ${offsetParam}`,
+    params
   );
 
-  return result.rows.map((row) => ({
-    runId: row.id,
-    trigger: row.trigger,
-    branch: row.branch,
-    traceUrl: row.trace_url,
-    latencyMs: row.latency_ms,
-    createdAt: toIsoString(row.created_at),
-  }));
+  return {
+    runs: result.rows.map((row) => ({
+      runId: row.id,
+      trigger: row.trigger,
+      branch: row.branch,
+      traceUrl: row.trace_url,
+      latencyMs: row.latency_ms,
+      createdAt: toIsoString(row.created_at),
+      status: row.run_status,
+      severity: row.max_severity,
+      signalCount: Number(row.signal_count),
+    })),
+    total: Number(result.rows[0]?.total_count ?? 0),
+    limit,
+    offset,
+  };
 }
 
 export async function getFleetGraphTraceDetail(
