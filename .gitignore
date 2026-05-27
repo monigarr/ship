@@ -7,6 +7,9 @@ dist
 build
 .turbo
 *.tsbuildinfo
+coverage/
+api/coverage/
+web/coverage/
 
 # Environment files
 .env
@@ -47,15 +50,13 @@ Thumbs.db
 
 # Evidence/verification screenshots (keep generic evidence dirs ignored)
 evidence/
-!prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/
-!prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/**
 
 # Live session/cookie artifacts — regenerate locally for C3/C4 repro
-prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/*cookie*
-prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/session-cookie*.txt
-prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/bench-cookies.txt
-prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/metrics-cookies-*.txt
-prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence/csrf-token.json
+deliverables/**/evidence/*cookie*
+deliverables/**/evidence/session-cookie*.txt
+deliverables/**/evidence/bench-cookies.txt
+deliverables/**/evidence/metrics-cookies-*.txt
+deliverables/**/evidence/csrf-token.json
 
 *.png
 
@@ -111,6 +112,8 @@ research/
 
 # Deployment artifacts
 ship-api-*.zip
+deploy-api-*.zip
+artifacts/generated/
 
 # Vendor (local SDK links)
 vendor/
@@ -123,3 +126,8 @@ vendor/
 
 # Vite PWA dev artifacts
 web/dev-dist/
+
+# Client deliverables are the intentional, reviewable audit trail.
+!deliverables/
+!deliverables/**/
+!deliverables/**

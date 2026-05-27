@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const evidenceDir = path.resolve('prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence');
+const evidenceDir = path.resolve('deliverables/2026-W21-week-01/PHASE_2_PRD_BUNDLE/evidence');
 const buildLogPath = path.join(evidenceDir, 'build-closeout.log');
 const buildLog = fs.readFileSync(buildLogPath, 'utf8');
 
@@ -35,7 +35,7 @@ const initialReductionPct = currentLargestChunkKb === null
 const lines = [
   '# Category 2 After Bundle Summary',
   '',
-  'Baseline source: `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`',
+  'Baseline source: `deliverables/2026-W21-week-01/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`',
   '',
   `- Baseline total dist size: ${baselineTotalDistKb} KB`,
   `- Current total dist size: ${currentTotalDistKb} KB`,

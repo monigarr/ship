@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const evidenceDir = path.resolve('prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence');
+const evidenceDir = path.resolve('deliverables/2026-W21-week-01/PHASE_2_PRD_BUNDLE/evidence');
 
 const baselineP95 = {
   'api-auth-session': 27.33,
@@ -43,7 +43,7 @@ const metCount = rows.filter((row) => row.reductionPct >= 20).length;
 const lines = [
   '# Category 3 After Benchmark Summary',
   '',
-  'Baseline source: `prd_dev_branch_one/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`',
+  'Baseline source: `deliverables/2026-W21-week-01/PHASE_1_PRD_BUNDLE/PHASE_1_AUDIT_REPORT.md`',
   '',
   '| Endpoint | P50 (after) | P95 (after) | P99 (after) | P95 reduction vs baseline |',
   '| --- | ---: | ---: | ---: | ---: |',

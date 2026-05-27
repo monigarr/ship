@@ -10,7 +10,7 @@ const packages = [
   { name: 'api', tsconfig: path.join(repoRoot, 'api', 'tsconfig.json'), srcRoot: path.join(repoRoot, 'api', 'src') },
   { name: 'shared', tsconfig: path.join(repoRoot, 'shared', 'tsconfig.json'), srcRoot: path.join(repoRoot, 'shared', 'src') },
 ];
-const evidenceDir = path.join(repoRoot, 'prd_dev_branch_one', 'PHASE_2_PRD_BUNDLE', 'evidence');
+const evidenceDir = path.join(repoRoot, 'deliverables', '2026-W21-week-01', 'PHASE_2_PRD_BUNDLE', 'evidence');
 const outputJson = path.join(evidenceDir, 'c1-measurement.json');
 const outputMd = path.join(evidenceDir, 'c1-measurement.md');
 const runCommand = 'pnpm audit:c1';

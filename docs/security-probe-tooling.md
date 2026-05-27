@@ -11,8 +11,8 @@ pnpm security:probe
 
 This executes `api/src/scripts/security-probe.ts` and writes:
 
-- JSON: `prd_dev_branch_one/PRD_CAT8/security-probe-report.json`
-- Markdown: `prd_dev_branch_one/PRD_CAT8/security-probe-report.md`
+- JSON: `deliverables/2026-W21-week-01/PRD_CAT8/security-probe-report.json`
+- Markdown: `deliverables/2026-W21-week-01/PRD_CAT8/security-probe-report.md`
 
 ## Environment Variables
 

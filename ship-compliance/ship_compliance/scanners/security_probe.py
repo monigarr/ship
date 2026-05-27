@@ -9,7 +9,7 @@ from typing import Any
 
 from ship_compliance.ci.gates import ExitCode, GateResult
 
-DEFAULT_PROBE_REPORT_PATH = Path("prd_dev_branch_one/PRD_CAT8/security-probe-report.json")
+DEFAULT_PROBE_REPORT_PATH = Path("deliverables/2026-W21-week-01/PRD_CAT8/security-probe-report.json")
 
 
 def _pnpm_command() -> str:

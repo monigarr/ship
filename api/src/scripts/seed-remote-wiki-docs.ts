@@ -3,7 +3,7 @@
  * @date 2026-05-23
  * @author Monica Peters <monica.peters@gfachallenger.gauntletai.com>
  *
- * Purpose: Bulk-create wiki documents on a remote Ship instance from prd_dev_branch_one markdown files.
+ * Purpose: Bulk-create wiki documents on a remote Ship instance from weekly deliverable markdown files.
  *
  * Usage:
  *   SHIP_BASE_URL=https://ship-web-jyqh.onrender.com \
@@ -13,7 +13,7 @@
  *
  * Optional:
  *   SHIP_SEED_ROOT_TITLE="GFA Week 4 — PRD Portfolio"
- *   SHIP_SEED_SOURCE_DIR=../../prd_dev_branch_one   (relative to api/)
+ *   SHIP_SEED_SOURCE_DIR=../../../deliverables/2026-W21-week-01
  *   SHIP_SEED_DRY_RUN=1
  *   SHIP_SEED_DELAY_MS=300
  *   SHIP_SEED_RESUME=1          (skip root creation; only add missing pages)
@@ -21,7 +21,7 @@
  * Example:
  *   cd ship && pnpm --filter @ship/api seed:remote-wiki
  *
- * Dependencies: Node 20+ fetch, prd_dev_branch_one/*.md on disk
+ * Dependencies: Node 20+ fetch and markdown files under `deliverables/`
  *
  * Security/PHI: N/A — no PHI; credentials via env only, never committed
  * HIPAA: N/A — no PHI
@@ -47,7 +47,7 @@ const RESUME = process.env.SHIP_SEED_RESUME === '1' || process.env.SHIP_SEED_RES
 const DELAY_MS = Number(process.env.SHIP_SEED_DELAY_MS ?? '300');
 const SOURCE_DIR = path.resolve(
   __dirname,
-  process.env.SHIP_SEED_SOURCE_DIR ?? '../../../prd_dev_branch_one',
+  process.env.SHIP_SEED_SOURCE_DIR ?? '../../../deliverables/2026-W21-week-01',
 );
 
 /** Render WAF may block certain titles; override basename → safe title */
@@ -475,7 +475,7 @@ async function main(): Promise<void> {
   } else {
     const rootContent = markdownToTiptap(
       `# ${ROOT_TITLE}\n\n` +
-        `Seeded from \`prd_dev_branch_one\` on ${new Date().toISOString().slice(0, 10)}.\n\n` +
+        `Seeded from \`deliverables/2026-W21-week-01\` on ${new Date().toISOString().slice(0, 10)}.\n\n` +
         `- Phase 1 PRD bundle\n- Phase 2 PRD bundle\n- PRD CAT 8\n- Core compliance reports\n`,
     );
 

@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const baseUrl = process.env.A11Y_BASE_URL ?? 'http://localhost:5173';
-const outputDir = path.resolve('prd_dev_branch_one/PHASE_2_PRD_BUNDLE/evidence');
+const outputDir = path.resolve('deliverables/2026-W21-week-01/PHASE_2_PRD_BUNDLE/evidence');
 const jsonPath = path.join(outputDir, 'c7-axe-remediation.json');
 const mdPath = path.join(outputDir, 'c7-axe-remediation.md');
 

@@ -11,13 +11,9 @@ This is a `pnpm` monorepo with:
 - `shared/` - shared TypeScript types/contracts
 - `e2e/` - Playwright end-to-end tests
 - `docs/` - architecture and operational documentation
-- `prd_dev_branch_one/` - PRD, audit, and evidence bundles produced in this branch
+- `deliverables/` - client PRD packages, compliance matrices, and reviewable evidence by week
 
-Additional branch evidence artifacts may also appear in:
-
-- `api/prd_dev_branch_one/`
-- `api/coverage/`
-- `web/coverage/`
+Client reviewers should start at [`deliverables/INDEX.md`](./deliverables/INDEX.md). Generated coverage HTML and deployment archives are kept out of the committed source tree; commit summarized evidence under the relevant weekly deliverable folder when it proves a PRD requirement.
 
 ## Prerequisites
 
@@ -118,7 +114,7 @@ Use this workflow to bulk-create wiki documents in a deployed Ship instance from
 
 **Script:** `api/src/scripts/seed-remote-wiki-docs.ts`
 
-**Default source:** `prd_dev_branch_one/` (override with `SHIP_SEED_SOURCE_DIR`)
+**Default source:** `deliverables/2026-W21-week-01/` (override with `SHIP_SEED_SOURCE_DIR`)
 
 ```bash
 # Required: credentials and target instance (never commit these)
@@ -148,7 +144,7 @@ pnpm --filter @ship/api seed:remote-wiki
 | Variable | Purpose |
 | --- | --- |
 | `SHIP_SEED_ROOT_TITLE` | Root portfolio doc title (default: `GFA Week 4 — PRD Portfolio`) |
-| `SHIP_SEED_SOURCE_DIR` | Path to markdown tree (relative to `api/`) |
+| `SHIP_SEED_SOURCE_DIR` | Path to markdown tree (resolved by the seed script; default points at `deliverables/2026-W21-week-01/`) |
 | `SHIP_SEED_RESUME=1` | Reuse existing root; create only missing wiki pages |
 | `SHIP_SEED_DRY_RUN=1` | Print actions without creating documents |
 | `SHIP_SEED_DELAY_MS` | Delay between API calls (default: `300`) |
@@ -223,6 +219,10 @@ pnpm --filter @ship/api seed:remote-synthetic
 - `docs/accountability-philosophy.md`
 - `docs/accountability-manager-guide.md`
 - `docs/developer-workflow-guide.md`
+- `docs/product/ship-welcome-guide.md`
+- `docs/product/ship-changelog-72h.md`
+- `docs/product/ship-clarity-feature-demo.md`
+- `deliverables/INDEX.md`
 
 Render docs deployment:
 

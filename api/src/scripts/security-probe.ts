@@ -817,7 +817,7 @@ async function main(): Promise<void> {
     allowedHostsEnv: process.env.SECURITY_PROBE_ALLOWED_HOSTS,
   });
   const outputPath = process.env.SECURITY_PROBE_OUTPUT
-    ?? '../prd_dev_branch_one/PRD_CAT8/security-probe-report.json';
+    ?? '../deliverables/2026-W21-week-01/PRD_CAT8/security-probe-report.json';
 
   const ctx: ProbeContext = {
     httpOrigin,
