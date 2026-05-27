@@ -63,19 +63,23 @@ const MAX_SNOOZE_HOURS = 168;
 const STANDUP_GAP_DAYS = 2;
 const PRD_LATENCY_BUDGET_MS = 300_000;
 
-type FleetGraphTraceSortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity';
+type FleetGraphTraceSortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity' | 'signalCount' | 'trace';
 type FleetGraphTraceSortDir = 'asc' | 'desc';
 
 export interface FleetGraphRecentRunsQuery {
   sortBy?: FleetGraphTraceSortBy;
   sortDir?: FleetGraphTraceSortDir;
   status?: string;
+  severity?: string;
   trigger?: string;
   branch?: string;
   minLatencyMs?: number;
   maxLatencyMs?: number;
+  minSignalCount?: number;
+  maxSignalCount?: number;
   from?: string;
   to?: string;
+  trace?: string;
   q?: string;
   limit?: number;
   offset?: number;
@@ -1684,6 +1688,10 @@ export async function listFleetGraphRecentRuns(
     params.push(query.status.trim());
     whereClauses.push(`summary.run_status = $${params.length}`);
   }
+  if (query.severity && query.severity.trim() !== '') {
+    params.push(query.severity.trim());
+    whereClauses.push(`summary.max_severity = $${params.length}`);
+  }
   if (query.trigger && query.trigger.trim() !== '') {
     params.push(query.trigger.trim());
     whereClauses.push(`r.trigger = $${params.length}`);
@@ -1700,6 +1708,14 @@ export async function listFleetGraphRecentRuns(
     params.push(Math.max(0, Math.floor(query.maxLatencyMs)));
     whereClauses.push(`r.latency_ms <= $${params.length}`);
   }
+  if (typeof query.minSignalCount === 'number' && Number.isFinite(query.minSignalCount)) {
+    params.push(Math.max(0, Math.floor(query.minSignalCount)));
+    whereClauses.push(`summary.signal_count >= $${params.length}`);
+  }
+  if (typeof query.maxSignalCount === 'number' && Number.isFinite(query.maxSignalCount)) {
+    params.push(Math.max(0, Math.floor(query.maxSignalCount)));
+    whereClauses.push(`summary.signal_count <= $${params.length}`);
+  }
   if (query.from && !Number.isNaN(new Date(query.from).getTime())) {
     params.push(new Date(query.from).toISOString());
     whereClauses.push(`r.created_at >= $${params.length}::timestamptz`);
@@ -1708,11 +1724,12 @@ export async function listFleetGraphRecentRuns(
     params.push(new Date(query.to).toISOString());
     whereClauses.push(`r.created_at <= $${params.length}::timestamptz`);
   }
-  if (query.q && query.q.trim() !== '') {
-    params.push(`%${query.q.trim()}%`);
-    const qParam = `$${params.length}`;
+  const traceSearch = query.trace?.trim() || query.q?.trim();
+  if (traceSearch) {
+    params.push(`%${traceSearch}%`);
+    const traceParam = `$${params.length}`;
     whereClauses.push(
-      `(r.trace_id ILIKE ${qParam} OR r.branch ILIKE ${qParam} OR r.trigger ILIKE ${qParam})`
+      `(r.trace_id ILIKE ${traceParam} OR r.branch ILIKE ${traceParam} OR r.trigger ILIKE ${traceParam})`
     );
   }
 
@@ -1723,7 +1740,11 @@ export async function listFleetGraphRecentRuns(
         ? `summary.run_status_rank ${sortDir}, r.created_at DESC`
         : sortBy === 'severity'
           ? `summary.max_severity_rank ${sortDir}, r.created_at DESC`
-          : `r.created_at ${sortDir}`;
+          : sortBy === 'signalCount'
+            ? `summary.signal_count ${sortDir}, r.created_at DESC`
+            : sortBy === 'trace'
+              ? `summary.trace_id ${sortDir}, r.created_at DESC`
+              : `r.created_at ${sortDir}`;
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
   params.push(limit);
@@ -1778,7 +1799,7 @@ export async function listFleetGraphRecentRuns(
          r.trace_url,
          r.latency_ms,
          r.created_at::text,
-         COALESCE(fs.signal_count, 0)::text AS signal_count,
+         COALESCE(fs.signal_count, 0) AS signal_count,
          CASE COALESCE(fs.max_severity_rank, 0)
            WHEN 3 THEN 'high'
            WHEN 2 THEN 'medium'
@@ -1806,7 +1827,7 @@ export async function listFleetGraphRecentRuns(
        summary.created_at,
        summary.run_status,
        summary.max_severity,
-       summary.signal_count,
+       summary.signal_count::text AS signal_count,
        COUNT(*) OVER()::text AS total_count
      FROM runs_with_summary summary
      JOIN fleetgraph_runs r ON r.id = summary.id

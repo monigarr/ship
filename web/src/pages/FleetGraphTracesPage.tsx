@@ -9,7 +9,7 @@ import {
   resolveInternalTraceHref,
 } from '@/lib/fleetgraphVisuals';
 
-type SortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity';
+type SortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity' | 'signalCount' | 'trace';
 type SortDir = 'asc' | 'desc';
 
 interface FleetGraphTraceRun {
@@ -34,15 +34,24 @@ interface FleetGraphTraceListResponse {
 
 const DEFAULT_LIMIT = 25;
 const STATUS_OPTIONS = ['', 'pending_approval', 'attention', 'resolved', 'no_findings'];
+const SEVERITY_OPTIONS = ['', 'high', 'medium', 'low', 'none'];
 const SORT_FIELDS: Array<{ id: SortBy; label: string }> = [
   { id: 'createdAt', label: 'Created' },
   { id: 'latencyMs', label: 'Latency' },
   { id: 'status', label: 'Status' },
   { id: 'severity', label: 'Severity' },
+  { id: 'signalCount', label: 'Signals' },
+  { id: 'trace', label: 'Trace' },
 ];
 
 function sanitizeSortBy(value: string | null): SortBy {
-  return value === 'latencyMs' || value === 'status' || value === 'severity' ? value : 'createdAt';
+  return value === 'latencyMs' ||
+    value === 'status' ||
+    value === 'severity' ||
+    value === 'signalCount' ||
+    value === 'trace'
+    ? value
+    : 'createdAt';
 }
 
 function sanitizeSortDir(value: string | null): SortDir {
@@ -55,18 +64,41 @@ function parseNumberParam(value: string | null): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function resolveRowTraceId(run: FleetGraphTraceRun): string | undefined {
+  const traceId = run.traceId?.trim();
+  if (traceId) return traceId;
+
+  try {
+    const parsed = new URL(run.traceUrl, 'https://ship.local');
+    const prefix = '/fleetgraph/traces/';
+    if (parsed.pathname.startsWith(prefix)) {
+      return parsed.pathname.slice(prefix.length).split('/')[0] || undefined;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function formatTraceLabel(traceId?: string): string {
+  if (!traceId) return 'Trace index';
+  return traceId.length > 16 ? `Trace ${traceId.slice(0, 8)}...${traceId.slice(-4)}` : `Trace ${traceId}`;
+}
+
 export function FleetGraphTracesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sortBy = sanitizeSortBy(searchParams.get('sortBy'));
   const sortDir = sanitizeSortDir(searchParams.get('sortDir'));
   const status = searchParams.get('status') ?? '';
-  const trigger = searchParams.get('trigger') ?? '';
-  const branch = searchParams.get('branch') ?? '';
-  const q = searchParams.get('q') ?? '';
+  const severity = searchParams.get('severity') ?? '';
+  const trace = searchParams.get('trace') ?? searchParams.get('q') ?? '';
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
   const minLatencyMs = parseNumberParam(searchParams.get('minLatencyMs'));
   const maxLatencyMs = parseNumberParam(searchParams.get('maxLatencyMs'));
+  const minSignalCount = parseNumberParam(searchParams.get('minSignalCount'));
+  const maxSignalCount = parseNumberParam(searchParams.get('maxSignalCount'));
   const limit = parseNumberParam(searchParams.get('limit')) ?? DEFAULT_LIMIT;
   const offset = parseNumberParam(searchParams.get('offset')) ?? 0;
 
@@ -77,15 +109,30 @@ export function FleetGraphTracesPage() {
     query.set('limit', String(limit));
     query.set('offset', String(offset));
     if (status) query.set('status', status);
-    if (trigger) query.set('trigger', trigger);
-    if (branch.trim()) query.set('branch', branch.trim());
-    if (q.trim()) query.set('q', q.trim());
+    if (severity) query.set('severity', severity);
+    if (trace.trim()) query.set('trace', trace.trim());
     if (from) query.set('from', from);
     if (to) query.set('to', to);
     if (typeof minLatencyMs === 'number') query.set('minLatencyMs', String(minLatencyMs));
     if (typeof maxLatencyMs === 'number') query.set('maxLatencyMs', String(maxLatencyMs));
+    if (typeof minSignalCount === 'number') query.set('minSignalCount', String(minSignalCount));
+    if (typeof maxSignalCount === 'number') query.set('maxSignalCount', String(maxSignalCount));
     return query.toString();
-  }, [branch, from, limit, maxLatencyMs, minLatencyMs, offset, q, sortBy, sortDir, status, to, trigger]);
+  }, [
+    from,
+    limit,
+    maxLatencyMs,
+    maxSignalCount,
+    minLatencyMs,
+    minSignalCount,
+    offset,
+    severity,
+    sortBy,
+    sortDir,
+    status,
+    to,
+    trace,
+  ]);
 
   const tracesQuery = useQuery<FleetGraphTraceListResponse>({
     queryKey: ['fleetgraph-traces-index', queryString],
@@ -142,49 +189,24 @@ export function FleetGraphTracesPage() {
 
       <section className="rounded-lg border border-border bg-background/60 p-3">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Filters</p>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
           <label className="text-xs text-muted">
-            <span className="mb-1 block">Status</span>
-            <select
-              value={status}
-              onChange={(event) => updateParam('status', event.target.value)}
+            <span className="mb-1 block">Created from</span>
+            <input
+              type="datetime-local"
+              value={from}
+              onChange={(event) => updateParam('from', event.target.value)}
               className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
-            >
-              {STATUS_OPTIONS.map((value) => (
-                <option key={value || 'all'} value={value}>
-                  {value ? getFleetGraphStatusTone(value).label : 'All statuses'}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="text-xs text-muted">
-            <span className="mb-1 block">Trigger</span>
-            <input
-              value={trigger}
-              onChange={(event) => updateParam('trigger', event.target.value)}
-              placeholder="on_demand"
-              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </label>
 
           <label className="text-xs text-muted">
-            <span className="mb-1 block">Branch</span>
+            <span className="mb-1 block">Created to</span>
             <input
-              value={branch}
-              onChange={(event) => updateParam('branch', event.target.value)}
-              placeholder="planning_risk"
-              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-          </label>
-
-          <label className="text-xs text-muted">
-            <span className="mb-1 block">Search</span>
-            <input
-              value={q}
-              onChange={(event) => updateParam('q', event.target.value)}
-              placeholder="trace or branch"
-              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+              type="datetime-local"
+              value={to}
+              onChange={(event) => updateParam('to', event.target.value)}
+              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </label>
 
@@ -211,22 +233,64 @@ export function FleetGraphTracesPage() {
           </label>
 
           <label className="text-xs text-muted">
-            <span className="mb-1 block">From</span>
-            <input
-              type="datetime-local"
-              value={from}
-              onChange={(event) => updateParam('from', event.target.value)}
+            <span className="mb-1 block">Status</span>
+            <select
+              value={status}
+              onChange={(event) => updateParam('status', event.target.value)}
               className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              {STATUS_OPTIONS.map((value) => (
+                <option key={value || 'all'} value={value}>
+                  {value ? getFleetGraphStatusTone(value).label : 'All statuses'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-xs text-muted">
+            <span className="mb-1 block">Severity</span>
+            <select
+              value={severity}
+              onChange={(event) => updateParam('severity', event.target.value)}
+              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              {SEVERITY_OPTIONS.map((value) => (
+                <option key={value || 'all'} value={value}>
+                  {value ? getFleetGraphSeverityTone(value).label : 'All severities'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-xs text-muted">
+            <span className="mb-1 block">Min signals</span>
+            <input
+              value={minSignalCount ?? ''}
+              onChange={(event) => updateParam('minSignalCount', event.target.value)}
+              inputMode="numeric"
+              placeholder="0"
+              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </label>
 
           <label className="text-xs text-muted">
-            <span className="mb-1 block">To</span>
+            <span className="mb-1 block">Max signals</span>
             <input
-              type="datetime-local"
-              value={to}
-              onChange={(event) => updateParam('to', event.target.value)}
-              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              value={maxSignalCount ?? ''}
+              onChange={(event) => updateParam('maxSignalCount', event.target.value)}
+              inputMode="numeric"
+              placeholder="10"
+              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </label>
+
+          <label className="text-xs text-muted xl:col-span-2">
+            <span className="mb-1 block">Trace</span>
+            <input
+              value={trace}
+              onChange={(event) => updateParam('trace', event.target.value)}
+              placeholder="trace id, branch, or trigger"
+              className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </label>
         </div>
@@ -252,8 +316,6 @@ export function FleetGraphTracesPage() {
                     </button>
                   </th>
                 ))}
-                <th className="px-3 py-2 text-left font-semibold">Signals</th>
-                <th className="px-3 py-2 text-left font-semibold">Trace</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/80 text-sm">
@@ -281,6 +343,8 @@ export function FleetGraphTracesPage() {
               {tracesQuery.data?.runs.map((run) => {
                 const statusTone = getFleetGraphStatusTone(run.status);
                 const severityTone = getFleetGraphSeverityTone(run.severity);
+                const traceId = resolveRowTraceId(run);
+                const traceHref = resolveInternalTraceHref(run.traceUrl, traceId);
                 return (
                   <tr key={run.runId} className="hover:bg-border/10">
                     <td className="px-3 py-2 text-muted">{formatFleetGraphDateTime(run.createdAt)}</td>
@@ -298,11 +362,12 @@ export function FleetGraphTracesPage() {
                     <td className="px-3 py-2 text-muted">{run.signalCount}</td>
                     <td className="px-3 py-2">
                       <Link
-                        to={resolveInternalTraceHref(run.traceUrl, run.traceId)}
+                        to={traceHref}
                         className="text-accent hover:underline"
                       >
-                        {run.branch} ({run.trigger})
+                        {formatTraceLabel(traceId)}
                       </Link>
+                      <p className="mt-0.5 text-[11px] text-muted">{run.branch} ({run.trigger})</p>
                     </td>
                   </tr>
                 );

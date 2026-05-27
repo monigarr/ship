@@ -41,7 +41,9 @@ function parseRecentRunsQuery(req: Request): FleetGraphRecentRunsQuery {
     sortByRaw === 'createdAt' ||
     sortByRaw === 'latencyMs' ||
     sortByRaw === 'status' ||
-    sortByRaw === 'severity'
+    sortByRaw === 'severity' ||
+    sortByRaw === 'signalCount' ||
+    sortByRaw === 'trace'
       ? sortByRaw
       : undefined;
   const sortDirRaw = typeof req.query.sortDir === 'string' ? req.query.sortDir.trim().toLowerCase() : '';
@@ -51,6 +53,10 @@ function parseRecentRunsQuery(req: Request): FleetGraphRecentRunsQuery {
     typeof req.query.status === 'string' && req.query.status.trim() !== ''
       ? req.query.status.trim()
       : undefined;
+  const severity =
+    typeof req.query.severity === 'string' && req.query.severity.trim() !== ''
+      ? req.query.severity.trim()
+      : undefined;
   const trigger =
     typeof req.query.trigger === 'string' && req.query.trigger.trim() !== ''
       ? req.query.trigger.trim()
@@ -58,6 +64,10 @@ function parseRecentRunsQuery(req: Request): FleetGraphRecentRunsQuery {
   const branch =
     typeof req.query.branch === 'string' && req.query.branch.trim() !== ''
       ? req.query.branch.trim()
+      : undefined;
+  const trace =
+    typeof req.query.trace === 'string' && req.query.trace.trim() !== ''
+      ? req.query.trace.trim()
       : undefined;
   const q = typeof req.query.q === 'string' && req.query.q.trim() !== '' ? req.query.q.trim() : undefined;
   const from =
@@ -73,17 +83,23 @@ function parseRecentRunsQuery(req: Request): FleetGraphRecentRunsQuery {
   const offset = parseFiniteNumber(req.query.offset);
   const minLatencyMs = parseFiniteNumber(req.query.minLatencyMs);
   const maxLatencyMs = parseFiniteNumber(req.query.maxLatencyMs);
+  const minSignalCount = parseFiniteNumber(req.query.minSignalCount);
+  const maxSignalCount = parseFiniteNumber(req.query.maxSignalCount);
 
   return {
     sortBy,
     sortDir,
     status,
+    severity,
     trigger,
     branch,
     minLatencyMs,
     maxLatencyMs,
+    minSignalCount,
+    maxSignalCount,
     from,
     to,
+    trace,
     q,
     limit,
     offset,

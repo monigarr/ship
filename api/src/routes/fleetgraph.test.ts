@@ -187,7 +187,9 @@ describe('FleetGraph API', () => {
         .send({});
 
       const response = await request(ctx.app)
-        .get('/api/fleetgraph/traces?sortBy=latencyMs&sortDir=desc&status=attention&limit=10&offset=0')
+        .get(
+          '/api/fleetgraph/traces?sortBy=signalCount&sortDir=desc&status=attention&severity=medium&minSignalCount=1&maxSignalCount=5&trace=planning&limit=10&offset=0'
+        )
         .set('Cookie', ctx.sessionCookie);
 
       expect(response.status).toBe(200);
@@ -195,6 +197,8 @@ describe('FleetGraph API', () => {
       expect(response.body.limit).toBe(10);
       expect(response.body.offset).toBe(0);
       expect(response.body.runs.every((run: { status: string }) => run.status === 'attention')).toBe(true);
+      expect(response.body.runs.every((run: { severity: string }) => run.severity === 'medium')).toBe(true);
+      expect(response.body.runs.every((run: { signalCount: number }) => run.signalCount >= 1)).toBe(true);
     });
   });
 
