@@ -37,7 +37,7 @@ import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
 
-type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'settings' | 'dashboard' | 'project-context';
+type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'settings' | 'dashboard' | 'project-context';
 
 export function AppLayout() {
   const { user, logout, isSuperAdmin, impersonating, endImpersonation } = useAuth();
@@ -173,6 +173,7 @@ export function AppLayout() {
     if (location.pathname.match(/^\/programs\/[^/]+\/sprints/)) return 'sprints';
     if (location.pathname.startsWith('/programs') || location.pathname.startsWith('/feedback')) return 'programs';
     if (location.pathname.startsWith('/team')) return 'team';
+    if (location.pathname.startsWith('/fleetgraph')) return 'fleetgraph';
     if (location.pathname.startsWith('/settings')) return 'settings';
     return 'dashboard';
   };
@@ -181,7 +182,7 @@ export function AppLayout() {
   const isMyWeekPage = location.pathname.startsWith('/my-week');
   const isWeeklyDoc = currentDocumentType === 'weekly_plan' || currentDocumentType === 'weekly_retro';
   const isStandup = currentDocumentType === 'standup';
-  const hideLeftSidebar = isMyWeekPage || isWeeklyDoc || isStandup;
+  const hideLeftSidebar = isMyWeekPage || isWeeklyDoc || isStandup || activeMode === 'fleetgraph';
 
   // Get the active document ID from URL - works for /documents/:id and legacy routes
   const getActiveDocumentId = (): string | undefined => {
@@ -209,6 +210,7 @@ export function AppLayout() {
       case 'programs': navigate('/programs'); break;
       case 'sprints': navigate('/sprints'); break;
       case 'team': navigate('/team'); break;
+      case 'fleetgraph': navigate('/fleetgraph/traces'); break;
       case 'settings': navigate('/settings'); break;
     }
   };
@@ -354,7 +356,7 @@ export function AppLayout() {
             )}
           </div>
 
-          {/* Mode icons - ordered by hierarchy: Dashboard → Docs → Programs → Projects → Issues → Teams */}
+          {/* Mode icons - ordered by hierarchy: Dashboard → Docs → Programs → Projects → Teams → FleetGraph */}
           <div className="flex flex-1 flex-col items-center gap-1">
             <RailIcon
               icon={<DashboardIcon />}
@@ -386,6 +388,12 @@ export function AppLayout() {
               active={activeMode === 'team'}
               onClick={() => handleModeClick('team')}
               showBadge={standupDue}
+            />
+            <RailLink
+              icon={<FleetGraphTraceIcon />}
+              label="FleetGraph traces"
+              active={activeMode === 'fleetgraph'}
+              to="/fleetgraph/traces"
             />
           </div>
 
@@ -440,6 +448,7 @@ export function AppLayout() {
                 {activeMode === 'programs' && 'Programs'}
                 {activeMode === 'sprints' && 'Weeks'}
                 {activeMode === 'team' && 'Teams'}
+                {activeMode === 'fleetgraph' && 'FleetGraph'}
                 {activeMode === 'settings' && 'Settings'}
                 {activeMode === 'project-context' && 'Project'}
               </h2>
@@ -601,6 +610,23 @@ function RailIcon({ icon, label, active, onClick, showBadge }: { icon: React.Rea
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
         )}
       </button>
+    </Tooltip>
+  );
+}
+
+function RailLink({ icon, label, active, to }: { icon: React.ReactNode; label: string; active: boolean; to: string }) {
+  return (
+    <Tooltip content={label} side="right">
+      <Link
+        to={to}
+        className={cn(
+          'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+          active ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'
+        )}
+        aria-label={label}
+      >
+        {icon}
+      </Link>
     </Tooltip>
   );
 }
@@ -1808,6 +1834,16 @@ function TeamIcon() {
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+
+function FleetGraphTraceIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5l4.25-4.25 3.25 2.5L18 8" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5V19m4.25-5.75V15m3.25.75v1.5M18 8v1.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 17.5a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zm4.25-4.25a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM12 15.75a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM16.5 8a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0z" />
     </svg>
   );
 }
