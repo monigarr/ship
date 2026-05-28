@@ -116,8 +116,9 @@ export function FleetGraphTracePage() {
   const findings = useMemo(() => traceQuery.data?.findings ?? [], [traceQuery.data?.findings]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto w-full max-w-6xl space-y-4 p-4 pb-20">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">FleetGraph Trace Detail</h1>
           <p className="text-sm text-muted">
@@ -386,6 +387,7 @@ export function FleetGraphTracePage() {
           </section>
         </>
       )}
+      </div>
     </div>
   );
 }
