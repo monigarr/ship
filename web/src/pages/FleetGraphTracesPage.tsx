@@ -115,7 +115,7 @@ function resolveRowTraceId(run: FleetGraphTraceRun): string | undefined {
 
 function formatTraceLabel(traceId?: string): string {
   if (!traceId) return 'Trace unavailable';
-  return traceId.length > 16 ? `Trace ${traceId.slice(0, 8)}...${traceId.slice(-4)}` : `Trace ${traceId}`;
+  return `Trace ${traceId}`;
 }
 
 export function FleetGraphTracesPage() {
@@ -222,7 +222,10 @@ export function FleetGraphTracesPage() {
   const canGoNext = tracesQuery.data ? tracesQuery.data.offset + tracesQuery.data.limit < tracesQuery.data.total : false;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 p-4">
+    <div
+      className="mx-auto min-h-0 w-full max-w-7xl flex-1 space-y-4 overflow-y-auto overflow-x-hidden p-4"
+      data-testid="fleetgraph-traces-scroll-region"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-foreground">FleetGraph Traces</h1>
@@ -348,11 +351,12 @@ export function FleetGraphTracesPage() {
         className="rounded-lg border border-border bg-background/60"
         aria-live="polite"
       >
-        <div className="overflow-x-auto">
+        <div className="max-w-full overflow-x-auto pb-1" data-testid="fleetgraph-traces-table-scroll">
           <table className="w-full min-w-[1280px]">
             <thead className="border-b border-border bg-border/20 text-xs uppercase tracking-wide text-muted">
               <tr>
                 {renderSortHeader('createdAt')}
+                {renderSortHeader('trace', 'min-w-[240px] px-3 py-2 text-left font-semibold')}
                 {renderSortHeader('status')}
                 {renderSortHeader('severity')}
                 <th className="px-3 py-2 text-left font-semibold">Top Signal</th>
@@ -361,7 +365,6 @@ export function FleetGraphTracesPage() {
                 <th className="px-3 py-2 text-left font-semibold">Owner / Audience</th>
                 {renderSortHeader('signalCount')}
                 {renderSortHeader('latencyMs')}
-                {renderSortHeader('trace')}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/80 text-sm">
@@ -394,6 +397,21 @@ export function FleetGraphTracesPage() {
                 return (
                   <tr key={run.runId} className="hover:bg-border/10">
                     <td className="px-3 py-2 text-muted">{formatFleetGraphDateTime(run.createdAt)}</td>
+                    <td className="min-w-[240px] max-w-[320px] px-3 py-2 align-top">
+                      {traceId ? (
+                        <Link
+                          to={traceHref}
+                          className="break-all text-accent hover:underline"
+                          aria-label={`Open FleetGraph trace ${traceId}`}
+                          title={traceId}
+                        >
+                          {formatTraceLabel(traceId)}
+                        </Link>
+                      ) : (
+                        <span className="text-muted">{formatTraceLabel(traceId)}</span>
+                      )}
+                      <p className="mt-0.5 text-[11px] text-muted">{run.branch} ({run.trigger})</p>
+                    </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex rounded border px-2 py-0.5 text-xs ${statusTone.className}`}>
                         {statusTone.label}
@@ -444,20 +462,6 @@ export function FleetGraphTracesPage() {
                     </td>
                     <td className="px-3 py-2 text-muted">{run.signalCount}</td>
                     <td className="px-3 py-2 text-foreground">{run.latencyMs}ms</td>
-                    <td className="px-3 py-2">
-                      {traceId ? (
-                        <Link
-                          to={traceHref}
-                          className="text-accent hover:underline"
-                          aria-label={`Open FleetGraph trace ${traceId}`}
-                        >
-                          {formatTraceLabel(traceId)}
-                        </Link>
-                      ) : (
-                        <span className="text-muted">{formatTraceLabel(traceId)}</span>
-                      )}
-                      <p className="mt-0.5 text-[11px] text-muted">{run.branch} ({run.trigger})</p>
-                    </td>
                   </tr>
                 );
               })}

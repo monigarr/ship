@@ -99,7 +99,7 @@ Recorded values below come from the 2026-05-25 through 2026-05-27 FleetGraph cap
 
 Last fully green verification: `2026-05-25 23:44 (UTC-5)` (`2026-05-26T04:44Z` approx).
 
-Latest targeted FleetGraph trace-link verification: `2026-05-27 19:20 (America/Chicago)`.
+Latest targeted FleetGraph trace-index verification: `2026-05-28 11:17 (America/Chicago)`.
 
 Current repo spot-check: `2026-05-28` verified referenced files/routes/migrations exist, the deployed login URL returns `200 OK`, and the targeted FleetGraph API suite currently declares `48` tests across `5` files. A local test rerun on 2026-05-28 discovered the same tests but did not execute them because no local Postgres was listening on `localhost:5432` (`ECONNREFUSED`).
 
@@ -107,8 +107,8 @@ Current repo spot-check: `2026-05-28` verified referenced files/routes/migration
 - Web type-check: pass (`pnpm --filter @ship/web type-check`)
 - FleetGraph API/runtime/route trace suites: recorded pass (`37` tests, `3` files)
 - FleetGraph targeted API suite declarations: current repo has `48` tests across `5` files (`trace` 5, `runtime` 19, `routes` 13, `proactive` 9, `notifications` 2)
-- FleetGraph trace index UI regression: recorded pass (`6` tests, `1` file); trace-link helper coverage currently has `4` tests in [`fleetgraphVisuals.test.ts`](../../web/src/lib/fleetgraphVisuals.test.ts)
-- Local route/API smoke: `/fleetgraph/traces` returned `200`; repaired legacy row resolved to `/fleetgraph/traces/e317cde4-bfa3-46c9-ab0d-5a0d2da00858`
+- FleetGraph trace index UI regression: current pass (`6` tests, `1` file), including visible Trace column order and page/table scroll containers; trace-link helper coverage currently has `4` tests in [`fleetgraphVisuals.test.ts`](../../web/src/lib/fleetgraphVisuals.test.ts)
+- Local route/API smoke: `/fleetgraph/traces` returned `200`; repaired legacy row resolved to `/fleetgraph/traces/e317cde4-bfa3-46c9-ab0d-5a0d2da00858`; production-build browser check confirmed the Trace column renders as the second table column with full trace ID link text and scrollable vertical/horizontal overflow.
 
 ### Tests
 

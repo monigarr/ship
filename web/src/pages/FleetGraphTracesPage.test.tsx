@@ -83,6 +83,14 @@ describe('FleetGraphTracesPage', () => {
     renderPage();
 
     expect(await screen.findByText('FleetGraph Traces')).toBeInTheDocument();
+    expect(screen.getByTestId('fleetgraph-traces-scroll-region')).toHaveClass('overflow-y-auto');
+    expect(screen.getByTestId('fleetgraph-traces-table-scroll')).toHaveClass('overflow-x-auto');
+    expect(
+      screen
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent?.replace(/[↑↓]/g, '').trim())
+        .slice(0, 4)
+    ).toEqual(['Created', 'Trace', 'Status', 'Severity']);
     expect(await screen.findByText('Pending Approval')).toBeInTheDocument();
     expect((await screen.findAllByText('High')).length).toBeGreaterThan(0);
     expect(await screen.findByText('Weak plan quality: Test Weekly Plan')).toBeInTheDocument();
