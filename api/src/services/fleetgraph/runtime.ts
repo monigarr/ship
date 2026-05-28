@@ -63,8 +63,22 @@ const MAX_SNOOZE_HOURS = 168;
 const STANDUP_GAP_DAYS = 2;
 const PRD_LATENCY_BUDGET_MS = 300_000;
 
+function normalizeStoredTraceId(traceId?: string | null): string {
+  return typeof traceId === 'string' ? traceId.trim() : '';
+}
+
+function resolveTraceIdentifier(traceId: string | null | undefined, runId: string): string {
+  return normalizeStoredTraceId(traceId) || runId;
+}
+
+function resolveRunTraceUrl(traceId: string | null | undefined, traceUrl: string | null | undefined, runId: string): string {
+  return canonicalizeFleetGraphTraceUrl(resolveTraceIdentifier(traceId, runId), traceUrl);
+}
+
 type FleetGraphTraceSortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity' | 'signalCount' | 'trace';
 type FleetGraphTraceSortDir = 'asc' | 'desc';
+
+let traceLinkRepairApplied = false;
 
 export interface FleetGraphRecentRunsQuery {
   sortBy?: FleetGraphTraceSortBy;
@@ -152,6 +166,40 @@ export async function ensureFleetGraphTables(): Promise<void> {
       ADD COLUMN IF NOT EXISTS snooze_note TEXT,
       ADD COLUMN IF NOT EXISTS notification_drafts JSONB NOT NULL DEFAULT '[]'::jsonb;
   `);
+
+  if (!traceLinkRepairApplied) {
+    await pool.query(`
+      UPDATE fleetgraph_runs
+      SET trace_id = id::text
+      WHERE trace_id IS NULL
+         OR btrim(trace_id) = '';
+    `);
+
+    await pool.query(`
+      UPDATE fleetgraph_runs
+      SET trace_url = '/fleetgraph/traces/' || trace_id
+      WHERE trace_id IS NOT NULL
+        AND btrim(trace_id) <> ''
+        AND (
+          trace_url IS NULL
+          OR btrim(trace_url) = ''
+          OR trace_url IN ('/fleetgraph/traces', '/fleetgraph/traces/')
+          OR trace_url ~* '^https?://'
+          OR trace_url LIKE 'internal://fleetgraph/%'
+        );
+    `);
+
+    await pool.query(`
+      UPDATE fleetgraph_trace_events e
+      SET trace_id = r.trace_id
+      FROM fleetgraph_runs r
+      WHERE e.run_id = r.id
+        AND (e.trace_id IS NULL OR btrim(e.trace_id) = '')
+        AND r.trace_id IS NOT NULL
+        AND btrim(r.trace_id) <> '';
+    `);
+    traceLinkRepairApplied = true;
+  }
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS fleetgraph_hitl_requests (
@@ -1729,7 +1777,7 @@ export async function listFleetGraphRecentRuns(
     params.push(`%${traceSearch}%`);
     const traceParam = `$${params.length}`;
     whereClauses.push(
-      `(r.trace_id ILIKE ${traceParam} OR r.branch ILIKE ${traceParam} OR r.trigger ILIKE ${traceParam})`
+      `(r.trace_id ILIKE ${traceParam} OR r.id::text ILIKE ${traceParam} OR r.trace_url ILIKE ${traceParam} OR r.branch ILIKE ${traceParam} OR r.trigger ILIKE ${traceParam})`
     );
   }
 
@@ -1743,7 +1791,7 @@ export async function listFleetGraphRecentRuns(
           : sortBy === 'signalCount'
             ? `summary.signal_count ${sortDir}, r.created_at DESC`
             : sortBy === 'trace'
-              ? `summary.trace_id ${sortDir}, r.created_at DESC`
+              ? `COALESCE(NULLIF(summary.trace_id, ''), summary.id::text) ${sortDir}, r.created_at DESC`
               : `r.created_at ${sortDir}`;
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -1754,10 +1802,10 @@ export async function listFleetGraphRecentRuns(
 
   const result = await pool.query<{
     id: string;
-    trace_id: string;
+    trace_id: string | null;
     trigger: string;
     branch: string;
-    trace_url: string;
+    trace_url: string | null;
     latency_ms: number;
     created_at: string;
     run_status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
@@ -1841,10 +1889,10 @@ export async function listFleetGraphRecentRuns(
   return {
     runs: result.rows.map((row) => ({
       runId: row.id,
-      traceId: row.trace_id,
+      traceId: resolveTraceIdentifier(row.trace_id, row.id),
       trigger: row.trigger,
       branch: row.branch,
-      traceUrl: canonicalizeFleetGraphTraceUrl(row.trace_id, row.trace_url),
+      traceUrl: resolveRunTraceUrl(row.trace_id, row.trace_url, row.id),
       latencyMs: row.latency_ms,
       createdAt: toIsoString(row.created_at),
       status: row.run_status,
@@ -1909,9 +1957,10 @@ export async function getFleetGraphTraceDetail(
 
   const runResult = await pool.query<{
     id: string;
+    trace_id: string | null;
     trigger: string;
     branch: string;
-    trace_url: string;
+    trace_url: string | null;
     latency_ms: number;
     token_estimate: number;
     cost_estimate_usd: string;
@@ -1921,6 +1970,7 @@ export async function getFleetGraphTraceDetail(
   }>(
     `SELECT
        id,
+       trace_id,
        trigger,
        branch,
        trace_url,
@@ -1932,8 +1982,10 @@ export async function getFleetGraphTraceDetail(
        run_output
      FROM fleetgraph_runs
      WHERE workspace_id = $1
-       AND trace_id = $2
-     ORDER BY created_at DESC
+       AND (trace_id = $2 OR id::text = $2)
+     ORDER BY
+       CASE WHEN trace_id = $2 THEN 0 ELSE 1 END,
+       created_at DESC
      LIMIT 1`,
     [workspaceId, traceId]
   );
@@ -1942,6 +1994,8 @@ export async function getFleetGraphTraceDetail(
   if (!run) {
     throw new Error('Trace not found');
   }
+
+  const resolvedTraceId = resolveTraceIdentifier(run.trace_id, run.id);
 
   const timelineResult = await pool.query<{
     phase: string;
@@ -1960,9 +2014,9 @@ export async function getFleetGraphTraceDetail(
        created_at::text
      FROM fleetgraph_trace_events
      WHERE workspace_id = $1
-       AND trace_id = $2
+       AND (run_id = $2 OR trace_id = $3)
      ORDER BY created_at ASC`,
-    [workspaceId, traceId]
+    [workspaceId, run.id, resolvedTraceId]
   );
 
   const findingsResult = await pool.query<{
@@ -2029,8 +2083,8 @@ export async function getFleetGraphTraceDetail(
       : run.run_output;
 
   return {
-    traceId,
-    traceUrl: canonicalizeFleetGraphTraceUrl(traceId, run.trace_url),
+    traceId: resolvedTraceId,
+    traceUrl: resolveRunTraceUrl(run.trace_id, run.trace_url, run.id),
     run: {
       runId: run.id,
       trigger: run.trigger,

@@ -71,8 +71,41 @@ describe('FleetGraphTracesPage', () => {
   it('links trace rows to internal FleetGraph trace details even when stored URL is external', async () => {
     renderPage();
 
-    const traceLink = await screen.findByRole('link', { name: 'Trace trace-1' });
+    const traceLink = await screen.findByRole('link', { name: 'Open FleetGraph trace trace-1' });
     expect(traceLink).toHaveAttribute('href', '/fleetgraph/traces/trace-1');
+  });
+
+  it('falls back to run id when a legacy trace row only points to the trace index', async () => {
+    mockedApiGet.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        runs: [
+          {
+            runId: 'legacy-run-1',
+            traceId: '',
+            trigger: 'proactive_poll',
+            branch: 'execution_risk',
+            traceUrl: '/fleetgraph/traces',
+            latencyMs: 800,
+            createdAt: '2026-05-26T21:05:00.000Z',
+            status: 'attention',
+            severity: 'high',
+            signalCount: 1,
+          },
+        ],
+        total: 1,
+        limit: 25,
+        offset: 0,
+      }),
+    } as unknown as Response);
+
+    renderPage();
+
+    const traceLink = await screen.findByRole('link', {
+      name: 'Open FleetGraph trace legacy-run-1',
+    });
+    expect(traceLink).toHaveAttribute('href', '/fleetgraph/traces/legacy-run-1');
+    expect(screen.queryByText('Trace index')).not.toBeInTheDocument();
   });
 
   it('sends column filters for created date, latency, status, severity, signals, and trace', async () => {

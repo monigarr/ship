@@ -6,7 +6,7 @@ Use this guide to **run automated FleetGraph tests** (fast engineer onboarding) 
 | --- | --- |
 | **Branch** | `gfa2_wk5` |
 | **Public app** | `https://ship-web-jyqh.onrender.com/` |
-| **Last updated** | 2026-05-26 |
+| **Last updated** | 2026-05-27 |
 | **Source of truth** | This file is the canonical quick start |
 
 Estimated time:
@@ -37,8 +37,10 @@ Use this when a human needs a quick orientation to FleetGraph observability and 
 - Trace execution data is persisted in API runtime tables (`fleetgraph_runs`, `fleetgraph_trace_events`) and exposed in authenticated endpoints.
 - Humans can inspect traces in three places:
   - FleetGraph assistant links (**Open trace details**)
+  - Visual trace index (`/fleetgraph/traces`)
   - Trace list API (`/api/fleetgraph/traces`)
   - Trace detail page (`/fleetgraph/traces/:traceId`)
+- The visual trace index opens the full in-app detail page for each run; legacy rows with an index-only URL are repaired to a run-specific internal trace link.
 - Divergent branches (for example `planning_risk` vs `accountability_risk`) are required evidence for grading.
 - Canonical evidence packaging lives in [`FLEETGRAPH_EVIDENCE_INDEX.md`](./FLEETGRAPH_EVIDENCE_INDEX.md); TC mappings live in [`FLEETGRAPH.md`](./FLEETGRAPH.md).
 
@@ -47,8 +49,8 @@ Use this when a human needs a quick orientation to FleetGraph observability and 
 | Step | Local path | Deployed path |
 | --- | --- | --- |
 | 1. Run or trigger FleetGraph | Seed + run via local API (`db:seed:fleetgraph` + on-demand or proactive trigger) | Use `[SYNTH-HITL]` workspace and run on-demand/proactive scenarios |
-| 2. Open trace list | `http://localhost:5173/api/fleetgraph/traces` (authenticated) | `https://ship-web-jyqh.onrender.com/api/fleetgraph/traces` (authenticated) |
-| 3. Open trace detail | Click a `traceUrl` to `/fleetgraph/traces/{traceId}` | Click a `traceUrl` to `/fleetgraph/traces/{traceId}` |
+| 2. Open trace list | `http://localhost:5173/fleetgraph/traces` or `/api/fleetgraph/traces` (authenticated) | `https://ship-web-jyqh.onrender.com/fleetgraph/traces` or `/api/fleetgraph/traces` (authenticated) |
+| 3. Open trace detail | Click the trace row link to `/fleetgraph/traces/{traceId}` | Click the trace row link to `/fleetgraph/traces/{traceId}` |
 | 4. Visually confirm fields | Branch, trigger, latency budget, timeline events, findings | Branch, trigger, latency budget, timeline events, findings |
 | 5. Confirm divergence | Capture at least two traces with different branches | Capture at least two traces with different branches |
 | 6. Record evidence | Paste links in `FLEETGRAPH.md` + Evidence Index | Paste links in `FLEETGRAPH.md` + Evidence Index |
@@ -69,9 +71,9 @@ Run these first to confirm FleetGraph runtime, routes, proactive polling, and PR
 
 | File | Tests | Purpose |
 | --- | --- | --- |
-| `api/src/services/fleetgraph/trace.test.ts` | 4 | Internal trace URL generation + safe trace config diagnostics |
-| `api/src/services/fleetgraph/runtime.test.ts` | 18 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence |
-| `api/src/routes/fleetgraph.test.ts` | 11 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
+| `api/src/services/fleetgraph/trace.test.ts` | 5 | Internal trace URL generation + safe trace config diagnostics |
+| `api/src/services/fleetgraph/runtime.test.ts` | 19 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence, legacy trace-link repair |
+| `api/src/routes/fleetgraph.test.ts` | 13 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
 | `api/src/services/fleetgraph/proactive.test.ts` | 9 | Proactive poll, webhook debounce, scan tiers, scheduler env guard |
 | `api/src/services/fleetgraph/notifications.test.ts` | 2 | Role-based notification draft routing |
 | `api/src/services/fleetgraph/seed-helpers.ts` | — | Shared document seed helpers (used by tests and `db:seed:fleetgraph`) |

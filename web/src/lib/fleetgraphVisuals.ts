@@ -83,12 +83,18 @@ export function formatFleetGraphDateTime(value: string): string {
   return asDate.toLocaleString();
 }
 
-export function resolveInternalTraceHref(traceUrl: string, traceId?: string): string {
+export function resolveInternalTraceHref(traceUrl?: string | null, traceId?: string): string {
   const normalizedTraceId = traceId?.trim();
   if (normalizedTraceId) {
     return `/fleetgraph/traces/${normalizedTraceId}`;
   }
+  if (!traceUrl) {
+    return '/fleetgraph/traces';
+  }
   if (traceUrl.startsWith('/')) {
+    if (traceUrl.startsWith('/api/fleetgraph/traces/')) {
+      return traceUrl.replace(/^\/api\/fleetgraph\/traces\//, '/fleetgraph/traces/');
+    }
     return traceUrl;
   }
   const legacyPrefix = 'internal://fleetgraph/';
@@ -100,6 +106,9 @@ export function resolveInternalTraceHref(traceUrl: string, traceId?: string): st
       const parsed = new URL(traceUrl);
       if (parsed.pathname.startsWith('/fleetgraph/traces/')) {
         return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+      if (parsed.pathname.startsWith('/api/fleetgraph/traces/')) {
+        return `${parsed.pathname.replace(/^\/api\/fleetgraph\/traces\//, '/fleetgraph/traces/')}${parsed.search}${parsed.hash}`;
       }
     } catch {
       return '/fleetgraph/traces';

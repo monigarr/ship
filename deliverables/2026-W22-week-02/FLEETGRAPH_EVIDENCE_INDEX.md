@@ -5,6 +5,7 @@ This file is the single packaging checklist for PRD submission evidence on branc
 ## 1) Core Links
 
 - Public deployment URL: `https://ship-web-jyqh.onrender.com/`
+- FleetGraph visual trace index: `/fleetgraph/traces`
 - FleetGraph findings endpoint: `/api/fleetgraph/findings`
 - FleetGraph traces endpoint: `/api/fleetgraph/traces`
 - FleetGraph metrics endpoint: `/api/fleetgraph/metrics`
@@ -26,7 +27,7 @@ Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Pa
 | Shared graph architecture for both modes | Complete | `api/src/services/fleetgraph/runtime.ts` |
 | Context-embedded chat (no standalone bot) | Complete | FleetGraph panel embedded in `IssueSidebar`, `ProjectSidebar`, `WeekSidebar` |
 | HITL gate for protected actions | Complete | `fleetgraph_hitl_requests`, `/api/fleetgraph/hitl/:requestId/approve|reject`, snooze via `/api/fleetgraph/findings/:findingId/snooze` |
-| Internal FleetGraph trace links | Complete | Internal trace detail endpoint `/api/fleetgraph/traces/:traceId` with in-app route `/fleetgraph/traces/:traceId` |
+| Internal FleetGraph trace links | Complete | Visual trace index `/fleetgraph/traces`, internal trace detail endpoint `/api/fleetgraph/traces/:traceId`, in-app route `/fleetgraph/traces/:traceId`, and legacy-row repair migration `043_repair_fleetgraph_trace_detail_links.sql` |
 | Snooze lifecycle | Complete | `fleetgraph_findings.snoozed_until`, UI snooze buttons in `FleetGraphAssistant.tsx` |
 | Standup + approval overdue detectors | Complete | `accountability_risk` + overdue `planning_risk` in `runtime.ts` (TC7/TC8) |
 | Real Ship data usage | Complete | Runtime reads from `documents` and related workspace records |
@@ -46,7 +47,7 @@ Internal policy: keep observability links inside Ship and verify they resolve fo
 | Early Submission | `/fleetgraph/traces/449ccd4f-99db-4aed-903c-ea835f717d1d` | `/fleetgraph/traces/d0f25512-b219-4766-afaa-5c0888e2a9f1` | TC2 vs TC4 divergent internal traces |
 | Final Submission | `/fleetgraph/traces/5b4a47f1-c766-40d8-a005-e6f3cd18f50b` | `/fleetgraph/traces/d7cdaac0-6352-49d8-b395-84f6bc9da39a` | TC3 vs TC8 divergent internal traces |
 
-Local fallback (if link unavailable): use `/api/fleetgraph/traces` to fetch recent runs and open `/fleetgraph/traces/{traceId}`.
+Local fallback (if link unavailable): use `/api/fleetgraph/traces` to fetch recent runs and open `/fleetgraph/traces/{traceId}`. Legacy rows that previously pointed to `/fleetgraph/traces` are repaired to a run-specific internal trace route.
 
 ## 4) Timed Latency Test Protocol
 
@@ -90,6 +91,14 @@ Use `/api/fleetgraph/metrics` for runtime-derived telemetry.
 ## 6) Validation Run Outputs (Live)
 
 Last fully green verification: `2026-05-25 23:44 (UTC-5)` (`2026-05-26T04:44Z` approx).
+
+Latest targeted FleetGraph trace-link verification: `2026-05-27 19:20 (America/Chicago)`.
+
+- API type-check: pass (`pnpm --filter @ship/api type-check`)
+- Web type-check: pass (`pnpm --filter @ship/web type-check`)
+- FleetGraph API/runtime trace suites: pass (`37` tests, `3` files)
+- FleetGraph trace index UI regression: pass (`6` tests, `1` file)
+- Local route/API smoke: `/fleetgraph/traces` returned `200`; repaired legacy row resolved to `/fleetgraph/traces/e317cde4-bfa3-46c9-ab0d-5a0d2da00858`
 
 ### Tests
 
@@ -181,6 +190,9 @@ docker stop ship-test-postgres; docker rm ship-test-postgres
   - `api/src/db/migrations/034_add_fleetgraph_runtime_tables.sql`
   - `api/src/db/migrations/039_fleetgraph_notification_drafts.sql`
   - `api/src/db/migrations/040_add_fleetgraph_trace_events.sql`
+  - `api/src/db/migrations/043_repair_fleetgraph_trace_detail_links.sql`
+  - `web/src/pages/FleetGraphTracesPage.tsx`
+  - `web/src/pages/FleetGraphTracePage.tsx`
   - `api/src/services/fleetgraph/synthesis.ts`
   - `api/src/services/fleetgraph/notifications.ts`
   - `api/src/services/fleetgraph/hitl-actions.ts`

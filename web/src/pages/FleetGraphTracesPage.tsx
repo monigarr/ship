@@ -14,10 +14,10 @@ type SortDir = 'asc' | 'desc';
 
 interface FleetGraphTraceRun {
   runId: string;
-  traceId?: string;
+  traceId?: string | null;
   trigger: string;
   branch: string;
-  traceUrl: string;
+  traceUrl?: string | null;
   latencyMs: number;
   createdAt: string;
   status: string;
@@ -68,21 +68,26 @@ function resolveRowTraceId(run: FleetGraphTraceRun): string | undefined {
   const traceId = run.traceId?.trim();
   if (traceId) return traceId;
 
+  const traceUrl = run.traceUrl?.trim();
   try {
-    const parsed = new URL(run.traceUrl, 'https://ship.local');
+    const parsed = new URL(traceUrl || '', 'https://ship.local');
     const prefix = '/fleetgraph/traces/';
     if (parsed.pathname.startsWith(prefix)) {
       return parsed.pathname.slice(prefix.length).split('/')[0] || undefined;
     }
+    const apiPrefix = '/api/fleetgraph/traces/';
+    if (parsed.pathname.startsWith(apiPrefix)) {
+      return parsed.pathname.slice(apiPrefix.length).split('/')[0] || undefined;
+    }
   } catch {
-    return undefined;
+    // Fall through to run id fallback.
   }
 
-  return undefined;
+  return run.runId?.trim() || undefined;
 }
 
 function formatTraceLabel(traceId?: string): string {
-  if (!traceId) return 'Trace index';
+  if (!traceId) return 'Trace unavailable';
   return traceId.length > 16 ? `Trace ${traceId.slice(0, 8)}...${traceId.slice(-4)}` : `Trace ${traceId}`;
 }
 
@@ -361,12 +366,17 @@ export function FleetGraphTracesPage() {
                     </td>
                     <td className="px-3 py-2 text-muted">{run.signalCount}</td>
                     <td className="px-3 py-2">
-                      <Link
-                        to={traceHref}
-                        className="text-accent hover:underline"
-                      >
-                        {formatTraceLabel(traceId)}
-                      </Link>
+                      {traceId ? (
+                        <Link
+                          to={traceHref}
+                          className="text-accent hover:underline"
+                          aria-label={`Open FleetGraph trace ${traceId}`}
+                        >
+                          {formatTraceLabel(traceId)}
+                        </Link>
+                      ) : (
+                        <span className="text-muted">{formatTraceLabel(traceId)}</span>
+                      )}
                       <p className="mt-0.5 text-[11px] text-muted">{run.branch} ({run.trigger})</p>
                     </td>
                   </tr>

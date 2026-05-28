@@ -474,6 +474,61 @@ describe('FleetGraph runtime', () => {
       expect(findings[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
     });
 
+    it('repairs legacy trace rows so the index opens a full in-app trace detail', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+
+      const legacyRun = await pool.query<{ id: string }>(
+        `INSERT INTO fleetgraph_runs (
+           workspace_id, user_id, trigger, branch, trace_id, trace_url,
+           latency_ms, token_estimate, cost_estimate_usd, run_input, run_output
+         )
+         VALUES (
+           $1, $2, 'proactive_poll', 'execution_risk', '', '/fleetgraph/traces',
+           800, 0, 0, '{}'::jsonb, '{"summary":"legacy trace index row"}'::jsonb
+         )
+         RETURNING id`,
+        [ctx.workspaceId, ctx.userId]
+      );
+      const legacyRunId = legacyRun.rows[0]?.id;
+      expect(legacyRunId).toBeTruthy();
+      if (!legacyRunId) {
+        throw new Error('Failed to create legacy FleetGraph run fixture');
+      }
+
+      await pool.query(
+        `INSERT INTO fleetgraph_findings (
+           workspace_id, run_id, signal_type, severity, confidence, title, summary,
+           entity_type, entity_id, evidence, dedupe_key, status
+         )
+         VALUES (
+           $1, $2, 'execution_risk', 'high', 0.91, 'Legacy execution risk',
+           'Legacy row should still resolve to a detail trace.', 'workspace', NULL,
+           '["legacy_trace_repair:true"]'::jsonb, $3, 'open'
+         )`,
+        [ctx.workspaceId, legacyRunId, `${ctx.workspaceId}:legacy-trace-detail`]
+      );
+
+      await pool.query(
+        `INSERT INTO fleetgraph_trace_events (
+           workspace_id, trace_id, run_id, phase, event_name, event_status, latency_ms, metadata
+         )
+         VALUES ($1, '', $2, 'detection', 'signals_detected', 'ok', 15, '{"legacy":true}'::jsonb)`,
+        [ctx.workspaceId, legacyRunId]
+      );
+
+      const runList = await listFleetGraphRecentRuns(ctx.workspaceId);
+      const repairedRun = runList.runs.find((run) => run.runId === legacyRunId);
+
+      expect(repairedRun?.traceId).toBe(legacyRunId);
+      expect(repairedRun?.traceUrl).toBe(`/fleetgraph/traces/${legacyRunId}`);
+
+      const traceDetail = await getFleetGraphTraceDetail(ctx.workspaceId, legacyRunId);
+      expect(traceDetail.traceId).toBe(legacyRunId);
+      expect(traceDetail.traceUrl).toBe(`/fleetgraph/traces/${legacyRunId}`);
+      expect(traceDetail.timeline.some((event) => event.eventName === 'signals_detected')).toBe(true);
+      expect(traceDetail.findings[0]?.signalType).toBe('execution_risk');
+    });
+
     it('surfaces findings within the PRD 5-minute latency window', async () => {
       await cleanupFleetGraphTables(ctx.workspaceId);
       await seedStaleIssue({ workspaceId: ctx.workspaceId, userId: ctx.userId });

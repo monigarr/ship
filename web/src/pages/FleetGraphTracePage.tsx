@@ -90,6 +90,12 @@ export function FleetGraphTracePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href={`/api/fleetgraph/traces/${traceQuery.data?.traceId ?? traceId ?? ''}`}
+            className="rounded border border-border px-2.5 py-1 text-xs text-muted hover:text-foreground"
+          >
+            API JSON
+          </a>
           <Link to="/fleetgraph/traces" className="rounded border border-border px-2.5 py-1 text-xs text-foreground hover:bg-border/30">
             Back to traces
           </Link>
