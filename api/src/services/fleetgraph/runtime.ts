@@ -56,6 +56,39 @@ interface FleetGraphTraceEventInput {
   metadata?: Record<string, unknown>;
 }
 
+interface FleetGraphAudienceDraft {
+  role: string;
+  reason: string;
+}
+
+interface FleetGraphTopSignalSummary {
+  title: string;
+  summary: string;
+  signalType: string;
+  status: string;
+  severity: string;
+  confidence: number;
+}
+
+interface FleetGraphAffectedRecordSummary {
+  entityType: string;
+  entityId: string | null;
+  title: string;
+  href: string | null;
+}
+
+interface FleetGraphEvidenceChecklistItem {
+  label: string;
+  value: string;
+  status: 'present' | 'attention' | 'missing';
+}
+
+interface FleetGraphHitlStateSummary {
+  label: string;
+  status: 'not_required' | 'pending' | 'approved' | 'rejected';
+  requiresAction: boolean;
+}
+
 const TOKEN_ESTIMATE_PER_SIGNAL = 3750;
 const COST_PER_RUN_ESTIMATE_USD = 0.006;
 const DEFAULT_SNOOZE_HOURS = 24;
@@ -73,6 +106,186 @@ function resolveTraceIdentifier(traceId: string | null | undefined, runId: strin
 
 function resolveRunTraceUrl(traceId: string | null | undefined, traceUrl: string | null | undefined, runId: string): string {
   return canonicalizeFleetGraphTraceUrl(resolveTraceIdentifier(traceId, runId), traceUrl);
+}
+
+function parseJsonArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) {
+    return value as T[];
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildAffectedRecordSummary(
+  entityType?: string | null,
+  entityId?: string | null,
+  entityTitle?: string | null
+): FleetGraphAffectedRecordSummary | null {
+  if (!entityType) {
+    return null;
+  }
+
+  const title = entityTitle?.trim() || (entityType === 'workspace' ? 'Workspace' : entityType);
+  const documentEntityTypes = new Set(['issue', 'project', 'sprint', 'weekly_plan', 'weekly_retro']);
+
+  return {
+    entityType,
+    entityId: entityId ?? null,
+    title,
+    href: entityId && documentEntityTypes.has(entityType) ? `/documents/${entityId}` : null,
+  };
+}
+
+function describeFleetGraphNextAction(
+  signalType?: string | null,
+  status?: string | null,
+  hitlDecisionStatus?: string | null
+): string {
+  if (!signalType) {
+    return 'No action needed';
+  }
+  if (hitlDecisionStatus === 'pending' || status === 'pending_approval') {
+    return 'Approve or reject the protected action';
+  }
+  if (status === 'resolved' || hitlDecisionStatus === 'approved') {
+    return 'No action needed';
+  }
+  if (status === 'snoozed') {
+    return 'Review when the snooze expires';
+  }
+  if (hitlDecisionStatus === 'rejected' || status === 'rejected') {
+    return 'Revise the recommendation or document why it was rejected';
+  }
+
+  switch (signalType) {
+    case 'planning_risk':
+      return 'Review the plan and request clearer owners, outcomes, or approval';
+    case 'execution_risk':
+      return 'Follow up on the blocker or stale issue owner';
+    case 'evidence_risk':
+      return 'Attach replayable evidence before review';
+    case 'hypothesis_risk':
+      return 'Add measurable success criteria or request PM review';
+    case 'compliance_risk':
+      return 'Run human compliance review before changing status';
+    case 'accountability_risk':
+      return 'Request the missing update or escalate to the manager';
+    default:
+      return 'Review the finding and decide the next step';
+  }
+}
+
+function describeFleetGraphBranch(branch: string, topSignal?: FleetGraphTopSignalSummary | null): string {
+  if (branch === 'no_action') {
+    return 'FleetGraph found no actionable signals for this run.';
+  }
+  if (topSignal) {
+    return `${branch} because "${topSignal.title}" was the highest-priority signal.`;
+  }
+
+  switch (branch) {
+    case 'planning_risk':
+      return 'Planning risk branch selected because plan quality or approval timing needs review.';
+    case 'execution_risk':
+      return 'Execution risk branch selected because issue movement, blocker age, or sprint timing needs follow-up.';
+    case 'evidence_risk':
+      return 'Evidence risk branch selected because review or completion proof may not be replayable.';
+    case 'hypothesis_risk':
+      return 'Hypothesis risk branch selected because project success criteria or outcome alignment needs review.';
+    case 'compliance_risk':
+      return 'Compliance risk branch selected because the request touches compliance-sensitive action.';
+    case 'accountability_risk':
+      return 'Accountability risk branch selected because expected owner updates or approvals are missing.';
+    default:
+      return `${branch} branch selected by FleetGraph signal scoring.`;
+  }
+}
+
+function buildHitlStateSummary(
+  status: string,
+  hitlRequestId?: string | null,
+  hitlDecisionStatus?: string | null
+): FleetGraphHitlStateSummary {
+  if (hitlDecisionStatus === 'pending' || (hitlRequestId && status === 'pending_approval')) {
+    return { label: 'Approval required', status: 'pending', requiresAction: true };
+  }
+  if (hitlDecisionStatus === 'approved') {
+    return { label: 'Approved', status: 'approved', requiresAction: false };
+  }
+  if (hitlDecisionStatus === 'rejected') {
+    return { label: 'Rejected', status: 'rejected', requiresAction: false };
+  }
+  return { label: 'No protected action', status: 'not_required', requiresAction: false };
+}
+
+function formatEvidenceLabel(key: string): string {
+  return key
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function classifyEvidenceItem(key: string, value: string): FleetGraphEvidenceChecklistItem['status'] {
+  const normalizedValue = value.trim().toLowerCase();
+  if (
+    normalizedValue === '' ||
+    normalizedValue === 'null' ||
+    normalizedValue === 'false' ||
+    normalizedValue === '0'
+  ) {
+    return 'missing';
+  }
+
+  const numericValue = Number(value);
+  if (key === 'plan_text_length' && Number.isFinite(numericValue) && numericValue < 80) {
+    return numericValue === 0 ? 'missing' : 'attention';
+  }
+  if (key === 'retro_text_length' && Number.isFinite(numericValue) && numericValue < 120) {
+    return numericValue === 0 ? 'missing' : 'attention';
+  }
+  if (key === 'success_criteria_length' && Number.isFinite(numericValue) && numericValue < 20) {
+    return numericValue === 0 ? 'missing' : 'attention';
+  }
+  if (
+    key.includes('age') ||
+    key.includes('overdue') ||
+    key.includes('missing') ||
+    key === 'approval_state' ||
+    key === 'blocker'
+  ) {
+    return 'attention';
+  }
+
+  return 'present';
+}
+
+function buildEvidenceChecklist(evidence: string[]): FleetGraphEvidenceChecklistItem[] {
+  return evidence.slice(0, 8).map((entry) => {
+    const separatorIndex = entry.indexOf(':');
+    if (separatorIndex === -1) {
+      return {
+        label: entry,
+        value: 'Recorded',
+        status: 'present',
+      };
+    }
+
+    const key = entry.slice(0, separatorIndex).trim();
+    const value = entry.slice(separatorIndex + 1).trim();
+    return {
+      label: formatEvidenceLabel(key),
+      value,
+      status: classifyEvidenceItem(key, value),
+    };
+  });
 }
 
 type FleetGraphTraceSortBy = 'createdAt' | 'latencyMs' | 'status' | 'severity' | 'signalCount' | 'trace';
@@ -1715,6 +1928,10 @@ export async function listFleetGraphRecentRuns(
     status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
     severity: 'high' | 'medium' | 'low' | 'none';
     signalCount: number;
+    topSignal: FleetGraphTopSignalSummary | null;
+    affectedRecord: FleetGraphAffectedRecordSummary | null;
+    nextAction: string;
+    audience: FleetGraphAudienceDraft[];
   }>;
   total: number;
   limit: number;
@@ -1811,6 +2028,17 @@ export async function listFleetGraphRecentRuns(
     run_status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
     max_severity: 'high' | 'medium' | 'low' | 'none';
     signal_count: string;
+    top_signal_title: string | null;
+    top_signal_summary: string | null;
+    top_signal_type: string | null;
+    top_signal_status: string | null;
+    top_signal_severity: string | null;
+    top_signal_confidence: string | null;
+    top_entity_type: string | null;
+    top_entity_id: string | null;
+    top_entity_title: string | null;
+    top_notification_drafts: unknown;
+    top_hitl_decision_status: string | null;
     total_count: string;
   }>(
     `WITH finding_summary AS (
@@ -1838,6 +2066,61 @@ export async function listFleetGraphRecentRuns(
        WHERE f.workspace_id = $1
        GROUP BY f.run_id
      ),
+     top_finding AS (
+       SELECT *
+       FROM (
+         SELECT
+           f.run_id,
+           f.signal_type,
+           f.severity,
+           f.status,
+           f.confidence::text AS confidence,
+           f.title,
+           f.summary,
+           f.entity_type,
+           f.entity_id::text AS entity_id,
+           COALESCE(d.title, u.name, w.name) AS entity_title,
+           f.notification_drafts,
+           h.decision_status AS hitl_decision_status,
+           ROW_NUMBER() OVER (
+             PARTITION BY f.run_id
+             ORDER BY
+               CASE f.severity
+                 WHEN 'high' THEN 3
+                 WHEN 'medium' THEN 2
+                 WHEN 'low' THEN 1
+                 ELSE 0
+               END DESC,
+               CASE f.status
+                 WHEN 'pending_approval' THEN 3
+                 WHEN 'open' THEN 2
+                 WHEN 'rejected' THEN 2
+                 WHEN 'resolved' THEN 1
+                 ELSE 0
+               END DESC,
+               f.confidence DESC,
+               f.updated_at DESC
+           ) AS row_rank
+         FROM fleetgraph_findings f
+         LEFT JOIN documents d
+           ON d.id = f.entity_id
+          AND d.workspace_id = f.workspace_id
+          AND d.deleted_at IS NULL
+         LEFT JOIN users u ON u.id = f.entity_id
+         LEFT JOIN workspaces w ON w.id = f.workspace_id
+         LEFT JOIN LATERAL (
+           SELECT decision_status
+           FROM fleetgraph_hitl_requests h
+           WHERE h.finding_id = f.id
+           ORDER BY
+             CASE WHEN h.decision_status = 'pending' THEN 0 ELSE 1 END,
+             h.created_at DESC
+           LIMIT 1
+         ) h ON true
+         WHERE f.workspace_id = $1
+       ) ranked
+       WHERE ranked.row_rank = 1
+     ),
      runs_with_summary AS (
        SELECT
          r.id,
@@ -1861,9 +2144,21 @@ export async function listFleetGraphRecentRuns(
            ELSE 'no_findings'
          END AS run_status,
          COALESCE(fs.max_severity_rank, 0) AS max_severity_rank,
-         COALESCE(fs.run_status_rank, 0) AS run_status_rank
+         COALESCE(fs.run_status_rank, 0) AS run_status_rank,
+         tf.title AS top_signal_title,
+         tf.summary AS top_signal_summary,
+         tf.signal_type AS top_signal_type,
+         tf.status AS top_signal_status,
+         tf.severity AS top_signal_severity,
+         tf.confidence AS top_signal_confidence,
+         tf.entity_type AS top_entity_type,
+         tf.entity_id AS top_entity_id,
+         tf.entity_title AS top_entity_title,
+         tf.notification_drafts AS top_notification_drafts,
+         tf.hitl_decision_status AS top_hitl_decision_status
        FROM fleetgraph_runs r
        LEFT JOIN finding_summary fs ON fs.run_id = r.id
+       LEFT JOIN top_finding tf ON tf.run_id = r.id
      )
      SELECT
        summary.id,
@@ -1876,6 +2171,17 @@ export async function listFleetGraphRecentRuns(
        summary.run_status,
        summary.max_severity,
        summary.signal_count::text AS signal_count,
+       summary.top_signal_title,
+       summary.top_signal_summary,
+       summary.top_signal_type,
+       summary.top_signal_status,
+       summary.top_signal_severity,
+       summary.top_signal_confidence,
+       summary.top_entity_type,
+       summary.top_entity_id,
+       summary.top_entity_title,
+       summary.top_notification_drafts,
+       summary.top_hitl_decision_status,
        COUNT(*) OVER()::text AS total_count
      FROM runs_with_summary summary
      JOIN fleetgraph_runs r ON r.id = summary.id
@@ -1898,6 +2204,27 @@ export async function listFleetGraphRecentRuns(
       status: row.run_status,
       severity: row.max_severity,
       signalCount: Number(row.signal_count),
+      topSignal: row.top_signal_title && row.top_signal_type
+        ? {
+            title: row.top_signal_title,
+            summary: row.top_signal_summary ?? '',
+            signalType: row.top_signal_type,
+            status: row.top_signal_status ?? row.run_status,
+            severity: row.top_signal_severity ?? row.max_severity,
+            confidence: Number(row.top_signal_confidence ?? 0),
+          }
+        : null,
+      affectedRecord: buildAffectedRecordSummary(
+        row.top_entity_type,
+        row.top_entity_id,
+        row.top_entity_title
+      ),
+      nextAction: describeFleetGraphNextAction(
+        row.top_signal_type,
+        row.top_signal_status,
+        row.top_hitl_decision_status
+      ),
+      audience: parseJsonArray<FleetGraphAudienceDraft>(row.top_notification_drafts),
     })),
     total: Number(result.rows[0]?.total_count ?? 0),
     limit,
@@ -1928,6 +2255,7 @@ export async function getFleetGraphTraceDetail(
     signalCount: number;
     signalTypes: string[];
     branchDivergenceMarker: string;
+    branchExplanation: string;
     hitlPendingCount: number;
   };
   timeline: Array<{
@@ -1948,9 +2276,13 @@ export async function getFleetGraphTraceDetail(
     summary: string;
     entityType: string;
     entityId: string | null;
+    affectedRecord: FleetGraphAffectedRecordSummary | null;
     evidence: string[];
+    evidenceChecklist: FleetGraphEvidenceChecklistItem[];
     hitlRequestId: string | null;
     hitlDecisionStatus: string | null;
+    hitlState: FleetGraphHitlStateSummary;
+    notificationDrafts: FleetGraphAudienceDraft[];
   }>;
 }> {
   await ensureFleetGraphTables();
@@ -2029,7 +2361,9 @@ export async function getFleetGraphTraceDetail(
     summary: string;
     entity_type: string;
     entity_id: string | null;
+    entity_title: string | null;
     evidence: string[] | string;
+    notification_drafts: unknown;
     hitl_request_id: string | null;
     hitl_decision_status: string | null;
   }>(
@@ -2043,40 +2377,88 @@ export async function getFleetGraphTraceDetail(
        f.summary,
        f.entity_type,
        f.entity_id::text,
+       COALESCE(d.title, u.name, w.name) AS entity_title,
        f.evidence,
+       f.notification_drafts,
        h.id::text AS hitl_request_id,
        h.decision_status AS hitl_decision_status
      FROM fleetgraph_findings f
-     LEFT JOIN fleetgraph_hitl_requests h
-       ON h.finding_id = f.id
+     LEFT JOIN documents d
+       ON d.id = f.entity_id
+      AND d.workspace_id = f.workspace_id
+      AND d.deleted_at IS NULL
+     LEFT JOIN users u ON u.id = f.entity_id
+     LEFT JOIN workspaces w ON w.id = f.workspace_id
+     LEFT JOIN LATERAL (
+       SELECT id, decision_status
+       FROM fleetgraph_hitl_requests h
+       WHERE h.finding_id = f.id
+       ORDER BY
+         CASE WHEN h.decision_status = 'pending' THEN 0 ELSE 1 END,
+         h.created_at DESC
+       LIMIT 1
+     ) h ON true
      WHERE f.workspace_id = $1
        AND f.run_id = $2
-     ORDER BY f.updated_at DESC`,
+     ORDER BY
+       CASE f.severity
+         WHEN 'high' THEN 3
+         WHEN 'medium' THEN 2
+         WHEN 'low' THEN 1
+         ELSE 0
+       END DESC,
+       CASE f.status
+         WHEN 'pending_approval' THEN 3
+         WHEN 'open' THEN 2
+         WHEN 'rejected' THEN 2
+         WHEN 'resolved' THEN 1
+         ELSE 0
+       END DESC,
+       f.confidence DESC,
+       f.updated_at DESC`,
     [workspaceId, run.id]
   );
 
-  const findings = findingsResult.rows.map((row) => ({
-    id: row.id,
-    status: row.status,
-    signalType: row.signal_type,
-    severity: row.severity,
-    confidence: Number(row.confidence),
-    title: row.title,
-    summary: row.summary,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    evidence:
+  const findings = findingsResult.rows.map((row) => {
+    const evidence =
       Array.isArray(row.evidence)
         ? row.evidence
         : typeof row.evidence === 'string'
           ? (JSON.parse(row.evidence) as string[])
-          : [],
-    hitlRequestId: row.hitl_request_id,
-    hitlDecisionStatus: row.hitl_decision_status,
-  }));
+          : [];
+
+    return {
+      id: row.id,
+      status: row.status,
+      signalType: row.signal_type,
+      severity: row.severity,
+      confidence: Number(row.confidence),
+      title: row.title,
+      summary: row.summary,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      affectedRecord: buildAffectedRecordSummary(row.entity_type, row.entity_id, row.entity_title),
+      evidence,
+      evidenceChecklist: buildEvidenceChecklist(evidence),
+      hitlRequestId: row.hitl_request_id,
+      hitlDecisionStatus: row.hitl_decision_status,
+      hitlState: buildHitlStateSummary(row.status, row.hitl_request_id, row.hitl_decision_status),
+      notificationDrafts: parseJsonArray<FleetGraphAudienceDraft>(row.notification_drafts),
+    };
+  });
 
   const signalTypes = [...new Set(findings.map((finding) => finding.signalType))];
   const hitlPendingCount = findings.filter((finding) => finding.hitlDecisionStatus === 'pending').length;
+  const topSignal = findings[0]
+    ? {
+        title: findings[0].title,
+        summary: findings[0].summary,
+        signalType: findings[0].signalType,
+        status: findings[0].status,
+        severity: findings[0].severity,
+        confidence: findings[0].confidence,
+      }
+    : null;
   const runOutput =
     typeof run.run_output === 'string'
       ? (JSON.parse(run.run_output) as Record<string, unknown>)
@@ -2105,6 +2487,7 @@ export async function getFleetGraphTraceDetail(
       signalCount: findings.length,
       signalTypes,
       branchDivergenceMarker: `${run.trigger}:${run.branch}:${signalTypes.join(',') || 'no_signals'}`,
+      branchExplanation: describeFleetGraphBranch(run.branch, topSignal),
       hitlPendingCount,
     },
     timeline: timelineResult.rows.map((row) => ({

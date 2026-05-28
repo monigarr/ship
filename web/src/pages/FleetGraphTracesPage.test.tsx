@@ -49,6 +49,27 @@ describe('FleetGraphTracesPage', () => {
             status: 'pending_approval',
             severity: 'high',
             signalCount: 3,
+            topSignal: {
+              title: 'Weak plan quality: Test Weekly Plan',
+              summary: 'Plan content is likely too short to define measurable outcomes.',
+              signalType: 'planning_risk',
+              status: 'pending_approval',
+              severity: 'high',
+              confidence: 0.9,
+            },
+            affectedRecord: {
+              entityType: 'weekly_plan',
+              entityId: 'plan-1',
+              title: 'Test Weekly Plan',
+              href: '/documents/plan-1',
+            },
+            nextAction: 'Review the plan and request clearer owners, outcomes, or approval',
+            audience: [
+              {
+                role: 'engineering_manager',
+                reason: 'Weekly plan quality or approval needs review.',
+              },
+            ],
           },
         ],
         total: 1,
@@ -64,6 +85,10 @@ describe('FleetGraphTracesPage', () => {
     expect(await screen.findByText('FleetGraph Traces')).toBeInTheDocument();
     expect(await screen.findByText('Pending Approval')).toBeInTheDocument();
     expect((await screen.findAllByText('High')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Weak plan quality: Test Weekly Plan')).toBeInTheDocument();
+    expect(await screen.findByText('Test Weekly Plan')).toBeInTheDocument();
+    expect(await screen.findByText('Review the plan and request clearer owners, outcomes, or approval')).toBeInTheDocument();
+    expect(await screen.findByText('Engineering Manager')).toBeInTheDocument();
     expect(await screen.findByText('Trace trace-1')).toBeInTheDocument();
     expect(await screen.findByText('planning_risk (on_demand)')).toBeInTheDocument();
   });
@@ -91,6 +116,10 @@ describe('FleetGraphTracesPage', () => {
             status: 'attention',
             severity: 'high',
             signalCount: 1,
+            topSignal: null,
+            affectedRecord: null,
+            nextAction: 'No action needed',
+            audience: [],
           },
         ],
         total: 1,

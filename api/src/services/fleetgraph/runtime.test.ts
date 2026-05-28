@@ -464,9 +464,17 @@ describe('FleetGraph runtime', () => {
       expect(runList.total).toBeGreaterThanOrEqual(1);
       expect(runList.runs[0]?.traceId).toBe(result.run.traceId);
       expect(runList.runs[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+      expect(runList.runs[0]?.topSignal?.signalType).toBe('evidence_risk');
+      expect(runList.runs[0]?.affectedRecord?.title).toBe('Test Weekly Retro');
+      expect(runList.runs[0]?.nextAction).toContain('Attach replayable evidence');
+      expect(runList.runs[0]?.audience.length).toBeGreaterThan(0);
 
       const traceDetail = await getFleetGraphTraceDetail(ctx.workspaceId, result.run.traceId);
       expect(traceDetail.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+      expect(traceDetail.observability.branchExplanation).toContain('evidence_risk');
+      expect(traceDetail.findings[0]?.affectedRecord?.title).toBe('Test Weekly Retro');
+      expect(traceDetail.findings[0]?.evidenceChecklist.length).toBeGreaterThan(0);
+      expect(traceDetail.findings[0]?.hitlState.label).toBe('No protected action');
 
       const findings = await listFleetGraphOpenFindings(ctx.workspaceId);
       expect(findings.length).toBeGreaterThanOrEqual(1);

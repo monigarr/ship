@@ -28,6 +28,7 @@ interface FleetGraphTraceDetailResponse {
     signalCount: number;
     signalTypes: string[];
     branchDivergenceMarker: string;
+    branchExplanation: string;
     hitlPendingCount: number;
   };
   timeline: Array<{
@@ -48,9 +49,29 @@ interface FleetGraphTraceDetailResponse {
     summary: string;
     entityType: string;
     entityId: string | null;
+    affectedRecord?: {
+      entityType: string;
+      entityId: string | null;
+      title: string;
+      href: string | null;
+    } | null;
     evidence: string[];
+    evidenceChecklist?: Array<{
+      label: string;
+      value: string;
+      status: 'present' | 'attention' | 'missing';
+    }>;
     hitlRequestId: string | null;
     hitlDecisionStatus: string | null;
+    hitlState?: {
+      label: string;
+      status: 'not_required' | 'pending' | 'approved' | 'rejected';
+      requiresAction: boolean;
+    };
+    notificationDrafts?: Array<{
+      role: string;
+      reason: string;
+    }>;
   }>;
 }
 
@@ -60,6 +81,20 @@ function valueToLabel(value: unknown): string {
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   if (Array.isArray(value)) return value.join(', ');
   return JSON.stringify(value);
+}
+
+function formatRoleLabel(role: string): string {
+  return role
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function getChecklistTone(status: 'present' | 'attention' | 'missing'): string {
+  if (status === 'present') return 'border-emerald-500/35 bg-emerald-500/10 text-emerald-200';
+  if (status === 'attention') return 'border-amber-500/35 bg-amber-500/10 text-amber-200';
+  return 'border-red-500/35 bg-red-500/10 text-red-200';
 }
 
 export function FleetGraphTracePage() {
@@ -177,6 +212,11 @@ export function FleetGraphTracePage() {
           </section>
 
           <section className="rounded border border-border bg-background/60 p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted">Branch explanation</p>
+            <p className="mt-1 text-sm text-foreground">{traceQuery.data.observability.branchExplanation}</p>
+          </section>
+
+          <section className="rounded border border-border bg-background/60 p-3">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Timeline</h2>
             <div className="mt-2 space-y-2">
               {timeline.length === 0 && <p className="text-xs text-muted">No trace events recorded.</p>}
@@ -233,22 +273,87 @@ export function FleetGraphTracePage() {
                       Severity: {getFleetGraphSeverityTone(finding.severity).label}
                     </span>
                     <span className="text-[10px] text-muted">{finding.signalType} · {(finding.confidence * 100).toFixed(0)}%</span>
+                    {finding.hitlState && (
+                      <span
+                        className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                          getFleetGraphStatusTone(finding.hitlState.status).className
+                        }`}
+                      >
+                        {finding.hitlState.label}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-muted">{finding.summary}</p>
+
+                  <div className="mt-2 grid gap-2 md:grid-cols-3">
+                    <div className="rounded border border-border/60 bg-border/10 p-2">
+                      <p className="text-[10px] uppercase tracking-wide text-muted">Affected record</p>
+                      {finding.affectedRecord?.href ? (
+                        <Link to={finding.affectedRecord.href} className="mt-1 block text-[11px] text-accent hover:underline">
+                          {finding.affectedRecord.title}
+                        </Link>
+                      ) : (
+                        <p className="mt-1 text-[11px] text-foreground">{finding.affectedRecord?.title ?? 'Workspace'}</p>
+                      )}
+                      <p className="mt-0.5 text-[10px] text-muted">{finding.affectedRecord?.entityType ?? finding.entityType}</p>
+                    </div>
+
+                    <div className="rounded border border-border/60 bg-border/10 p-2">
+                      <p className="text-[10px] uppercase tracking-wide text-muted">HITL state</p>
+                      <p className="mt-1 text-[11px] text-foreground">{finding.hitlState?.label ?? 'No protected action'}</p>
+                      {finding.hitlRequestId && (
+                        <p className="mt-0.5 break-all text-[10px] text-muted">{finding.hitlRequestId}</p>
+                      )}
+                    </div>
+
+                    <div className="rounded border border-border/60 bg-border/10 p-2">
+                      <p className="text-[10px] uppercase tracking-wide text-muted">Owner / audience</p>
+                      {finding.notificationDrafts && finding.notificationDrafts.length > 0 ? (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {finding.notificationDrafts.map((draft) => (
+                            <span
+                              key={`${finding.id}-${draft.role}`}
+                              title={draft.reason}
+                              className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted"
+                            >
+                              {formatRoleLabel(draft.role)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-[11px] text-muted">No audience routed.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {finding.evidenceChecklist && finding.evidenceChecklist.length > 0 && (
+                    <div className="mt-2 rounded border border-border/60 bg-border/10 p-2">
+                      <p className="text-[10px] uppercase tracking-wide text-muted">Evidence checklist</p>
+                      <div className="mt-1 grid gap-1 sm:grid-cols-2">
+                        {finding.evidenceChecklist.map((item) => (
+                          <div
+                            key={`${finding.id}-${item.label}-${item.value}`}
+                            className={`rounded border px-2 py-1 ${getChecklistTone(item.status)}`}
+                          >
+                            <p className="text-[10px] uppercase tracking-wide">{item.label}</p>
+                            <p className="break-words text-[11px]">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {finding.evidence.length > 0 && (
-                    <div className="mt-1.5 rounded border border-border/60 bg-border/10 p-2">
-                      <p className="text-[10px] uppercase tracking-wide text-muted">Evidence</p>
-                      <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-muted">
-                        {finding.evidence.slice(0, 6).map((evidenceEntry) => (
+                    <details className="mt-2 rounded border border-border/60 bg-border/10 p-2">
+                      <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-muted">
+                        Raw evidence
+                      </summary>
+                      <ul className="mt-1 list-inside list-disc space-y-0.5 text-[11px] text-muted">
+                        {finding.evidence.slice(0, 8).map((evidenceEntry) => (
                           <li key={`${finding.id}-${evidenceEntry}`}>{evidenceEntry}</li>
                         ))}
                       </ul>
-                    </div>
-                  )}
-                  {finding.entityId && (
-                    <Link to={`/documents/${finding.entityId}`} className="mt-2 inline-block text-[11px] text-accent hover:underline">
-                      Open related document
-                    </Link>
+                    </details>
                   )}
                 </div>
               ))}

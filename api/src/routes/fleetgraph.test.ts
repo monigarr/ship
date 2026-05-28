@@ -169,7 +169,18 @@ describe('FleetGraph API', () => {
         runId: expect.any(String),
         trigger: 'on_demand',
         traceUrl: expect.stringMatching(/^\/fleetgraph\/traces\//),
+        topSignal: {
+          title: expect.stringContaining('Weak plan quality'),
+          signalType: 'planning_risk',
+        },
+        affectedRecord: {
+          title: 'Test Weekly Plan',
+          entityType: 'weekly_plan',
+        },
+        nextAction: expect.stringContaining('Review the plan'),
       });
+      expect(Array.isArray(response.body.runs[0].audience)).toBe(true);
+      expect(response.body.runs[0].audience.length).toBeGreaterThan(0);
     });
 
     it('supports sorting, filtering, and pagination query params', async () => {
@@ -228,10 +239,22 @@ describe('FleetGraph API', () => {
         },
         observability: {
           latencyBudgetMs: 300000,
+          branchExplanation: expect.stringContaining('planning_risk'),
         },
       });
       expect(Array.isArray(response.body.timeline)).toBe(true);
       expect(Array.isArray(response.body.findings)).toBe(true);
+      expect(response.body.findings[0]).toMatchObject({
+        affectedRecord: {
+          title: 'Test Weekly Plan',
+          entityType: 'weekly_plan',
+        },
+        hitlState: {
+          label: 'No protected action',
+        },
+      });
+      expect(Array.isArray(response.body.findings[0].evidenceChecklist)).toBe(true);
+      expect(response.body.findings[0].evidenceChecklist.length).toBeGreaterThan(0);
     });
   });
 

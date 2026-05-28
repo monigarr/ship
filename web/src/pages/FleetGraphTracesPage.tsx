@@ -23,6 +23,25 @@ interface FleetGraphTraceRun {
   status: string;
   severity: string;
   signalCount: number;
+  topSignal?: {
+    title: string;
+    summary: string;
+    signalType: string;
+    status: string;
+    severity: string;
+    confidence: number;
+  } | null;
+  affectedRecord?: {
+    entityType: string;
+    entityId: string | null;
+    title: string;
+    href: string | null;
+  } | null;
+  nextAction?: string;
+  audience?: Array<{
+    role: string;
+    reason: string;
+  }>;
 }
 
 interface FleetGraphTraceListResponse {
@@ -43,6 +62,14 @@ const SORT_FIELDS: Array<{ id: SortBy; label: string }> = [
   { id: 'signalCount', label: 'Signals' },
   { id: 'trace', label: 'Trace' },
 ];
+
+function formatRoleLabel(role: string): string {
+  return role
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(' ');
+}
 
 function sanitizeSortBy(value: string | null): SortBy {
   return value === 'latencyMs' ||
@@ -169,6 +196,22 @@ export function FleetGraphTracesPage() {
     next.set('sortDir', nextDir);
     next.set('offset', '0');
     setSearchParams(next);
+  };
+
+  const renderSortHeader = (field: SortBy, className = 'px-3 py-2 text-left font-semibold') => {
+    const label = SORT_FIELDS.find((item) => item.id === field)?.label ?? field;
+    return (
+      <th className={className}>
+        <button
+          type="button"
+          onClick={() => updateSort(field)}
+          className="inline-flex items-center gap-1 text-left hover:text-foreground"
+        >
+          {label}
+          {sortBy === field && <span>{sortDir === 'asc' ? '↑' : '↓'}</span>}
+        </button>
+      </th>
+    );
   };
 
   const pageStart = tracesQuery.data ? tracesQuery.data.offset + 1 : 0;
@@ -306,41 +349,39 @@ export function FleetGraphTracesPage() {
         aria-live="polite"
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
+          <table className="w-full min-w-[1280px]">
             <thead className="border-b border-border bg-border/20 text-xs uppercase tracking-wide text-muted">
               <tr>
-                {SORT_FIELDS.map((field) => (
-                  <th key={field.id} className="px-3 py-2 text-left font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => updateSort(field.id)}
-                      className="inline-flex items-center gap-1 text-left hover:text-foreground"
-                    >
-                      {field.label}
-                      {sortBy === field.id && <span>{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                    </button>
-                  </th>
-                ))}
+                {renderSortHeader('createdAt')}
+                {renderSortHeader('status')}
+                {renderSortHeader('severity')}
+                <th className="px-3 py-2 text-left font-semibold">Top Signal</th>
+                <th className="px-3 py-2 text-left font-semibold">Affected Record</th>
+                <th className="px-3 py-2 text-left font-semibold">Next Action</th>
+                <th className="px-3 py-2 text-left font-semibold">Owner / Audience</th>
+                {renderSortHeader('signalCount')}
+                {renderSortHeader('latencyMs')}
+                {renderSortHeader('trace')}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/80 text-sm">
               {tracesQuery.isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-muted">
+                  <td colSpan={10} className="px-3 py-4 text-muted">
                     Loading traces...
                   </td>
                 </tr>
               )}
               {tracesQuery.isError && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-red-200">
+                  <td colSpan={10} className="px-3 py-4 text-red-200">
                     Trace index could not be loaded. Please refresh or verify access.
                   </td>
                 </tr>
               )}
               {tracesQuery.data?.runs.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-muted">
+                  <td colSpan={10} className="px-3 py-4 text-muted">
                     No traces match the current filters.
                   </td>
                 </tr>
@@ -353,7 +394,6 @@ export function FleetGraphTracesPage() {
                 return (
                   <tr key={run.runId} className="hover:bg-border/10">
                     <td className="px-3 py-2 text-muted">{formatFleetGraphDateTime(run.createdAt)}</td>
-                    <td className="px-3 py-2 text-foreground">{run.latencyMs}ms</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex rounded border px-2 py-0.5 text-xs ${statusTone.className}`}>
                         {statusTone.label}
@@ -364,7 +404,46 @@ export function FleetGraphTracesPage() {
                         {severityTone.label}
                       </span>
                     </td>
+                    <td className="max-w-[260px] px-3 py-2">
+                      {run.topSignal ? (
+                        <>
+                          <p className="line-clamp-2 text-xs font-medium text-foreground">{run.topSignal.title}</p>
+                          <p className="mt-0.5 text-[11px] text-muted">{run.topSignal.signalType}</p>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted">No actionable signal</span>
+                      )}
+                    </td>
+                    <td className="max-w-[220px] px-3 py-2">
+                      {run.affectedRecord?.href ? (
+                        <Link to={run.affectedRecord.href} className="text-xs text-accent hover:underline">
+                          {run.affectedRecord.title}
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-muted">{run.affectedRecord?.title ?? 'Workspace'}</span>
+                      )}
+                      <p className="mt-0.5 text-[11px] text-muted">{run.affectedRecord?.entityType ?? 'workspace'}</p>
+                    </td>
+                    <td className="max-w-[260px] px-3 py-2 text-xs text-foreground">{run.nextAction ?? 'No action needed'}</td>
+                    <td className="max-w-[220px] px-3 py-2">
+                      {run.audience && run.audience.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {run.audience.slice(0, 3).map((draft) => (
+                            <span
+                              key={`${run.runId}-${draft.role}`}
+                              title={draft.reason}
+                              className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted"
+                            >
+                              {formatRoleLabel(draft.role)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted">No audience</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-muted">{run.signalCount}</td>
+                    <td className="px-3 py-2 text-foreground">{run.latencyMs}ms</td>
                     <td className="px-3 py-2">
                       {traceId ? (
                         <Link
