@@ -233,8 +233,9 @@ Actual development spend from Vitest + trace capture runs (2026-05-25). Detector
 
 | Item | Amount |
 | --- | --- |
-| Claude API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
-| Claude API - output tokens | 0 (synthesis path available in production when Bedrock credentials present) |
+| Grok API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
+| OpenAI API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
+| OpenAI API - output tokens | 0 (synthesis path available in production when Bedrock credentials present) |
 | Total invocations during development | 162 (46 FleetGraph Vitest cases + 16 trace capture runs + deploy smoke runs) |
 | Total development spend | $0.00 LLM (deterministic detectors); internal trace storage in Ship Postgres |
 
