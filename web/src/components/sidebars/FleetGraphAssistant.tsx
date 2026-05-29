@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/lib/api';
 import {
@@ -90,9 +90,10 @@ interface FleetGraphTraceResponse {
 }
 
 interface FleetGraphAssistantProps {
-  documentId: string;
-  documentType: string;
+  documentId?: string | null;
+  documentType?: string | null;
   contextLabel?: string;
+  className?: string;
 }
 
 type ChatMessage =
@@ -348,20 +349,33 @@ export function FleetGraphAssistant({
   documentId,
   documentType,
   contextLabel,
+  className,
 }: FleetGraphAssistantProps) {
   const queryClient = useQueryClient();
+  const hasEntityContext = Boolean(documentId && documentType);
+  const activeDocumentId = documentId ?? null;
+  const activeDocumentType = documentType ?? null;
   const [prompt, setPrompt] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeHitl, setActiveHitl] = useState<HitlTarget | null>(null);
   const [hitlNote, setHitlNote] = useState('');
   const [decisionBanner, setDecisionBanner] = useState<string | null>(null);
 
-  const findingsQueryKey = ['fleetgraph-findings', documentId] as const;
+  const findingsQueryKey = ['fleetgraph-findings', activeDocumentId ?? 'workspace'] as const;
+
+  useEffect(() => {
+    setPrompt('');
+    setChatMessages([]);
+    setActiveHitl(null);
+    setHitlNote('');
+    setDecisionBanner(null);
+  }, [activeDocumentId, activeDocumentType]);
 
   const findingsQuery = useQuery<FindingsResponse>({
     queryKey: findingsQueryKey,
+    enabled: hasEntityContext && Boolean(activeDocumentId),
     queryFn: async () => {
-      const res = await apiGet(`/api/fleetgraph/findings?entity_id=${encodeURIComponent(documentId)}`);
+      const res = await apiGet(`/api/fleetgraph/findings?entity_id=${encodeURIComponent(activeDocumentId ?? '')}`);
       if (!res.ok) {
         throw new Error('Failed to fetch FleetGraph findings');
       }
@@ -392,13 +406,16 @@ export function FleetGraphAssistant({
   });
 
   const scopedFindings = useMemo(() => {
+    if (!activeDocumentId) {
+      return [];
+    }
     const findings = findingsQuery.data?.findings ?? [];
     return findings.filter(
-      (finding) => finding.entityId === documentId || finding.entityId === null
+      (finding) => finding.entityId === activeDocumentId || finding.entityId === null
     );
-  }, [findingsQuery.data?.findings, documentId]);
+  }, [findingsQuery.data?.findings, activeDocumentId]);
 
-  const quickPrompts = QUICK_PROMPTS[documentType] ?? QUICK_PROMPTS.issue;
+  const quickPrompts = activeDocumentType ? (QUICK_PROMPTS[activeDocumentType] ?? QUICK_PROMPTS.issue) : [];
 
   const invalidateFleetGraphQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: findingsQueryKey });
@@ -409,8 +426,8 @@ export function FleetGraphAssistant({
   const runMutation = useMutation({
     mutationFn: async (promptText: string): Promise<FleetGraphRunResponse> => {
       const res = await apiPost('/api/fleetgraph/run', {
-        document_id: documentId,
-        document_type: documentType,
+        document_id: activeDocumentId,
+        document_type: activeDocumentType,
         prompt: promptText.trim() || undefined,
       });
       if (!res.ok) {
@@ -444,8 +461,8 @@ export function FleetGraphAssistant({
           title: pendingFinding.signal.title,
           summary: pendingFinding.signal.summary,
           evidence: pendingFinding.signal.evidence,
-          entityType: pendingFinding.signal.entityType ?? documentType,
-          entityId: pendingFinding.signal.entityId ?? documentId,
+          entityType: pendingFinding.signal.entityType ?? activeDocumentType ?? 'document',
+          entityId: pendingFinding.signal.entityId ?? activeDocumentId,
           runSummary: data.summary,
         });
         setHitlNote('');
@@ -504,12 +521,12 @@ export function FleetGraphAssistant({
   const submitPrompt = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || runMutation.isPending) {
+      if (!hasEntityContext || !trimmed || runMutation.isPending) {
         return;
       }
       runMutation.mutate(trimmed);
     },
-    [runMutation]
+    [hasEntityContext, runMutation]
   );
 
   const handlePromptKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -528,20 +545,38 @@ export function FleetGraphAssistant({
     }
   };
 
-  const contextDisplay = contextLabel?.trim() || documentId.slice(0, 8);
+  const contextDisplay = contextLabel?.trim() || (activeDocumentId ? activeDocumentId.slice(0, 8) : 'No active context');
+  const showNoContextFallback = !hasEntityContext;
 
   return (
-    <div className="rounded-lg border border-border bg-background/80 p-3 space-y-3">
+    <div className={`rounded-lg border border-border bg-background/80 p-3 space-y-3 ${className ?? ''}`}>
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-semibold tracking-wide text-muted uppercase">FleetGraph</h4>
           <span className="text-[10px] text-muted uppercase">On-demand</span>
         </div>
-        <p className="text-[11px] text-muted">
-          Scoped to {formatEntityType(documentType)}:{' '}
-          <span className="text-foreground">{contextDisplay}</span>
-        </p>
+        {showNoContextFallback ? (
+          <p className="text-[11px] text-muted">Context required to run FleetGraph for a specific record.</p>
+        ) : (
+          <p className="text-[11px] text-muted">
+            Scoped to {formatEntityType(activeDocumentType ?? 'record')}:{' '}
+            <span className="text-foreground">{contextDisplay}</span>
+          </p>
+        )}
       </div>
+
+      {showNoContextFallback && (
+        <div className="rounded border border-border/70 bg-border/10 px-3 py-2">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-accent" aria-hidden="true">
+              <NoContextIcon />
+            </span>
+            <p className="text-[11px] text-muted">
+              View an Issue, Project, or Sprint for FleetGraph support. Workspace diagnostics and traces remain available.
+            </p>
+          </div>
+        </div>
+      )}
 
       {decisionBanner && (
         <div className="rounded border border-green-500/30 bg-green-500/10 px-2 py-1 text-[11px] text-green-300">
@@ -552,8 +587,9 @@ export function FleetGraphAssistant({
       <div className="space-y-2 max-h-56 overflow-y-auto rounded border border-border/60 bg-border/10 p-2">
         {chatMessages.length === 0 && !runMutation.isPending && (
           <p className="text-[11px] text-muted">
-            Ask about this {formatEntityType(documentType)} — FleetGraph answers from records you
-            can access in this view.
+            {showNoContextFallback
+              ? 'Select an Issue, Project, or Sprint to ask context-scoped FleetGraph questions.'
+              : `Ask about this ${formatEntityType(activeDocumentType ?? 'record')} — FleetGraph answers from records you can access in this view.`}
           </p>
         )}
 
@@ -620,7 +656,7 @@ export function FleetGraphAssistant({
               setPrompt(quickPrompt);
               submitPrompt(quickPrompt);
             }}
-            disabled={runMutation.isPending}
+            disabled={runMutation.isPending || showNoContextFallback}
             className="rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:bg-border/40 hover:text-foreground disabled:opacity-50"
           >
             {quickPrompt}
@@ -633,15 +669,19 @@ export function FleetGraphAssistant({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handlePromptKeyDown}
-          placeholder={`Ask about this ${formatEntityType(documentType)}...`}
+          placeholder={
+            showNoContextFallback
+              ? 'Open an Issue, Project, or Sprint to ask FleetGraph'
+              : `Ask about this ${formatEntityType(activeDocumentType ?? 'record')}...`
+          }
           rows={2}
-          disabled={runMutation.isPending}
+          disabled={runMutation.isPending || showNoContextFallback}
           className="flex-1 rounded border border-border bg-border/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent resize-none disabled:opacity-50"
         />
         <button
           type="button"
           onClick={() => submitPrompt(prompt)}
-          disabled={runMutation.isPending || !prompt.trim()}
+          disabled={runMutation.isPending || !prompt.trim() || showNoContextFallback}
           className="self-end rounded bg-accent px-2 py-1.5 text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
         >
           {runMutation.isPending ? '...' : 'Send'}
@@ -698,6 +738,9 @@ export function FleetGraphAssistant({
         </div>
 
         {findingsQuery.isLoading && <p className="text-xs text-muted">Loading findings...</p>}
+        {!findingsQuery.isLoading && showNoContextFallback && (
+          <p className="text-xs text-muted">Context-specific findings appear once an Issue, Project, or Sprint is open.</p>
+        )}
         {!findingsQuery.isLoading && scopedFindings.length === 0 && (
           <p className="text-xs text-muted">No open FleetGraph findings for this view.</p>
         )}
@@ -838,5 +881,14 @@ export function FleetGraphAssistant({
         </div>
       </details>
     </div>
+  );
+}
+
+function NoContextIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.25 6.75h1.5v7.5h-1.5zM11.25 16.5h1.5V18h-1.5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3.75a8.25 8.25 0 100 16.5 8.25 8.25 0 000-16.5z" />
+    </svg>
   );
 }

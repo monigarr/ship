@@ -11,7 +11,7 @@ import { useDocuments, WikiDocument } from '@/contexts/DocumentsContext';
 import { usePrograms, Program } from '@/contexts/ProgramsContext';
 import { useIssues, Issue } from '@/contexts/IssuesContext';
 import { useProjects, Project } from '@/contexts/ProjectsContext';
-import { useCurrentDocumentType, useCurrentDocument } from '@/contexts/CurrentDocumentContext';
+import { useCurrentDocument } from '@/contexts/CurrentDocumentContext';
 import { documentKeys } from '@/hooks/useDocumentsQuery';
 import { issueKeys } from '@/hooks/useIssuesQuery';
 import { programKeys } from '@/hooks/useProgramsQuery';
@@ -36,6 +36,7 @@ import { SelectionPersistenceProvider } from '@/contexts/SelectionPersistenceCon
 import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
+import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'settings' | 'dashboard' | 'project-context';
 const DEFAULT_LANGSMITH_TRACES_URL =
@@ -58,6 +59,9 @@ export function AppLayout() {
   const [projectSetupWizardOpen, setProjectSetupWizardOpen] = useState(false);
   const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
   const [actionItemsModalShownOnLoad, setActionItemsModalShownOnLoad] = useState(false);
+  const [fleetGraphDrawerOpen, setFleetGraphDrawerOpen] = useState(() => {
+    return localStorage.getItem('ship:fleetGraphDrawerOpen') === 'true';
+  });
 
   // Session timeout handling
   const handleSessionTimeout = useCallback(() => {
@@ -134,6 +138,10 @@ export function AppLayout() {
     localStorage.setItem('ship:leftSidebarCollapsed', String(leftSidebarCollapsed));
   }, [leftSidebarCollapsed]);
 
+  useEffect(() => {
+    localStorage.setItem('ship:fleetGraphDrawerOpen', String(fleetGraphDrawerOpen));
+  }, [fleetGraphDrawerOpen]);
+
   // Global Cmd+K keyboard shortcut for command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -203,6 +211,30 @@ export function AppLayout() {
   };
 
   const activeDocumentId = getActiveDocumentId();
+  const fleetGraphContext = useMemo(() => {
+    if (!currentDocumentId || !currentDocumentType) {
+      return null;
+    }
+
+    if (currentDocumentType !== 'issue' && currentDocumentType !== 'project' && currentDocumentType !== 'sprint') {
+      return null;
+    }
+
+    let contextLabel: string | undefined;
+    if (currentDocumentType === 'issue') {
+      contextLabel = issues.find((issue) => issue.id === currentDocumentId)?.title;
+    } else if (currentDocumentType === 'project') {
+      contextLabel = projects.find((project) => project.id === currentDocumentId)?.title;
+    } else {
+      contextLabel = documents.find((doc) => doc.id === currentDocumentId)?.title;
+    }
+
+    return {
+      documentId: currentDocumentId,
+      documentType: currentDocumentType,
+      contextLabel,
+    };
+  }, [currentDocumentId, currentDocumentType, issues, projects, documents]);
 
   const handleModeClick = (mode: Mode) => {
     switch (mode) {
@@ -264,7 +296,7 @@ export function AppLayout() {
   return (
     <TooltipProvider delayDuration={300}>
     <SelectionPersistenceProvider>
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-background">
       {/* Skip link for keyboard/screen reader users - Section 508 compliance */}
       <a
         href="#main-content"
@@ -397,6 +429,12 @@ export function AppLayout() {
               label="FleetGraph traces"
               active={activeMode === 'fleetgraph'}
               to="/fleetgraph/traces"
+            />
+            <RailIcon
+              icon={<FleetGraphAssistantIcon />}
+              label={fleetGraphDrawerOpen ? 'Close FleetGraph assistant' : 'Open FleetGraph assistant'}
+              active={fleetGraphDrawerOpen}
+              onClick={() => setFleetGraphDrawerOpen((open) => !open)}
             />
             <RailExternalLink
               icon={<LangSmithIcon />}
@@ -565,10 +603,51 @@ export function AppLayout() {
           </ErrorBoundary>
         </main>
 
+        <aside
+          aria-label="FleetGraph assistant"
+          className={cn(
+            'relative flex flex-col border-l border-border transition-[width] duration-200 overflow-hidden bg-background',
+            fleetGraphDrawerOpen ? 'w-[24rem]' : 'w-0 border-l-0'
+          )}
+        >
+          <div className="flex h-full w-[24rem] flex-col">
+            <div className="flex h-10 items-center justify-between border-b border-border px-3">
+              <h2 className="text-sm font-medium text-foreground m-0">FleetGraph</h2>
+              <Tooltip content="Close FleetGraph drawer" side="left">
+                <button
+                  onClick={() => setFleetGraphDrawerOpen(false)}
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
+                  aria-label="Close FleetGraph drawer"
+                >
+                  <CollapseRightIcon />
+                </button>
+              </Tooltip>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              <FleetGraphAssistant
+                documentId={fleetGraphContext?.documentId ?? null}
+                documentType={fleetGraphContext?.documentType ?? null}
+                contextLabel={fleetGraphContext?.contextLabel}
+              />
+            </div>
+          </div>
+        </aside>
+
         {/* Properties sidebar landmark - always present for proper accessibility structure */}
         {/* Portal content from Editor will be rendered here via React Portal */}
         <aside id="properties-portal" aria-label="Document properties" className="flex flex-col" />
       </div>
+
+      {!fleetGraphDrawerOpen && (
+        <button
+          type="button"
+          onClick={() => setFleetGraphDrawerOpen(true)}
+          aria-label="Open FleetGraph drawer"
+          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-border bg-background/95 px-2 py-3 text-muted shadow-sm transition-colors hover:text-foreground"
+        >
+          <ExpandLeftIcon />
+        </button>
+      )}
 
       {/* Command Palette (Cmd+K) */}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
@@ -1875,6 +1954,14 @@ function FleetGraphTraceIcon() {
   );
 }
 
+function FleetGraphAssistantIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10.5h8m-8 3h5m-7 6l-3-3.5V6.5A2.5 2.5 0 015.5 4h13A2.5 2.5 0 0121 6.5v7A2.5 2.5 0 0118.5 16H9z" />
+    </svg>
+  );
+}
+
 function LangSmithIcon() {
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1923,6 +2010,22 @@ function ExpandRightIcon() {
   return (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 5l7 7-7 7M4 5v14" />
+    </svg>
+  );
+}
+
+function ExpandLeftIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5l-7 7 7 7m9-14v14" />
+    </svg>
+  );
+}
+
+function CollapseRightIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5l7 7-7 7m-8-14v14" />
     </svg>
   );
 }
