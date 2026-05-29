@@ -146,10 +146,11 @@ Deploys the frontend to S3 + CloudFront.
 ./scripts/deploy-web.sh prod    # Deploy frontend to production
 ```
 
-### `./scripts/deploy-infrastructure.sh`
-Deploys Terraform infrastructure (interactive).
+### `./scripts/deploy-infrastructure.sh [dev|shadow|prod]`
+Compatibility wrapper for Terraform apply (interactive).
 - Requires manual confirmation before applying
-- Creates VPC, Aurora, S3, CloudFront, Elastic Beanstalk resources
+- Delegates to `./scripts/terraform.sh <env> init/plan/apply`
+- Canonical path is `./scripts/terraform.sh`
 
 ---
 

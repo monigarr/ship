@@ -6,7 +6,7 @@
  * Secrets Storage:
  * ─────────────────
  * SSM Parameter Store (/ship/{env}/):
- *   - DATABASE_URL, SESSION_SECRET, CORS_ORIGIN
+ *   - DATABASE_URL, SESSION_SECRET, CORS_ORIGIN, S3_UPLOADS_BUCKET
  *   - Application config that changes per environment
  *   - CAIA OAuth credentials (CAIA_ISSUER_URL, CAIA_CLIENT_ID, etc.)
  */
@@ -35,6 +35,14 @@ export async function getSSMSecret(name: string): Promise<string> {
   return response.Parameter.Value;
 }
 
+async function getSSMSecretOptional(name: string): Promise<string | null> {
+  try {
+    return await getSSMSecret(name);
+  } catch {
+    return null;
+  }
+}
+
 export async function loadProductionSecrets(): Promise<void> {
   if (process.env.NODE_ENV !== 'production') {
     return; // Use .env files for local dev
@@ -51,7 +59,8 @@ export async function loadProductionSecrets(): Promise<void> {
     process.env.DATABASE_URL &&
     process.env.SESSION_SECRET &&
     process.env.CORS_ORIGIN &&
-    process.env.APP_BASE_URL
+    process.env.APP_BASE_URL &&
+    process.env.S3_UPLOADS_BUCKET
   ) {
     console.log('Skipping SSM secrets load (required env vars already present)');
     return;
@@ -62,12 +71,13 @@ export async function loadProductionSecrets(): Promise<void> {
 
   console.log(`Loading secrets from SSM path: ${basePath}`);
 
-  const [databaseUrl, sessionSecret, corsOrigin, cdnDomain, appBaseUrl] = await Promise.all([
+  const [databaseUrl, sessionSecret, corsOrigin, cdnDomain, appBaseUrl, s3UploadsBucket] = await Promise.all([
     getSSMSecret(`${basePath}/DATABASE_URL`),
     getSSMSecret(`${basePath}/SESSION_SECRET`),
     getSSMSecret(`${basePath}/CORS_ORIGIN`),
     getSSMSecret(`${basePath}/CDN_DOMAIN`),
     getSSMSecret(`${basePath}/APP_BASE_URL`),
+    getSSMSecretOptional(`${basePath}/S3_UPLOADS_BUCKET`),
   ]);
 
   process.env.DATABASE_URL = databaseUrl;
@@ -75,9 +85,15 @@ export async function loadProductionSecrets(): Promise<void> {
   process.env.CORS_ORIGIN = corsOrigin;
   process.env.CDN_DOMAIN = cdnDomain;
   process.env.APP_BASE_URL = appBaseUrl;
+  if (s3UploadsBucket) {
+    process.env.S3_UPLOADS_BUCKET = s3UploadsBucket;
+  } else {
+    console.warn(`S3_UPLOADS_BUCKET missing in SSM at ${basePath}/S3_UPLOADS_BUCKET`);
+  }
 
   console.log('Secrets loaded from SSM Parameter Store');
   console.log(`CORS_ORIGIN: ${corsOrigin}`);
   console.log(`CDN_DOMAIN: ${cdnDomain}`);
   console.log(`APP_BASE_URL: ${appBaseUrl}`);
+  console.log(`S3_UPLOADS_BUCKET: ${process.env.S3_UPLOADS_BUCKET || '(not set)'}`);
 }

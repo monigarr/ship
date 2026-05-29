@@ -6,9 +6,10 @@ This directory contains all infrastructure as code for deploying Ship to AWS.
 
 ```
 terraform/
-├── *.tf                    # Root config (legacy flat structure, prod-only)
+├── *.tf                    # Root config (legacy compatibility path)
 ├── environments/
 │   ├── dev/                # Dev environment - uses shared VPC
+│   ├── shadow/             # Shadow environment - migration/UAT testing
 │   └── prod/               # Prod environment - creates dedicated VPC
 ├── modules/                # Reusable Terraform modules
 │   ├── vpc/
@@ -91,14 +92,14 @@ Prod creates its own VPC because:
 
 ## Quick Start
 
-### Using Environment Directories (Recommended)
+### Using Environment Directories (Canonical)
 
 ```bash
 # 1. Verify AWS credentials
 aws sts get-caller-identity
 
 # 2. Navigate to environment
-cd terraform/environments/dev   # or prod
+cd terraform/environments/dev   # or shadow or prod
 
 # 3. Sync config from SSM (creates terraform.tfvars)
 ../../scripts/sync-terraform-config.sh dev
@@ -111,7 +112,15 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-### Using Root Directory (Legacy - Prod Only)
+Or use the canonical wrapper from repo root:
+
+```bash
+./scripts/terraform.sh dev init
+./scripts/terraform.sh dev plan -out=tfplan
+./scripts/terraform.sh dev apply tfplan
+```
+
+### Using Root Directory (Deprecated Compatibility Path)
 
 ```bash
 # 1. Verify AWS credentials (must have access to the team's AWS account)
@@ -131,7 +140,7 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-> **Note:** The root-level `*.tf` files are the original flat structure. New environments should use the `environments/` directories which leverage shared modules.
+> **Note:** The canonical deployment path is `terraform/environments/*` for all environments. Root-level `*.tf` files are retained only for compatibility and should not be used for new work.
 
 ## Infrastructure Components
 

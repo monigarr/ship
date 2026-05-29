@@ -1,8 +1,20 @@
 # Ship - Deployment Guide
 
-**Primary target: Render deployment for Express API + React frontend**
+**Primary target: AWS deployment for Express API + React frontend**
 
-## Render Deployment (Recommended)
+Canonical AWS commands:
+
+- Infrastructure: `./scripts/terraform.sh <dev|shadow|prod> <init|plan|apply|output|...>`
+- API deploy: `./scripts/deploy.sh <dev|shadow|prod>`
+- Frontend deploy: `./scripts/deploy-web.sh <dev|shadow|prod>`
+
+Legacy compatibility wrappers still work during transition:
+
+- `./scripts/deploy-infrastructure.sh [env]`
+- `./scripts/deploy-api.sh [env]`
+- `./scripts/deploy-frontend.sh [env]`
+
+## Render Deployment (Secondary)
 
 This repository now includes a Render blueprint at `render.yaml` for full-stack deployment:
 
@@ -89,7 +101,7 @@ Run these checks against deployed URLs:
 
 ---
 
-## AWS Deployment (Legacy/Alternative)
+## AWS Deployment (Primary)
 
 **Government-compliant AWS deployment for Express API + React frontend**
 
@@ -148,7 +160,9 @@ cp terraform.tfvars.example terraform.tfvars
 
 # Deploy infrastructure
 cd ..
-./scripts/deploy-infrastructure.sh
+./scripts/terraform.sh dev init
+./scripts/terraform.sh dev plan -out=tfplan
+./scripts/terraform.sh dev apply tfplan
 ```
 
 **Important:** Save the Terraform outputs - you'll need them for the next steps.
@@ -160,13 +174,8 @@ cd ..
 Deploy the Express API to Elastic Beanstalk:
 
 ```bash
-# Set environment variables (required)
-export EB_APP_NAME="ship-api"           # From terraform output eb_application_name
-export EB_ENV_NAME="ship-api-dev"       # From terraform output eb_environment_name
-export AWS_REGION="us-east-1"           # Your AWS region
-
 # Deploy
-./scripts/deploy-api.sh
+./scripts/deploy.sh dev
 ```
 
 The script automatically:
@@ -197,7 +206,7 @@ This script:
 Deploy the React frontend:
 
 ```bash
-./scripts/deploy-frontend.sh
+./scripts/deploy-web.sh dev
 ```
 
 This script:
@@ -248,7 +257,8 @@ To use custom domains (e.g., `api.example.gov` and `app.example.gov`):
 
 3. Re-run Terraform:
    ```bash
-   ./scripts/deploy-infrastructure.sh
+   ./scripts/terraform.sh dev plan -out=tfplan
+   ./scripts/terraform.sh dev apply tfplan
    ```
 
 4. Wait for ACM certificate validation (5-30 minutes)
@@ -397,7 +407,7 @@ This deployment follows government compliance patterns:
    FROM public.ecr.aws/docker/library/node:22-slim
    ```
 
-2. Redeploy API: `./scripts/deploy-api.sh`
+2. Redeploy API: `./scripts/deploy.sh <dev|shadow|prod>`
 
 ### Update Database Schema
 

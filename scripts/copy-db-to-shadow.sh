@@ -305,7 +305,7 @@ main() {
     log_success "Database copy complete!"
     echo ""
     echo "Next steps:"
-    echo "  1. Deploy the API to shadow: ./scripts/deploy-api.sh shadow"
+    echo "  1. Deploy the API to shadow: ./scripts/deploy.sh shadow"
     echo "  2. Test login at: https://shadow.ship.awsdev.treasury.gov"
     echo ""
 }

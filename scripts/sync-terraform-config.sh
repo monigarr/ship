@@ -4,14 +4,14 @@ set -euo pipefail
 # Sync Terraform configuration from SSM Parameter Store
 # This ensures terraform.tfvars matches the infrastructure for the specified environment
 #
-# Usage: ./scripts/sync-terraform-config.sh <dev|prod>
+# Usage: ./scripts/sync-terraform-config.sh <dev|shadow|prod>
 #
 # The values stored in SSM are the source of truth for Terraform configuration.
 # This prevents the "missing tfvars" problem where developers accidentally
 # apply Terraform with default values against the wrong environment.
 #
 # SSM Parameters (per environment):
-#   /ship/terraform-config/{env}/environment        - Required: "dev" or "prod"
+#   /ship/terraform-config/{env}/environment        - Required: "dev", "shadow", or "prod"
 #   /ship/terraform-config/{env}/app_domain_name    - Optional: custom domain
 #   /ship/terraform-config/{env}/route53_zone_id    - Optional: for DNS records
 #   /ship/terraform-config/{env}/eb_environment_cname - Optional: EB CNAME
@@ -38,16 +38,13 @@ if [[ ! "$ENV" =~ ^(dev|shadow|prod)$ ]]; then
 fi
 
 # Environment-specific paths
-# - prod uses existing terraform at root with original SSM path
-# - dev/shadow use new modular structure
-if [ "$ENV" = "prod" ]; then
-  TFVARS_FILE="$PROJECT_ROOT/terraform/terraform.tfvars"
-  SSM_PREFIX="/ship/terraform-config"
-else
-  # dev and shadow both use the modular terraform structure
-  TFVARS_FILE="$PROJECT_ROOT/terraform/environments/$ENV/terraform.tfvars"
-  SSM_PREFIX="/ship/terraform-config/$ENV"
-fi
+# Canonical source of truth is terraform/environments/* for all environments.
+TFVARS_FILE="$PROJECT_ROOT/terraform/environments/$ENV/terraform.tfvars"
+
+# Canonical SSM path is /ship/terraform-config/{env}.
+# For backward compatibility, prod can still fall back to legacy /ship/terraform-config.
+SSM_PREFIX="/ship/terraform-config/$ENV"
+LEGACY_PROD_SSM_PREFIX="/ship/terraform-config"
 
 echo "Syncing Terraform config for $ENV environment from SSM..."
 
@@ -56,6 +53,16 @@ ENVIRONMENT=$(aws ssm get-parameter --name "$SSM_PREFIX/environment" --query 'Pa
 APP_DOMAIN_NAME=$(aws ssm get-parameter --name "$SSM_PREFIX/app_domain_name" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 ROUTE53_ZONE_ID=$(aws ssm get-parameter --name "$SSM_PREFIX/route53_zone_id" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 EB_ENVIRONMENT_CNAME=$(aws ssm get-parameter --name "$SSM_PREFIX/eb_environment_cname" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+
+# Backward compatibility: prod may still use the legacy non-suffixed prefix.
+if [ "$ENV" = "prod" ] && [ -z "$ENVIRONMENT" ]; then
+  echo "Primary prod SSM path not found, falling back to legacy /ship/terraform-config..."
+  SSM_PREFIX="$LEGACY_PROD_SSM_PREFIX"
+  ENVIRONMENT=$(aws ssm get-parameter --name "$SSM_PREFIX/environment" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+  APP_DOMAIN_NAME=$(aws ssm get-parameter --name "$SSM_PREFIX/app_domain_name" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+  ROUTE53_ZONE_ID=$(aws ssm get-parameter --name "$SSM_PREFIX/route53_zone_id" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+  EB_ENVIRONMENT_CNAME=$(aws ssm get-parameter --name "$SSM_PREFIX/eb_environment_cname" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+fi
 
 # Validate required values exist
 if [ -z "$ENVIRONMENT" ]; then

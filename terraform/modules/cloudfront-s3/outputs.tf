@@ -32,3 +32,13 @@ output "uploads_bucket_arn" {
   description = "S3 bucket ARN for file uploads"
   value       = aws_s3_bucket.uploads.arn
 }
+
+output "cloudfront_waf_web_acl_arn" {
+  description = "Managed WAF WebACL ARN (if created)"
+  value       = var.create_managed_waf ? aws_wafv2_web_acl.cloudfront[0].arn : null
+}
+
+output "cloudfront_realtime_log_config_arn" {
+  description = "Realtime log config ARN (if enabled)"
+  value       = var.enable_realtime_logging ? aws_cloudfront_realtime_log_config.main[0].arn : null
+}

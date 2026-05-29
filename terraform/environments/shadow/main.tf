@@ -100,6 +100,9 @@ module "cloudfront_s3" {
   route53_zone_id      = var.route53_zone_id
   eb_environment_cname = var.eb_environment_cname
   upload_cors_origins  = var.upload_cors_origins
+  cloudfront_waf_web_acl_id = var.cloudfront_waf_web_acl_id
+  create_managed_waf        = var.create_managed_waf
+  enable_realtime_logging   = var.enable_realtime_logging
 }
 
 # SSM Parameters (shadow has its own parameter paths: /ship/shadow/...)
@@ -116,6 +119,7 @@ module "ssm" {
   db_username            = module.aurora.master_username
   db_password            = module.aurora.master_password
   cloudfront_domain_name = module.cloudfront_s3.cloudfront_domain_name
+  uploads_bucket_name    = module.cloudfront_s3.uploads_bucket_name
   app_domain_name        = var.app_domain_name
   eb_instance_role_name  = module.elastic_beanstalk.instance_role_name
 }

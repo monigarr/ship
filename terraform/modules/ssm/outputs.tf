@@ -17,3 +17,8 @@ output "app_base_url_parameter_name" {
   description = "SSM parameter name for APP_BASE_URL"
   value       = aws_ssm_parameter.app_base_url.name
 }
+
+output "s3_uploads_bucket_parameter_name" {
+  description = "SSM parameter name for S3_UPLOADS_BUCKET"
+  value       = aws_ssm_parameter.s3_uploads_bucket.name
+}

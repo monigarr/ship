@@ -58,6 +58,8 @@ Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Pa
 - Local and deployed side-by-side manual trace verification steps
 - Pass/fail criteria for branch-divergent internal trace evidence
 
+For optional external monitoring, see [`QUICKSTART.md`](./QUICKSTART.md) → **Optional — LangSmith Automations Setup (External Observability)** for high-value automations and conservative/aggressive threshold defaults.
+
 ## 2) PRD Requirement Checklist (Pass/Fail)
 
 | PRD Requirement | Status | Evidence |

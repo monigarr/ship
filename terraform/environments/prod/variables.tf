@@ -75,3 +75,21 @@ variable "upload_cors_origins" {
   type        = list(string)
   default     = [] # Must be set per-environment (e.g., ["https://ship.awsdev.treasury.gov"])
 }
+
+variable "cloudfront_waf_web_acl_id" {
+  description = "WAF WebACL ARN to attach to CloudFront distribution (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "create_managed_waf" {
+  description = "Create managed WAF for CloudFront in this environment"
+  type        = bool
+  default     = true
+}
+
+variable "enable_realtime_logging" {
+  description = "Enable CloudFront realtime logging to Kinesis"
+  type        = bool
+  default     = true
+}

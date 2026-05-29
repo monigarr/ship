@@ -38,6 +38,11 @@ output "cors_origin_ssm_parameter" {
   value       = module.ssm.cors_origin_parameter_name
 }
 
+output "s3_uploads_bucket_ssm_parameter" {
+  description = "SSM parameter name for S3_UPLOADS_BUCKET"
+  value       = module.ssm.s3_uploads_bucket_parameter_name
+}
+
 output "s3_bucket_name" {
   description = "S3 bucket for frontend"
   value       = module.cloudfront_s3.s3_bucket_name

@@ -26,11 +26,7 @@ if [[ ! "$ENV" =~ ^(dev|shadow|prod)$ ]]; then
 fi
 
 # Environment-specific configuration
-if [ "$ENV" = "prod" ]; then
-  TF_DIR="$PROJECT_ROOT/terraform"
-else
-  TF_DIR="$PROJECT_ROOT/terraform/environments/$ENV"
-fi
+TF_DIR="$PROJECT_ROOT/terraform/environments/$ENV"
 
 # Sync terraform config from SSM (source of truth)
 "$SCRIPT_DIR/sync-terraform-config.sh" "$ENV"

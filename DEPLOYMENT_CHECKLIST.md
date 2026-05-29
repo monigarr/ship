@@ -1,6 +1,8 @@
 # Ship - Deployment Checklist
 
-Quick reference for deploying Ship to AWS.
+Quick reference for deploying Ship to AWS (canonical interface).
+
+Compatibility wrappers (`deploy-api.sh`, `deploy-frontend.sh`, `deploy-infrastructure.sh`) are still available but deprecated.
 
 ## Initial Setup (One-time)
 
@@ -8,12 +10,12 @@ Quick reference for deploying Ship to AWS.
 - [ ] Configure AWS credentials: `aws configure`
 - [ ] Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars`
 - [ ] Edit `terraform/terraform.tfvars` with your configuration
-- [ ] Deploy infrastructure: `./scripts/deploy-infrastructure.sh` (10-15 min)
+- [ ] Deploy infrastructure: `./scripts/terraform.sh <env> init && ./scripts/terraform.sh <env> plan -out=tfplan && ./scripts/terraform.sh <env> apply tfplan` (10-15 min)
 - [ ] Initialize Elastic Beanstalk: `cd api && eb init`
 - [ ] Create EB environment: See DEPLOYMENT.md for full `eb create` command (10-15 min)
 - [ ] Initialize database: `./scripts/init-database.sh` (2-3 min)
-- [ ] Deploy API: `./scripts/deploy-api.sh` (3-5 min)
-- [ ] Deploy frontend: `./scripts/deploy-frontend.sh` (2-3 min)
+- [ ] Deploy API: `./scripts/deploy.sh <env>` (3-5 min)
+- [ ] Deploy frontend: `./scripts/deploy-web.sh <env>` (2-3 min)
 
 **Total setup time:** ~30-45 minutes
 
@@ -21,19 +23,19 @@ Quick reference for deploying Ship to AWS.
 
 ### Deploy API Changes
 ```bash
-./scripts/deploy-api.sh
+./scripts/deploy.sh dev
 ```
 **Time:** 3-5 minutes
 
 ### Deploy Frontend Changes
 ```bash
-./scripts/deploy-frontend.sh
+./scripts/deploy-web.sh dev
 ```
 **Time:** 2-3 minutes
 
 ### Deploy Both
 ```bash
-./scripts/deploy-api.sh && ./scripts/deploy-frontend.sh
+./scripts/deploy.sh dev && ./scripts/deploy-web.sh dev
 ```
 **Time:** 5-8 minutes
 

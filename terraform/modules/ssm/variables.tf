@@ -53,6 +53,11 @@ variable "cloudfront_domain_name" {
   type        = string
 }
 
+variable "uploads_bucket_name" {
+  description = "S3 uploads bucket name"
+  type        = string
+}
+
 # EB role for IAM policies
 variable "eb_instance_role_name" {
   description = "EB instance role name for attaching policies"

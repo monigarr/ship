@@ -108,6 +108,18 @@ resource "aws_ssm_parameter" "app_base_url" {
   }
 }
 
+# SSM Parameter - Uploads bucket name
+resource "aws_ssm_parameter" "s3_uploads_bucket" {
+  name        = "/${var.project_name}/${var.environment}/S3_UPLOADS_BUCKET"
+  description = "S3 bucket name for direct file uploads"
+  type        = "String"
+  value       = var.uploads_bucket_name
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-s3-uploads-bucket"
+  }
+}
+
 # Generate random session secret
 resource "random_password" "session_secret" {
   length  = 64

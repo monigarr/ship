@@ -4,12 +4,13 @@ set -euo pipefail
 # Terraform wrapper script for multi-environment deployment
 # Automatically changes to the correct environment directory and syncs config from SSM
 #
-# Usage: ./scripts/terraform.sh <dev|prod> <terraform command>
+# Usage: ./scripts/terraform.sh <dev|shadow|prod> <terraform command>
 #
 # Examples:
 #   ./scripts/terraform.sh dev init
 #   ./scripts/terraform.sh dev plan
 #   ./scripts/terraform.sh dev apply
+#   ./scripts/terraform.sh shadow plan
 #   ./scripts/terraform.sh prod output -raw s3_bucket_name
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,13 +18,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Parse environment argument
 ENV="${1:-}"
-if [[ ! "$ENV" =~ ^(dev|prod)$ ]]; then
-  echo "Usage: $0 <dev|prod> <terraform command>"
+if [[ ! "$ENV" =~ ^(dev|shadow|prod)$ ]]; then
+  echo "Usage: $0 <dev|shadow|prod> <terraform command>"
   echo ""
   echo "Examples:"
   echo "  $0 dev init              # Initialize dev environment"
   echo "  $0 dev plan              # Plan changes for dev"
   echo "  $0 dev apply             # Apply changes to dev"
+  echo "  $0 shadow plan           # Plan changes for shadow"
   echo "  $0 prod output           # Show prod outputs"
   exit 1
 fi
@@ -32,18 +34,13 @@ shift
 # Check that terraform command was provided
 if [ $# -eq 0 ]; then
   echo "ERROR: No terraform command specified"
-  echo "Usage: $0 <dev|prod> <terraform command>"
+  echo "Usage: $0 <dev|shadow|prod> <terraform command>"
   exit 1
 fi
 
 # Environment-specific terraform directory
-# - prod uses existing monolithic terraform at root (existing state, no migration needed)
-# - dev uses new modular structure
-if [ "$ENV" = "prod" ]; then
-  TF_DIR="$PROJECT_ROOT/terraform"
-else
-  TF_DIR="$PROJECT_ROOT/terraform/environments/$ENV"
-fi
+# Canonical source of truth is terraform/environments/* for all environments.
+TF_DIR="$PROJECT_ROOT/terraform/environments/$ENV"
 
 # Verify environment directory exists
 if [ ! -d "$TF_DIR" ]; then

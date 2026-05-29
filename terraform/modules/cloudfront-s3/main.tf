@@ -131,6 +131,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   default_root_object = "index.html"
   price_class         = "PriceClass_100" # US, Canada, Europe only
 
+  # Attach either an externally managed WebACL or a module-managed one.
+  web_acl_id = var.cloudfront_waf_web_acl_id != "" ? var.cloudfront_waf_web_acl_id : (
+    var.create_managed_waf ? aws_wafv2_web_acl.cloudfront[0].arn : null
+  )
+
   aliases = var.app_domain_name != "" ? [var.app_domain_name] : []
 
   # Origin 1: S3 for static assets
@@ -265,6 +270,9 @@ resource "aws_cloudfront_distribution" "frontend" {
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 86400
+
+    # Optional realtime logging for request forensics and troubleshooting.
+    realtime_log_config_arn = var.enable_realtime_logging ? aws_cloudfront_realtime_log_config.main[0].arn : null
 
     forwarded_values {
       query_string = false

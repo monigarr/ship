@@ -13,11 +13,9 @@ pip install awsebcli
 aws configure
 
 # 3. Deploy infrastructure (one-time, 10-15 min)
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your values
-cd ..
-./scripts/deploy-infrastructure.sh
+./scripts/terraform.sh dev init
+./scripts/terraform.sh dev plan -out=tfplan
+./scripts/terraform.sh dev apply tfplan
 
 # 4. Initialize Elastic Beanstalk (one-time, 10-15 min)
 cd api
@@ -29,8 +27,8 @@ cd ..
 ./scripts/init-database.sh
 
 # 6. Deploy application (frequent, 5-8 min)
-./scripts/deploy-api.sh
-./scripts/deploy-frontend.sh
+./scripts/deploy.sh dev
+./scripts/deploy-web.sh dev
 ```
 
 ## Documentation
@@ -79,9 +77,12 @@ api/
 ### Deployment Scripts
 ```
 scripts/
-├── deploy-infrastructure.sh - Deploy Terraform resources
-├── deploy-api.sh            - Deploy API to Elastic Beanstalk
-├── deploy-frontend.sh       - Deploy frontend to S3 + CloudFront
+├── terraform.sh             - Canonical Terraform interface by environment
+├── deploy.sh                - Canonical API deployment to Elastic Beanstalk
+├── deploy-web.sh            - Canonical frontend deployment to S3 + CloudFront
+├── deploy-infrastructure.sh - Compatibility wrapper (deprecated)
+├── deploy-api.sh            - Compatibility wrapper (deprecated)
+├── deploy-frontend.sh       - Compatibility wrapper (deprecated)
 └── init-database.sh         - Initialize database schema
 ```
 
@@ -155,7 +156,7 @@ Note: Dev environment can disable NAT Gateway if using VPC endpoints for ECR/S3/
 ## Deployment Workflow
 
 ### Initial Setup (One-time)
-1. **Infrastructure** (10-15 min): `./scripts/deploy-infrastructure.sh`
+1. **Infrastructure** (10-15 min): `./scripts/terraform.sh <env> init/plan/apply`
    - Creates VPC, Aurora, S3, CloudFront, security groups, IAM roles
 2. **EB Environment** (10-15 min): `eb init` then `eb create`
    - Creates ALB, EC2 instances, deploys Docker container
@@ -165,8 +166,8 @@ Note: Dev environment can disable NAT Gateway if using VPC endpoints for ECR/S3/
 **Total setup time:** 30-45 minutes
 
 ### Regular Deployments (Frequent)
-- **API changes** (3-5 min): `./scripts/deploy-api.sh`
-- **Frontend changes** (2-3 min): `./scripts/deploy-frontend.sh`
+- **API changes** (3-5 min): `./scripts/deploy.sh <env>`
+- **Frontend changes** (2-3 min): `./scripts/deploy-web.sh <env>`
 - **Both** (5-8 min): Run both scripts
 
 ## Configuration
@@ -284,7 +285,7 @@ aws ssm put-parameter \
   --overwrite
 
 # 3. Redeploy API
-./scripts/deploy-api.sh
+./scripts/deploy.sh <dev|shadow|prod>
 ```
 
 **RTO (Recovery Time Objective):** 15-30 minutes
@@ -294,7 +295,7 @@ aws ssm put-parameter \
 
 ### Update Node.js Version
 1. Update `api/Dockerfile` base image: `FROM public.ecr.aws/docker/library/node:22-slim`
-2. Redeploy: `./scripts/deploy-api.sh`
+2. Redeploy: `./scripts/deploy.sh <dev|shadow|prod>`
 
 ### Update Database Schema
 1. Update `api/src/db/schema.sql`

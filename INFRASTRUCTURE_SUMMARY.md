@@ -155,7 +155,9 @@ enable_nat_gateway = true
 
 ### 1. Infrastructure (One-time: 10-15 min)
 ```bash
-./scripts/deploy-infrastructure.sh
+./scripts/terraform.sh dev init
+./scripts/terraform.sh dev plan -out=tfplan
+./scripts/terraform.sh dev apply tfplan
 ```
 Creates VPC, Aurora, S3, CloudFront, EB application, security groups, IAM roles, SSM parameters.
 
@@ -175,13 +177,13 @@ Applies schema, optionally seeds test data.
 
 ### 4. API (Frequent: 3-5 min)
 ```bash
-./scripts/deploy-api.sh
+./scripts/deploy.sh dev
 ```
 Builds Docker image, uploads to EB, rolling deployment.
 
 ### 5. Frontend (Frequent: 2-3 min)
 ```bash
-./scripts/deploy-frontend.sh
+./scripts/deploy-web.sh dev
 ```
 Builds React app, syncs to S3, invalidates CloudFront.
 
@@ -257,7 +259,7 @@ Note: Costs vary by region and actual usage.
 ### Restore
 1. Restore Aurora from snapshot or point-in-time
 2. Update SSM parameters with new endpoint
-3. Redeploy API: `./scripts/deploy-api.sh`
+3. Redeploy API: `./scripts/deploy.sh <dev|shadow|prod>`
 4. Restore S3 from version history if needed
 
 ### RTO/RPO
@@ -268,7 +270,7 @@ Note: Costs vary by region and actual usage.
 
 ### Update Node.js Version
 1. Update `api/Dockerfile` base image
-2. Deploy: `./scripts/deploy-api.sh`
+2. Deploy: `./scripts/deploy.sh <dev|shadow|prod>`
 
 ### Update Database Schema
 1. Update `api/src/db/schema.sql`
@@ -313,7 +315,7 @@ Apply: `cd terraform && terraform apply`
 
 ### Immediate
 1. Configure `terraform.tfvars` with your AWS account details
-2. Deploy infrastructure: `./scripts/deploy-infrastructure.sh`
+2. Deploy infrastructure: `./scripts/terraform.sh <dev|shadow|prod> init/plan/apply`
 3. Initialize EB environment (see DEPLOYMENT.md)
 4. Deploy application: API then frontend
 

@@ -61,6 +61,53 @@ Pass criteria (both paths):
 - At least two branch-divergent traces are visible and shareable to authenticated workspace members.
 - Trace API (`/api/fleetgraph/traces`) and trace detail route are both accessible.
 
+### Optional — LangSmith Automations Setup (External Observability)
+
+Use this section to add external alerting and automations on top of internal FleetGraph traces.
+
+- LangSmith project traces URL: `https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces`
+
+Terminology (keep consistent with evidence docs):
+
+- **Detection latency**: `event introduced -> finding surfaced`
+- **Run latency**: runtime execution latency (`executeFleetGraphRun`)
+- **Runtime estimate**: telemetry-derived estimate from FleetGraph runtime data
+- **Billed spend**: invoice-observed provider spend (separate from runtime estimate)
+
+#### Recommended initial automations (highest user value)
+
+1. Error spike alert (run failures)
+2. Detection latency SLO breach alert
+3. HITL pending-too-long escalation
+4. Run latency regression alert
+5. Runtime estimate anomaly alert
+
+#### Threshold defaults
+
+| Automation | Conservative default | Aggressive default |
+| --- | --- | --- |
+| Error rate | Warn `>5%` / 30m (`>=40` runs), Critical `>10%` / 15m (`>=25` runs) | Warn `>2%` / 15m (`>=20` runs), Critical `>5%` / 10m (`>=15` runs) |
+| Detection latency | Warn p95 `>120000ms` / 60m (`>=30` samples), Critical p95 `>300000ms` / 30m (`>=20` samples) | Warn p95 `>60000ms` / 30m (`>=20` samples), Critical p95 `>180000ms` / 20m (`>=15` samples), hard-fail any `>300000ms` |
+| Run latency | Warn p95 `>5000ms` / 60m (`>=50` runs), Critical p95 `>15000ms` / 30m (`>=30` runs) | Warn p95 `>2000ms` / 30m (`>=30` runs), Critical p95 `>5000ms` / 15m (`>=20` runs) |
+| HITL pending age | Warn `>4h`, Critical `>12h`, escalate if `>=5` pending over 4h | Warn `>2h`, Critical `>6h`, escalate if `>=3` pending over 2h |
+| Runtime estimate anomaly | Warn p95 run estimate `>2x` 14d baseline, Critical `>3x` or daily total `>2x` baseline (`>=50` runs/day) | Warn p95 run estimate `>1.5x` baseline, Critical `>2x` or daily total `>1.5x` baseline (`>=30` runs/day) |
+
+#### Setup checklist (LangSmith)
+
+- Scope by project and environment tags (`prod`, `staging`, trigger type).
+- Add minimum-sample guards to avoid low-volume alert noise.
+- Add dedupe and cooldown windows (recommended `15-30` minutes).
+- Route alerts by severity:
+  - Warn -> team Slack channel
+  - Critical -> incident channel/on-call webhook
+- Review weekly: false positives, threshold tuning, and branch-divergence trends.
+
+#### Rollout guidance
+
+- Week 1: use **Conservative** defaults.
+- Week 2: move detection-latency and HITL rules to **Aggressive** if alert quality is acceptable.
+- Keep error-rate and runtime-estimate alerts conservative until production traffic stabilizes.
+
 ---
 
 ## Part A — Automated Tests (Engineer Onboarding)
