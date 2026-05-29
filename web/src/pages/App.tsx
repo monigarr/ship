@@ -437,8 +437,8 @@ export function AppLayout() {
               onClick={() => setFleetGraphDrawerOpen((open) => !open)}
               className={
                 fleetGraphDrawerOpen
-                  ? 'bg-accent/25 text-accent hover:bg-accent/30 hover:text-accent'
-                  : 'text-accent hover:bg-accent/15 hover:text-accent'
+                  ? 'bg-accent/45 text-accent-foreground ring-1 ring-accent shadow-lg shadow-accent/80 hover:bg-accent/55 hover:shadow-xl hover:shadow-accent'
+                  : 'bg-accent/20 text-accent ring-1 ring-accent/60 shadow-md shadow-accent/60 hover:bg-accent/35 hover:text-accent-foreground hover:shadow-lg hover:shadow-accent/90'
               }
             />
             <RailExternalLink
@@ -648,7 +648,7 @@ export function AppLayout() {
           type="button"
           onClick={() => setFleetGraphDrawerOpen(true)}
           aria-label="Open FleetGraph drawer"
-          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-accent/40 bg-accent/15 px-2 py-3 text-accent shadow-sm transition-colors hover:bg-accent/25 hover:text-accent"
+          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-accent/80 bg-accent/45 px-2 py-3 text-accent-foreground shadow-lg shadow-accent/80 ring-1 ring-accent/70 transition-colors hover:bg-accent/55 hover:shadow-xl hover:shadow-accent hover:ring-accent"
         >
           <ExpandLeftIcon />
         </button>
