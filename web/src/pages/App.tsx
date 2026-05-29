@@ -193,7 +193,7 @@ export function AppLayout() {
   const isMyWeekPage = location.pathname.startsWith('/my-week');
   const isWeeklyDoc = currentDocumentType === 'weekly_plan' || currentDocumentType === 'weekly_retro';
   const isStandup = currentDocumentType === 'standup';
-  const hideLeftSidebar = isMyWeekPage || isWeeklyDoc || isStandup;
+  const hideLeftSidebar = (isMyWeekPage || isWeeklyDoc || isStandup) && !fleetGraphDrawerOpen;
 
   // Get the active document ID from URL - works for /documents/:id and legacy routes
   const getActiveDocumentId = (): string | undefined => {
@@ -428,7 +428,10 @@ export function AppLayout() {
               icon={<FleetGraphAssistantIcon />}
               label={fleetGraphDrawerOpen ? 'Close FleetGraph in left sidebar' : 'Open FleetGraph in left sidebar'}
               active={fleetGraphDrawerOpen}
-              onClick={() => setFleetGraphDrawerOpen((open) => !open)}
+              onClick={() => {
+                setLeftSidebarCollapsed(false);
+                setFleetGraphDrawerOpen((open) => !open);
+              }}
               className={
                 fleetGraphDrawerOpen
                   ? 'bg-accent/45 text-accent-foreground ring-1 ring-accent shadow-lg shadow-accent/80 hover:bg-accent/55 hover:shadow-xl hover:shadow-accent'
