@@ -117,3 +117,22 @@ export function resolveInternalTraceHref(traceUrl?: string | null, traceId?: str
   }
   return traceUrl;
 }
+
+export function resolveExternalTraceHref(externalTraceUrl?: string | null): string | null {
+  if (!externalTraceUrl) {
+    return null;
+  }
+  const trimmed = externalTraceUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}

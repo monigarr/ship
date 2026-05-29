@@ -108,6 +108,20 @@ function resolveRunTraceUrl(traceId: string | null | undefined, traceUrl: string
   return canonicalizeFleetGraphTraceUrl(resolveTraceIdentifier(traceId, runId), traceUrl);
 }
 
+function resolveExternalTraceUrl(externalTraceUrl: string | null | undefined): string | null {
+  if (!externalTraceUrl) {
+    return null;
+  }
+  const trimmed = externalTraceUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return null;
+}
+
 function parseJsonArray<T>(value: unknown): T[] {
   if (Array.isArray(value)) {
     return value as T[];
@@ -322,6 +336,7 @@ export async function ensureFleetGraphTables(): Promise<void> {
       branch TEXT NOT NULL,
       trace_id TEXT NOT NULL,
       trace_url TEXT NOT NULL,
+      external_trace_url TEXT,
       latency_ms INTEGER NOT NULL,
       token_estimate INTEGER NOT NULL DEFAULT 0,
       cost_estimate_usd NUMERIC(10, 6) NOT NULL DEFAULT 0,
@@ -370,6 +385,11 @@ export async function ensureFleetGraphTables(): Promise<void> {
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_fleetgraph_trace_events_workspace_trace_created
       ON fleetgraph_trace_events(workspace_id, trace_id, created_at ASC);
+  `);
+
+  await pool.query(`
+    ALTER TABLE fleetgraph_runs
+      ADD COLUMN IF NOT EXISTS external_trace_url TEXT;
   `);
 
   await pool.query(`
@@ -1520,12 +1540,12 @@ export async function executeFleetGraphRun(
   const persistencePhaseMs = Date.now();
   await pool.query(
     `INSERT INTO fleetgraph_runs (
-       id, workspace_id, user_id, trigger, branch, trace_id, trace_url,
+       id, workspace_id, user_id, trigger, branch, trace_id, trace_url, external_trace_url,
        latency_ms, token_estimate, cost_estimate_usd, run_input, run_output
      )
      VALUES (
-       $1, $2, $3, $4, $5, $6, $7,
-       $8, $9, $10, $11::jsonb, $12::jsonb
+       $1, $2, $3, $4, $5, $6, $7, $8,
+       $9, $10, $11, $12::jsonb, $13::jsonb
      )`,
     [
       runId,
@@ -1535,6 +1555,7 @@ export async function executeFleetGraphRun(
       branch,
       trace.traceId,
       trace.traceUrl,
+      resolveExternalTraceUrl(trace.externalTraceUrl),
       latencyMs,
       tokenEstimate,
       costEstimateUsd,
@@ -1603,6 +1624,7 @@ export async function executeFleetGraphRun(
       runId,
       traceId: trace.traceId,
       traceUrl: trace.traceUrl,
+      externalTraceUrl: resolveExternalTraceUrl(trace.externalTraceUrl),
       trigger,
       branch,
       startedAt: startedAtIso,
@@ -1631,6 +1653,7 @@ export async function listFleetGraphOpenFindings(
   summary: string;
   traceId: string;
   traceUrl: string;
+  externalTraceUrl: string | null;
   updatedAt: string;
   snoozedUntil: string | null;
   evidence: string[];
@@ -1656,6 +1679,7 @@ export async function listFleetGraphOpenFindings(
     summary: string;
     trace_id: string;
     trace_url: string;
+    external_trace_url: string | null;
     updated_at: string;
     snoozed_until: string | null;
     evidence: string[] | string;
@@ -1674,6 +1698,7 @@ export async function listFleetGraphOpenFindings(
        f.summary,
        r.trace_id,
        r.trace_url,
+       r.external_trace_url,
        f.updated_at::text,
        f.snoozed_until::text,
        f.evidence,
@@ -1719,6 +1744,7 @@ export async function listFleetGraphOpenFindings(
       summary: row.summary,
       traceId: row.trace_id,
       traceUrl: canonicalizeFleetGraphTraceUrl(row.trace_id, row.trace_url),
+      externalTraceUrl: resolveExternalTraceUrl(row.external_trace_url),
       updatedAt: toIsoString(row.updated_at),
       snoozedUntil: row.snoozed_until ? toIsoString(row.snoozed_until) : null,
       evidence,
@@ -1923,6 +1949,7 @@ export async function listFleetGraphRecentRuns(
     trigger: string;
     branch: string;
     traceUrl: string;
+    externalTraceUrl: string | null;
     latencyMs: number;
     createdAt: string;
     status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
@@ -1994,7 +2021,7 @@ export async function listFleetGraphRecentRuns(
     params.push(`%${traceSearch}%`);
     const traceParam = `$${params.length}`;
     whereClauses.push(
-      `(r.trace_id ILIKE ${traceParam} OR r.id::text ILIKE ${traceParam} OR r.trace_url ILIKE ${traceParam} OR r.branch ILIKE ${traceParam} OR r.trigger ILIKE ${traceParam})`
+      `(r.trace_id ILIKE ${traceParam} OR r.id::text ILIKE ${traceParam} OR r.trace_url ILIKE ${traceParam} OR r.external_trace_url ILIKE ${traceParam} OR r.branch ILIKE ${traceParam} OR r.trigger ILIKE ${traceParam})`
     );
   }
 
@@ -2023,6 +2050,7 @@ export async function listFleetGraphRecentRuns(
     trigger: string;
     branch: string;
     trace_url: string | null;
+    external_trace_url: string | null;
     latency_ms: number;
     created_at: string;
     run_status: 'pending_approval' | 'attention' | 'resolved' | 'no_findings';
@@ -2128,6 +2156,7 @@ export async function listFleetGraphRecentRuns(
          r.trigger,
          r.branch,
          r.trace_url,
+        r.external_trace_url,
          r.latency_ms,
          r.created_at::text,
          COALESCE(fs.signal_count, 0) AS signal_count,
@@ -2166,6 +2195,7 @@ export async function listFleetGraphRecentRuns(
        summary.trigger,
        summary.branch,
        summary.trace_url,
+       summary.external_trace_url,
        summary.latency_ms,
        summary.created_at,
        summary.run_status,
@@ -2199,6 +2229,7 @@ export async function listFleetGraphRecentRuns(
       trigger: row.trigger,
       branch: row.branch,
       traceUrl: resolveRunTraceUrl(row.trace_id, row.trace_url, row.id),
+      externalTraceUrl: resolveExternalTraceUrl(row.external_trace_url),
       latencyMs: row.latency_ms,
       createdAt: toIsoString(row.created_at),
       status: row.run_status,
@@ -2238,11 +2269,13 @@ export async function getFleetGraphTraceDetail(
 ): Promise<{
   traceId: string;
   traceUrl: string;
+  externalTraceUrl: string | null;
   run: {
     runId: string;
     trigger: string;
     branch: string;
     latencyMs: number;
+    externalTraceUrl: string | null;
     tokenEstimate: number;
     costEstimateUsd: number;
     createdAt: string;
@@ -2293,6 +2326,7 @@ export async function getFleetGraphTraceDetail(
     trigger: string;
     branch: string;
     trace_url: string | null;
+    external_trace_url: string | null;
     latency_ms: number;
     token_estimate: number;
     cost_estimate_usd: string;
@@ -2306,6 +2340,7 @@ export async function getFleetGraphTraceDetail(
        trigger,
        branch,
        trace_url,
+       external_trace_url,
        latency_ms,
        token_estimate,
        cost_estimate_usd::text,
@@ -2467,11 +2502,13 @@ export async function getFleetGraphTraceDetail(
   return {
     traceId: resolvedTraceId,
     traceUrl: resolveRunTraceUrl(run.trace_id, run.trace_url, run.id),
+    externalTraceUrl: resolveExternalTraceUrl(run.external_trace_url),
     run: {
       runId: run.id,
       trigger: run.trigger,
       branch: run.branch,
       latencyMs: run.latency_ms,
+      externalTraceUrl: resolveExternalTraceUrl(run.external_trace_url),
       tokenEstimate: run.token_estimate,
       costEstimateUsd: Number(run.cost_estimate_usd),
       createdAt: toIsoString(run.created_at),

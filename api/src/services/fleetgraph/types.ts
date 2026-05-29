@@ -39,6 +39,7 @@ export interface FleetGraphRunRecord {
   runId: string;
   traceId: string;
   traceUrl: string;
+  externalTraceUrl: string | null;
   trigger: FleetGraphTrigger;
   branch: FleetGraphBranch;
   startedAt: string;

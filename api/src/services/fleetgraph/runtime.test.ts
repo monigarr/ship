@@ -52,6 +52,7 @@ describe('FleetGraph runtime', () => {
       expect(result.summary.toLowerCase()).toContain('planning_risk');
       expect(result.findings[0]?.status).toBe('open');
       expect(result.run.traceUrl).toMatch(/^\/fleetgraph\/traces\//);
+      expect(result.run.externalTraceUrl).toBeNull();
     });
 
     it('detects short weekly plan as planning_risk', async () => {
@@ -464,6 +465,7 @@ describe('FleetGraph runtime', () => {
       expect(runList.total).toBeGreaterThanOrEqual(1);
       expect(runList.runs[0]?.traceId).toBe(result.run.traceId);
       expect(runList.runs[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+      expect(runList.runs[0]?.externalTraceUrl).toBeNull();
       expect(runList.runs[0]?.topSignal?.signalType).toBe('evidence_risk');
       expect(runList.runs[0]?.affectedRecord?.title).toBe('Test Weekly Retro');
       expect(runList.runs[0]?.nextAction).toContain('Attach replayable evidence');
@@ -471,6 +473,7 @@ describe('FleetGraph runtime', () => {
 
       const traceDetail = await getFleetGraphTraceDetail(ctx.workspaceId, result.run.traceId);
       expect(traceDetail.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+      expect(traceDetail.externalTraceUrl).toBeNull();
       expect(traceDetail.observability.branchExplanation).toContain('evidence_risk');
       expect(traceDetail.findings[0]?.affectedRecord?.title).toBe('Test Weekly Retro');
       expect(traceDetail.findings[0]?.evidenceChecklist.length).toBeGreaterThan(0);
@@ -480,6 +483,37 @@ describe('FleetGraph runtime', () => {
       expect(findings.length).toBeGreaterThanOrEqual(1);
       expect(findings[0]?.traceId).toBe(result.run.traceId);
       expect(findings[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
+      expect(findings[0]?.externalTraceUrl).toBeNull();
+    });
+
+    it('returns external trace URLs when persisted as additive metadata', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const result = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+
+      const langSmithUrl =
+        'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces';
+      await pool.query(
+        `UPDATE fleetgraph_runs
+         SET external_trace_url = $1
+         WHERE workspace_id = $2
+           AND trace_id = $3`,
+        [langSmithUrl, ctx.workspaceId, result.run.traceId]
+      );
+
+      const runList = await listFleetGraphRecentRuns(ctx.workspaceId);
+      expect(runList.runs[0]?.externalTraceUrl).toBe(langSmithUrl);
+
+      const detail = await getFleetGraphTraceDetail(ctx.workspaceId, result.run.traceId);
+      expect(detail.externalTraceUrl).toBe(langSmithUrl);
+      expect(detail.run.externalTraceUrl).toBe(langSmithUrl);
+
+      const findings = await listFleetGraphOpenFindings(ctx.workspaceId);
+      expect(findings[0]?.externalTraceUrl).toBe(langSmithUrl);
     });
 
     it('repairs legacy trace rows so the index opens a full in-app trace detail', async () => {

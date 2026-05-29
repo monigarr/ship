@@ -44,6 +44,8 @@ describe('FleetGraphTracesPage', () => {
             trigger: 'on_demand',
             branch: 'planning_risk',
             traceUrl: 'https://external-observability.example/trace/stale-external-trace',
+            externalTraceUrl:
+              'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces',
             latencyMs: 1200,
             createdAt: '2026-05-26T21:00:00.000Z',
             status: 'pending_approval',
@@ -106,6 +108,10 @@ describe('FleetGraphTracesPage', () => {
 
     const traceLink = await screen.findByRole('link', { name: 'Open FleetGraph trace trace-1' });
     expect(traceLink).toHaveAttribute('href', '/fleetgraph/traces/trace-1');
+    expect(await screen.findByRole('link', { name: 'View in LangSmith' })).toHaveAttribute(
+      'href',
+      'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces'
+    );
   });
 
   it('falls back to run id when a legacy trace row only points to the trace index', async () => {

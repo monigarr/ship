@@ -2,11 +2,48 @@
 
 This file is the sprint-folder packaging checklist for PRD submission evidence on branch `gfa2_wk5`.
 
+## **AGENTS, EVALS, GRAPHS, RAGS **
+
+**Agents (FleetGraph runtime + UI)**
+- api/src/services/fleetgraph/runtime.ts — core FleetGraph execution, signal detection, branching, findings persistence, trace detail/metrics/list APIs.
+- api/src/services/fleetgraph/proactive.ts — proactive scheduler + webhook-triggered runs, scan-state tracking, debounce.
+- api/src/services/fleetgraph/synthesis.ts — optional LLM synthesis layer for on-demand responses (Bedrock).
+- api/src/services/fleetgraph/hitl-actions.ts — HITL action payload build + approved action execution.
+- api/src/services/fleetgraph/notifications.ts — notification draft enrichment/routing.
+- api/src/services/fleetgraph/trace.ts — internal trace URL/config lifecycle.
+- api/src/services/fleetgraph/types.ts — runtime types/contracts.
+- api/src/routes/fleetgraph.ts — authenticated REST endpoints for run, findings, metrics, traces, trace detail, HITL decisions, snooze.
+- web/src/components/sidebars/FleetGraphAssistant.tsx — context-embedded assistant panel + findings + HITL controls.
+- web/src/pages/FleetGraphTracesPage.tsx — trace index UI.
+- web/src/pages/FleetGraphTracePage.tsx — trace detail UI.
+- web/src/lib/fleetgraphVisuals.ts — shared FleetGraph status/severity/trace-link helpers.
+- web/src/components/sidebars/IssueSidebar.tsx, ProjectSidebar.tsx, WeekSidebar.tsx — assistant embedding points.
+
+**Evals (implemented as test-driven scenario validation)**
+- api/src/services/fleetgraph/runtime.test.ts — TC1–TC8 scenario assertions, branch divergence, latency, dedupe, HITL lifecycle.
+- api/src/routes/fleetgraph.test.ts — endpoint contract and auth/CSRF behavior.
+- api/src/services/fleetgraph/proactive.test.ts — scheduler/webhook/tier/debounce behavior.
+- api/src/services/fleetgraph/trace.test.ts — trace URL/config behavior.
+- api/src/services/fleetgraph/notifications.test.ts — notification routing.
+web/src/pages/FleetGraphTracesPage.test.tsx, web/src/lib/fleetgraphVisuals.test.ts — UI and helper coverage.
+- api/src/scripts/capture-fleetgraph-traces.ts — scripted capture of TC trace URLs (evidence generation, not product runtime).
+
+**Graphs**
+- api/src/services/fleetgraph/runtime.ts — graph-context expansion via related docs/associations (project-state graph reasoning).
+- web/src/pages/FleetGraphTracesPage.tsx, FleetGraphTracePage.tsx — graph-run observability views.
+- web/src/components/week/WeekProgressGraph.tsx — sprint burndown chart graph (non-FleetGraph visual graph).
+
+**“RAG-like” adjacent, but not full RAG**
+- api/src/routes/search.ts — lexical SQL search over titles/tags/content fields (no vector retrieval).
+- api/src/services/ai-analysis.ts + api/src/routes/ai.ts — LLM scoring for plans/retros; analysis endpoints, but not retrieval-augmented generation pipeline.
+Planned / Docs-Only
+
 ## 1) Core Links
 
 - Public review/login URL: `https://ship-web-jyqh.onrender.com/login` (HEAD `200 OK` verified 2026-05-28)
 - Public app base URL: `https://ship-web-jyqh.onrender.com/`
 - FleetGraph visual trace index: `/fleetgraph/traces` (deployed: `https://ship-web-jyqh.onrender.com/fleetgraph/traces`, authenticated)
+- LangSmith project traces (public reviewer view): `https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces`
 - FleetGraph findings endpoint: `/api/fleetgraph/findings` (authenticated)
 - FleetGraph traces endpoint: `/api/fleetgraph/traces` (authenticated)
 - FleetGraph metrics endpoint: `/api/fleetgraph/metrics` (authenticated)
@@ -38,7 +75,7 @@ Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Pa
 | Deployed and accessible | Complete | Public review/login URL above returned `200 OK` on 2026-05-28 |
 | Trigger model documented and defended | Complete | [`FLEETGRAPH.md`](./FLEETGRAPH.md) Trigger Model section |
 | Cost per run + runs/day documented | Complete | [`FLEETGRAPH.md`](./FLEETGRAPH.md) Cost Analysis + `/api/fleetgraph/metrics` |
-| Detection latency evidence (<5 min) | Complete (recorded local live run) | 51 ms measured from start to surfaced output (details below) |
+| Detection latency evidence (<5 min) | Complete (recorded local live run) | Detection latency and run latency are now tracked separately; see Section 4. |
 
 ## 3) Shared Trace Links To Submit
 
@@ -57,24 +94,38 @@ Local fallback (if link unavailable): use `/api/fleetgraph/traces` to fetch rece
 ## 4) Timed Latency Test Protocol
 
 1. Introduce a known triggering state in Ship (for example, stale blocker condition).
-2. Record start timestamp.
+2. Record event-introduced timestamp.
 3. Trigger proactive execution:
    - webhook path: `POST /api/fleetgraph/proactive/webhook`
    - or wait for scheduled poll (`FLEETGRAPH_POLL_INTERVAL_MS`, default 3 minutes).
 4. Record first surfaced finding timestamp from `/api/fleetgraph/findings`.
-5. Compute latency and paste result below.
+5. Compute detection latency (`finding surfaced` - `event introduced`) and run latency separately.
+
+### Scripted capture (recommended)
+
+```powershell
+DATABASE_URL=... pnpm --filter @ship/api exec tsx src/scripts/measure-detection-latency.ts
+```
+
+The script prints JSON with:
+- `detectionLatencyMs` (PRD detection latency metric)
+- `runLatencyMs` (runtime execution latency metric)
+- `traceId`, `internalTraceUrl`, and optional `externalTraceUrl`
 
 ### Latency Evidence
 
 - Test run ID: `1a478610-3bbd-4748-9245-fca36e724243`
-- Start time (UTC): `2026-05-25T21:58:45.946Z`
-- Surface time (UTC): `2026-05-25T21:58:45.997Z`
-- Measured latency: `51 ms`
+- Event introduced at (UTC): `2026-05-25T21:58:45.946Z`
+- First surfaced finding at (UTC): `2026-05-25T21:58:45.997Z`
+- Detection latency (`event -> surfaced finding`): `51 ms`
+- Run latency (`executeFleetGraphRun` runtime execution latency): `51 ms`
 - Pass condition: `< 5 minutes`
 
 ## 5) Cost and Telemetry Capture
 
 Use `/api/fleetgraph/metrics` for runtime-derived telemetry.
+
+Important scope boundary: `/api/fleetgraph/metrics` reports FleetGraph runtime estimates from `fleetgraph_runs`; it does not represent billed spend invoices.
 
 ### Recorded Runtime Snapshot
 
@@ -83,9 +134,10 @@ Recorded values below come from the 2026-05-25 through 2026-05-27 FleetGraph cap
 | Metric | Value |
 | --- | --- |
 | Total runs | `162+` (Vitest + trace capture + deploy smoke) |
-| Average latency (ms) | `12` (capture script average) |
-| Total token estimate | `450,000` (planning estimates at 3750/signal; not billed LLM tokens) |
-| Total cost estimate (USD) | `0.72` (planning formula; actual LLM spend $0.00 in detector-only dev) |
+| Average run latency (ms) | `12` (capture script average) |
+| Total runtime estimate (tokens) | `450,000` (runtime estimate at 3750/signal; not billed spend) |
+| Total runtime estimate (USD) | `0.72` (FleetGraph runtime estimate formula from `fleetgraph_runs`) |
+| Billed spend observed (USD) | `0.00` (detector-only dev/test runtime sample window) |
 
 ### Production Projection Snapshot
 

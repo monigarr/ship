@@ -3,6 +3,7 @@ import {
   formatFleetGraphDateTime,
   getFleetGraphSeverityTone,
   getFleetGraphStatusTone,
+  resolveExternalTraceHref,
   resolveInternalTraceHref,
 } from './fleetgraphVisuals';
 
@@ -29,6 +30,18 @@ describe('fleetgraphVisuals', () => {
     expect(resolveInternalTraceHref('https://external-observability.example/trace/stale-external-trace')).toBe(
       '/fleetgraph/traces'
     );
+  });
+
+  it('validates external trace URLs', () => {
+    expect(
+      resolveExternalTraceHref(
+        'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces'
+      )
+    ).toBe(
+      'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces'
+    );
+    expect(resolveExternalTraceHref('not-a-url')).toBeNull();
+    expect(resolveExternalTraceHref('javascript:alert(1)')).toBeNull();
   });
 
   it('formats datetime values safely', () => {

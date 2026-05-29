@@ -1,7 +1,11 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/lib/api';
-import { getFleetGraphSeverityTone, resolveInternalTraceHref } from '@/lib/fleetgraphVisuals';
+import {
+  getFleetGraphSeverityTone,
+  resolveExternalTraceHref,
+  resolveInternalTraceHref,
+} from '@/lib/fleetgraphVisuals';
 
 interface FleetGraphSignal {
   type: string;
@@ -26,6 +30,7 @@ interface FleetGraphFinding {
   summary: string;
   traceId?: string;
   traceUrl: string;
+  externalTraceUrl?: string | null;
   updatedAt: string;
   snoozedUntil?: string | null;
   evidence: string[];
@@ -40,6 +45,7 @@ interface FleetGraphRunResponse {
   run: {
     traceId: string;
     traceUrl: string;
+    externalTraceUrl?: string | null;
     latencyMs: number;
     branch: string;
   };
@@ -74,6 +80,7 @@ interface FleetGraphTraceRun {
   trigger: string;
   branch: string;
   traceUrl: string;
+  externalTraceUrl?: string | null;
   latencyMs: number;
   createdAt: string;
 }
@@ -572,6 +579,16 @@ export function FleetGraphAssistant({
                 >
                   Open trace details
                 </a>
+                {resolveExternalTraceHref(message.run.externalTraceUrl) && (
+                  <a
+                    href={resolveExternalTraceHref(message.run.externalTraceUrl) || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-2 text-[10px] text-muted hover:text-foreground hover:underline"
+                  >
+                    View in LangSmith
+                  </a>
+                )}
               </div>
               {message.signals.map((signal, signalIndex) => (
                 <SignalCard key={`${signal.type}-${signalIndex}`} signal={signal} />
@@ -751,6 +768,16 @@ export function FleetGraphAssistant({
               >
                 Trace details
               </a>
+              {resolveExternalTraceHref(finding.externalTraceUrl) && (
+                <a
+                  href={resolveExternalTraceHref(finding.externalTraceUrl) || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] text-muted hover:text-foreground hover:underline self-center"
+                >
+                  LangSmith
+                </a>
+              )}
             </div>
           </div>
         ))}
@@ -785,15 +812,26 @@ export function FleetGraphAssistant({
           {tracesQuery.data && tracesQuery.data.runs.length > 0 && (
             <div className="space-y-1">
               {tracesQuery.data.runs.slice(0, 2).map((run) => (
-                <a
-                  key={run.runId}
-                  href={resolveInternalTraceHref(run.traceUrl, run.traceId)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded border border-border px-2 py-1 text-[11px] text-accent hover:bg-border/30"
-                >
-                  {run.branch} ({run.trigger})
-                </a>
+                <div key={run.runId} className="space-y-1">
+                  <a
+                    href={resolveInternalTraceHref(run.traceUrl, run.traceId)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded border border-border px-2 py-1 text-[11px] text-accent hover:bg-border/30"
+                  >
+                    {run.branch} ({run.trigger})
+                  </a>
+                  {resolveExternalTraceHref(run.externalTraceUrl) && (
+                    <a
+                      href={resolveExternalTraceHref(run.externalTraceUrl) || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block px-2 text-[10px] text-muted hover:text-foreground hover:underline"
+                    >
+                      View this run in LangSmith
+                    </a>
+                  )}
+                </div>
               ))}
             </div>
           )}

@@ -6,16 +6,19 @@ import {
   formatFleetGraphDateTime,
   getFleetGraphSeverityTone,
   getFleetGraphStatusTone,
+  resolveExternalTraceHref,
 } from '@/lib/fleetgraphVisuals';
 
 interface FleetGraphTraceDetailResponse {
   traceId: string;
   traceUrl: string;
+  externalTraceUrl: string | null;
   run: {
     runId: string;
     trigger: string;
     branch: string;
     latencyMs: number;
+    externalTraceUrl: string | null;
     tokenEstimate: number;
     costEstimateUsd: number;
     createdAt: string;
@@ -114,6 +117,9 @@ export function FleetGraphTracePage() {
 
   const timeline = useMemo(() => traceQuery.data?.timeline ?? [], [traceQuery.data?.timeline]);
   const findings = useMemo(() => traceQuery.data?.findings ?? [], [traceQuery.data?.findings]);
+  const externalTraceHref = resolveExternalTraceHref(
+    traceQuery.data?.externalTraceUrl ?? traceQuery.data?.run.externalTraceUrl ?? null
+  );
 
   return (
     <div className="h-full overflow-y-auto">
@@ -126,6 +132,16 @@ export function FleetGraphTracePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {externalTraceHref && (
+            <a
+              href={externalTraceHref}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded border border-border px-2.5 py-1 text-xs text-muted hover:text-foreground"
+            >
+              View in LangSmith
+            </a>
+          )}
           <a
             href={`/api/fleetgraph/traces/${traceQuery.data?.traceId ?? traceId ?? ''}`}
             className="rounded border border-border px-2.5 py-1 text-xs text-muted hover:text-foreground"

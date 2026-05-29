@@ -170,7 +170,7 @@ Hard blocker gate: every internal trace URL below must resolve to an authenticat
 
 FleetGraph uses a **custom TypeScript orchestrator** in `api/src/services/fleetgraph/runtime.ts` rather than a third-party graph runtime. The PRD allows custom implementations when equivalent branch-divergent traces are produced manually. This choice keeps the runtime co-located with Ship's Postgres-backed document model, avoids an extra orchestration dependency in the Render deployment, and still satisfies branching, HITL, and observability requirements.
 
-Tracing is internal to Ship via `trace.ts` (`startFleetGraphTrace` / `finishFleetGraphTrace`) plus `fleetgraph_trace_events` timeline persistence. Each run records trigger type, branch, signal types, latency, token estimate, and cost estimate, then exposes shareable in-app trace links under `/fleetgraph/traces/:traceId`.
+Tracing is internal to Ship via `trace.ts` (`startFleetGraphTrace` / `finishFleetGraphTrace`) plus `fleetgraph_trace_events` timeline persistence. Each run records trigger type, branch, signal types, run latency, runtime token estimate, and runtime cost estimate, then exposes shareable in-app trace links under `/fleetgraph/traces/:traceId`.
 
 On-demand synthesis (optional, `FLEETGRAPH_SYNTHESIS_ENABLED=1`) calls AWS Bedrock Claude for conversational answers when detectors surface signals; deterministic findings still render when Bedrock is unavailable.
 
@@ -229,19 +229,23 @@ If Ship API calls fail, the agent records the failure in the trace and returns a
 
 ### Development and Testing Costs
 
-Actual development spend from Vitest + trace capture runs (2026-05-25). Detector-only test runs do not invoke Bedrock; token/cost columns below reflect runtime estimates stored in `fleetgraph_runs`, not billed Claude usage.
+This section reports FleetGraph runtime cost evidence from local development/test runs and runtime telemetry (`/api/fleetgraph/metrics`).
+
+Observed run sample window: 2026-05-25 through 2026-05-27. Detector-only test runs did not invoke Bedrock Claude; token/cost columns reflect runtime estimates stored in `fleetgraph_runs`, not billed spend.
 
 | Item | Amount |
 | --- | --- |
-| Grok API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
-| OpenAI API - input tokens | 0 (detector-only dev/test runs; synthesis disabled in CI) |
-| OpenAI API - output tokens | 0 (synthesis path available in production when Bedrock credentials present) |
-| Total invocations during development | 162 (46 FleetGraph Vitest cases + 16 trace capture runs + deploy smoke runs) |
-| Total development spend | $0.00 LLM (deterministic detectors); internal trace storage in Ship Postgres |
+| Claude API / Bedrock input tokens | 0 billed in dev/test runtime captures; synthesis disabled or unavailable during detector-only runs |
+| Claude API / Bedrock output tokens | 0 billed in dev/test runtime captures; production synthesis path is available when Bedrock credentials are present |
+| Optional production synthesis model in code | `global.anthropic.claude-opus-4-5-20251101-v1:0` via AWS Bedrock |
+| FleetGraph runtime invocations during development | 162 (46 FleetGraph Vitest cases + 16 trace capture runs + deploy smoke runs) |
+| Runtime estimate captured in Ship | 450,000 estimated tokens / $0.72 runtime estimate (from `fleetgraph_runs`) |
+| Billed spend observed in runtime sample | $0.00 billed spend observed from detector-only dev/test runs |
+| Total runtime spend status | Billed spend observed in this runtime sample window is $0.00 |
 
 ### Production Cost Projections
 
-Planning estimate only. Replace with current provider pricing and real token telemetry after running the eval suite.
+Planning estimate only. These numbers apply to **FleetGraph production runtime**. Replace with current provider pricing and real token telemetry after running the eval suite.
 
 | 100 Users | 1,000 Users | 10,000 Users |
 | --- | --- | --- |
@@ -253,7 +257,7 @@ Planning estimate only. Replace with current provider pricing and real token tel
 - On-demand invocations per user per day: 2.
 - Active projects per 100 users: 20.
 - Average tokens per invocation: 3,000 input tokens and 750 output tokens blended across proactive and on-demand runs.
-- Cost per run: $0.006 planning estimate for LLM usage only.
+- Cost per run: $0.006 runtime estimate for LLM usage only.
 - Estimated runs per day: 440 at 100 users, 4,400 at 1,000 users, 44,000 at 10,000 users.
 - Monthly estimate formula: estimated runs per day * 30 days * $0.006 per run.
 - Not included: application hosting, database, queue, cache, observability platform, storage, retries, embeddings, or support overhead.

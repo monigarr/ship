@@ -6,6 +6,7 @@ import {
   formatFleetGraphDateTime,
   getFleetGraphSeverityTone,
   getFleetGraphStatusTone,
+  resolveExternalTraceHref,
   resolveInternalTraceHref,
 } from '@/lib/fleetgraphVisuals';
 
@@ -18,6 +19,7 @@ interface FleetGraphTraceRun {
   trigger: string;
   branch: string;
   traceUrl?: string | null;
+  externalTraceUrl?: string | null;
   latencyMs: number;
   createdAt: string;
   status: string;
@@ -394,6 +396,7 @@ export function FleetGraphTracesPage() {
                 const severityTone = getFleetGraphSeverityTone(run.severity);
                 const traceId = resolveRowTraceId(run);
                 const traceHref = resolveInternalTraceHref(run.traceUrl, traceId);
+                const externalTraceHref = resolveExternalTraceHref(run.externalTraceUrl);
                 return (
                   <tr key={run.runId} className="hover:bg-border/10">
                     <td className="px-3 py-2 text-muted">{formatFleetGraphDateTime(run.createdAt)}</td>
@@ -411,6 +414,16 @@ export function FleetGraphTracesPage() {
                         <span className="text-muted">{formatTraceLabel(traceId)}</span>
                       )}
                       <p className="mt-0.5 text-[11px] text-muted">{run.branch} ({run.trigger})</p>
+                      {externalTraceHref && (
+                        <a
+                          href={externalTraceHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] text-muted hover:text-foreground"
+                        >
+                          View in LangSmith
+                        </a>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex rounded border px-2 py-0.5 text-xs ${statusTone.className}`}>

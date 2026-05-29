@@ -38,6 +38,8 @@ import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'settings' | 'dashboard' | 'project-context';
+const DEFAULT_LANGSMITH_TRACES_URL =
+  'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces';
 
 export function AppLayout() {
   const { user, logout, isSuperAdmin, impersonating, endImpersonation } = useAuth();
@@ -179,6 +181,7 @@ export function AppLayout() {
   };
 
   const activeMode = getActiveMode();
+  const langSmithTracesUrl = import.meta.env.VITE_LANGSMITH_TRACES_URL?.trim() || DEFAULT_LANGSMITH_TRACES_URL;
   const isMyWeekPage = location.pathname.startsWith('/my-week');
   const isWeeklyDoc = currentDocumentType === 'weekly_plan' || currentDocumentType === 'weekly_retro';
   const isStandup = currentDocumentType === 'standup';
@@ -394,6 +397,11 @@ export function AppLayout() {
               label="FleetGraph traces"
               active={activeMode === 'fleetgraph'}
               to="/fleetgraph/traces"
+            />
+            <RailExternalLink
+              icon={<LangSmithIcon />}
+              label="LangSmith traces (external)"
+              href={langSmithTracesUrl}
             />
           </div>
 
@@ -627,6 +635,25 @@ function RailLink({ icon, label, active, to }: { icon: React.ReactNode; label: s
       >
         {icon}
       </Link>
+    </Tooltip>
+  );
+}
+
+function RailExternalLink({ icon, label, href }: { icon: React.ReactNode; label: string; href: string }) {
+  return (
+    <Tooltip content={label} side="right">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+          'text-muted hover:bg-border/50 hover:text-foreground'
+        )}
+        aria-label={label}
+      >
+        {icon}
+      </a>
     </Tooltip>
   );
 }
@@ -1844,6 +1871,17 @@ function FleetGraphTraceIcon() {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5l4.25-4.25 3.25 2.5L18 8" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5V19m4.25-5.75V15m3.25.75v1.5M18 8v1.5" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 17.5a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zm4.25-4.25a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM12 15.75a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM16.5 8a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0z" />
+    </svg>
+  );
+}
+
+function LangSmithIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 18V8.5A2.5 2.5 0 016.5 6H10" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 6v9.5a2.5 2.5 0 01-2.5 2.5H14" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 4l4 4-4 4" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 20l-4-4 4-4" />
     </svg>
   );
 }

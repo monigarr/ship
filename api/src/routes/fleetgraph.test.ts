@@ -169,6 +169,7 @@ describe('FleetGraph API', () => {
         runId: expect.any(String),
         trigger: 'on_demand',
         traceUrl: expect.stringMatching(/^\/fleetgraph\/traces\//),
+        externalTraceUrl: null,
         topSignal: {
           title: expect.stringContaining('Weak plan quality'),
           signalType: 'planning_risk',
@@ -234,8 +235,10 @@ describe('FleetGraph API', () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         traceId,
+        externalTraceUrl: null,
         run: {
           trigger: 'on_demand',
+          externalTraceUrl: null,
         },
         observability: {
           latencyBudgetMs: 300000,
