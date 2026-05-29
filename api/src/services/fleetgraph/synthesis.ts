@@ -37,7 +37,10 @@ export interface FleetGraphSynthesisResult {
   inputTokens: number;
   outputTokens: number;
   costEstimateUsd: number;
+  billedSpendUsd: number | null;
   synthesized: boolean;
+  modelId: string | null;
+  tokenSource: 'actual_model_usage' | 'heuristic_estimate';
 }
 
 function synthesisEnabled(): boolean {
@@ -72,9 +75,15 @@ function estimateCost(inputTokens: number, outputTokens: number): number {
   );
 }
 
-async function callBedrock(systemPrompt: string, userPrompt: string): Promise<string | null> {
+async function callBedrock(systemPrompt: string, userPrompt: string): Promise<{
+  text: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}> {
   const client = getClient();
-  if (!client) return null;
+  if (!client) {
+    return { text: null, inputTokens: null, outputTokens: null };
+  }
 
   const body = JSON.stringify({
     anthropic_version: 'bedrock-2023-05-31',
@@ -92,7 +101,13 @@ async function callBedrock(systemPrompt: string, userPrompt: string): Promise<st
 
   const response = await client.send(command);
   const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  return responseBody.content?.[0]?.text ?? null;
+  const inputTokens = Number(responseBody?.usage?.input_tokens);
+  const outputTokens = Number(responseBody?.usage?.output_tokens);
+  return {
+    text: responseBody.content?.[0]?.text ?? null,
+    inputTokens: Number.isFinite(inputTokens) ? inputTokens : null,
+    outputTokens: Number.isFinite(outputTokens) ? outputTokens : null,
+  };
 }
 
 export async function synthesizeFleetGraphResponse(input: {
@@ -108,7 +123,10 @@ export async function synthesizeFleetGraphResponse(input: {
       inputTokens: 0,
       outputTokens: 0,
       costEstimateUsd: 0,
+      billedSpendUsd: null,
       synthesized: false,
+      modelId: null,
+      tokenSource: 'heuristic_estimate',
     };
   }
 
@@ -131,24 +149,37 @@ export async function synthesizeFleetGraphResponse(input: {
   const inputTokens = estimateTokens(systemPrompt + composedUserPrompt);
 
   try {
-    const text = await callBedrock(systemPrompt, composedUserPrompt);
-    if (!text?.trim()) {
+    const response = await callBedrock(systemPrompt, composedUserPrompt);
+    if (!response.text?.trim()) {
       return {
         summary: input.fallbackSummary,
         inputTokens,
         outputTokens: 0,
         costEstimateUsd: 0,
+        billedSpendUsd: null,
         synthesized: false,
+        modelId: null,
+        tokenSource: 'heuristic_estimate',
       };
     }
 
-    const outputTokens = estimateTokens(text);
+    const outputTokens = response.outputTokens ?? estimateTokens(response.text);
+    const resolvedInputTokens = response.inputTokens ?? inputTokens;
+    const spendEstimateUsd = estimateCost(resolvedInputTokens, outputTokens);
+    const billedSpendUsd =
+      response.inputTokens !== null && response.outputTokens !== null ? spendEstimateUsd : null;
     return {
-      summary: text.trim(),
-      inputTokens,
+      summary: response.text.trim(),
+      inputTokens: resolvedInputTokens,
       outputTokens,
-      costEstimateUsd: estimateCost(inputTokens, outputTokens),
+      costEstimateUsd: spendEstimateUsd,
+      billedSpendUsd,
       synthesized: true,
+      modelId: MODEL_ID,
+      tokenSource:
+        response.inputTokens !== null && response.outputTokens !== null
+          ? 'actual_model_usage'
+          : 'heuristic_estimate',
     };
   } catch (error) {
     console.warn('FleetGraph synthesis failed:', error);
@@ -157,7 +188,10 @@ export async function synthesizeFleetGraphResponse(input: {
       inputTokens,
       outputTokens: 0,
       costEstimateUsd: 0,
+      billedSpendUsd: null,
       synthesized: false,
+      modelId: null,
+      tokenSource: 'heuristic_estimate',
     };
   }
 }

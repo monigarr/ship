@@ -458,7 +458,11 @@ describe('FleetGraph runtime', () => {
       expect(metrics.runCount).toBeGreaterThanOrEqual(1);
       expect(metrics.recentTraceUrls.length).toBeGreaterThanOrEqual(1);
       expect(metrics.recentTraceUrls[0]).toBe(`/fleetgraph/traces/${result.run.traceId}`);
-      expect(metrics.monthlyProjectionUsd.users100).toBeGreaterThan(0);
+      expect(metrics.tokenTotals.all).toBeGreaterThanOrEqual(1);
+      expect(metrics.tokenTotals.current30Days).toBeGreaterThanOrEqual(1);
+      expect(metrics.spend.runtimeTotalUsd).toBeGreaterThanOrEqual(0);
+      expect(metrics.monthlyProjection.basis).toBe('trailing_30_day_daily_average');
+      expect(Array.isArray(metrics.modelUsage)).toBe(true);
 
       const runList = await listFleetGraphRecentRuns(ctx.workspaceId);
       expect(runList.runs.length).toBeGreaterThanOrEqual(1);
@@ -484,6 +488,65 @@ describe('FleetGraph runtime', () => {
       expect(findings[0]?.traceId).toBe(result.run.traceId);
       expect(findings[0]?.traceUrl).toBe(`/fleetgraph/traces/${result.run.traceId}`);
       expect(findings[0]?.externalTraceUrl).toBeNull();
+    });
+
+    it('computes token-source and billed delta metrics from run truth fields', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      await seedWeeklyPlan({ workspaceId: ctx.workspaceId, userId: ctx.userId, text: undefined });
+
+      const first = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+      const second = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+      });
+
+      await pool.query(
+        `UPDATE fleetgraph_runs
+         SET token_estimate = $1,
+             runtime_spend_usd = $2,
+             cost_estimate_usd = $2,
+             billed_spend_usd = $3,
+             model_id = $4,
+             token_source = 'actual_model_usage',
+             created_at = NOW() - INTERVAL '5 days'
+         WHERE workspace_id = $5
+           AND trace_id = $6`,
+        [1200, 2.4, 2.7, 'test.model.actual', ctx.workspaceId, first.run.traceId]
+      );
+
+      await pool.query(
+        `UPDATE fleetgraph_runs
+         SET token_estimate = $1,
+             runtime_spend_usd = $2,
+             cost_estimate_usd = $2,
+             billed_spend_usd = NULL,
+             model_id = NULL,
+             token_source = 'heuristic_estimate',
+             created_at = NOW() - INTERVAL '35 days'
+         WHERE workspace_id = $3
+           AND trace_id = $4`,
+        [300, 0.3, ctx.workspaceId, second.run.traceId]
+      );
+
+      const metrics = await getFleetGraphMetrics(ctx.workspaceId);
+      expect(metrics.runCount).toBe(2);
+      expect(metrics.tokenTotals.all).toBe(1500);
+      expect(metrics.tokenTotals.actualModelUsage).toBe(1200);
+      expect(metrics.tokenTotals.heuristicEstimate).toBe(300);
+      expect(metrics.tokenTotals.current30Days).toBe(1200);
+      expect(metrics.tokenTotals.previous30Days).toBe(300);
+      expect(metrics.spend.runtimeTotalUsd).toBeCloseTo(2.7, 6);
+      expect(metrics.spend.billedTotalUsd).toBeCloseTo(2.7, 6);
+      expect(metrics.spend.deltaUsd).toBeCloseTo(0, 6);
+      expect(metrics.spend.billedCoverageRuns).toBe(1);
+      expect(metrics.monthlyProjection.runtimeUsd).toBeCloseTo(2.4, 6);
+      expect(metrics.monthlyProjection.billedUsd).toBeCloseTo(2.7, 6);
+      expect(metrics.monthlyProjection.deltaUsd).toBeCloseTo(0.3, 6);
+      expect(metrics.modelUsage[0]?.modelId).toBe('test.model.actual');
+      expect(metrics.modelUsage[0]?.tokenSource).toBe('actual_model_usage');
     });
 
     it('returns external trace URLs when persisted as additive metadata', async () => {

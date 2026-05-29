@@ -65,13 +65,34 @@ interface FindingsResponse {
 interface FleetGraphMetrics {
   runCount: number;
   avgLatencyMs: number;
-  totalTokenEstimate: number;
-  totalCostEstimateUsd: number;
-  monthlyProjectionUsd: {
-    users100: number;
-    users1000: number;
-    users10000: number;
+  tokenTotals: {
+    all: number;
+    actualModelUsage: number;
+    heuristicEstimate: number;
+    current30Days: number;
+    previous30Days: number;
   };
+  spend: {
+    runtimeTotalUsd: number;
+    billedTotalUsd: number;
+    deltaUsd: number | null;
+    billedCoverageRuns: number;
+    billedCoveragePct: number;
+  };
+  monthlyProjection: {
+    basis: 'trailing_30_day_daily_average';
+    runtimeUsd: number;
+    billedUsd: number | null;
+    deltaUsd: number | null;
+  };
+  modelUsage: Array<{
+    modelId: string;
+    runCount: number;
+    tokenTotal: number;
+    runtimeSpendUsd: number;
+    billedSpendUsd: number;
+    tokenSource: 'actual_model_usage' | 'heuristic_estimate';
+  }>;
 }
 
 interface FleetGraphTraceRun {
@@ -143,6 +164,10 @@ function proposedActionLabel(signalType: string, title: string): string {
     return `Confirm compliance action: ${title}`;
   }
   return title;
+}
+
+function tokenSourceLabel(value: 'actual_model_usage' | 'heuristic_estimate'): string {
+  return value === 'actual_model_usage' ? 'actual model usage' : 'heuristic estimate';
 }
 
 function findingToHitlTarget(finding: FleetGraphFinding): HitlTarget | null {
@@ -841,13 +866,43 @@ export function FleetGraphAssistant({
                 {Math.round(metricsQuery.data.avgLatencyMs)}ms
               </p>
               <p className="text-[11px] text-muted">
-                Tokens: {metricsQuery.data.totalTokenEstimate.toLocaleString()} | Spend est: $
-                {metricsQuery.data.totalCostEstimateUsd.toFixed(3)}
+                Tokens: {metricsQuery.data.tokenTotals.all.toLocaleString()} (30d:{' '}
+                {metricsQuery.data.tokenTotals.current30Days.toLocaleString()} | Prev 30d:{' '}
+                {metricsQuery.data.tokenTotals.previous30Days.toLocaleString()})
               </p>
               <p className="text-[11px] text-muted">
-                Monthly projection: ${metricsQuery.data.monthlyProjectionUsd.users100.toFixed(0)} / $
-                {metricsQuery.data.monthlyProjectionUsd.users1000.toFixed(0)} / $
-                {metricsQuery.data.monthlyProjectionUsd.users10000.toFixed(0)}
+                Runtime spend: ${metricsQuery.data.spend.runtimeTotalUsd.toFixed(3)} | Billed spend: $
+                {metricsQuery.data.spend.billedTotalUsd.toFixed(3)}
+              </p>
+              <p className="text-[11px] text-muted">
+                Spend delta:{' '}
+                {metricsQuery.data.spend.deltaUsd === null
+                  ? 'N/A (no billed coverage)'
+                  : `$${metricsQuery.data.spend.deltaUsd.toFixed(3)}`}{' '}
+                | Coverage: {metricsQuery.data.spend.billedCoverageRuns} run(s) (
+                {metricsQuery.data.spend.billedCoveragePct.toFixed(1)}%)
+              </p>
+              <p className="text-[11px] text-muted">
+                Model:{' '}
+                {metricsQuery.data.modelUsage.length > 0
+                  ? metricsQuery.data.modelUsage[0]?.modelId
+                  : 'None (deterministic only)'}{' '}
+                | Token basis:{' '}
+                {metricsQuery.data.modelUsage.length > 0
+                  ? tokenSourceLabel(
+                      metricsQuery.data.modelUsage[0]?.tokenSource ?? 'heuristic_estimate'
+                    )
+                  : 'heuristic estimate'}
+              </p>
+              <p className="text-[11px] text-muted">
+                Monthly projection ({metricsQuery.data.monthlyProjection.basis.replaceAll('_', ' ')}): runtime $
+                {metricsQuery.data.monthlyProjection.runtimeUsd.toFixed(2)}
+                {metricsQuery.data.monthlyProjection.billedUsd === null
+                  ? ' | billed N/A'
+                  : ` | billed $${metricsQuery.data.monthlyProjection.billedUsd.toFixed(2)}`}
+                {metricsQuery.data.monthlyProjection.deltaUsd === null
+                  ? ''
+                  : ` | delta $${metricsQuery.data.monthlyProjection.deltaUsd.toFixed(2)}`}
               </p>
             </div>
           )}

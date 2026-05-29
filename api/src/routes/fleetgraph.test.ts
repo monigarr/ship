@@ -120,7 +120,7 @@ describe('FleetGraph API', () => {
   });
 
   describe('GET /api/fleetgraph/metrics', () => {
-    it('returns metrics and monthly projections', async () => {
+    it('returns truth-based metrics and trailing-30-day projections', async () => {
       await cleanupFleetGraphTables(ctx.workspaceId);
       await seedStaleIssue({ workspaceId: ctx.workspaceId, userId: ctx.userId });
 
@@ -136,11 +136,24 @@ describe('FleetGraph API', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.runCount).toBeGreaterThanOrEqual(1);
-      expect(response.body.monthlyProjectionUsd).toMatchObject({
-        users100: expect.any(Number),
-        users1000: expect.any(Number),
-        users10000: expect.any(Number),
+      expect(response.body.tokenTotals).toMatchObject({
+        all: expect.any(Number),
+        actualModelUsage: expect.any(Number),
+        heuristicEstimate: expect.any(Number),
+        current30Days: expect.any(Number),
+        previous30Days: expect.any(Number),
       });
+      expect(response.body.spend).toMatchObject({
+        runtimeTotalUsd: expect.any(Number),
+        billedTotalUsd: expect.any(Number),
+        billedCoverageRuns: expect.any(Number),
+        billedCoveragePct: expect.any(Number),
+      });
+      expect(response.body.monthlyProjection).toMatchObject({
+        basis: 'trailing_30_day_daily_average',
+        runtimeUsd: expect.any(Number),
+      });
+      expect(Array.isArray(response.body.modelUsage)).toBe(true);
       expect(Array.isArray(response.body.recentTraceUrls)).toBe(true);
     });
   });

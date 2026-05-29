@@ -89,6 +89,8 @@ interface FleetGraphHitlStateSummary {
   requiresAction: boolean;
 }
 
+type FleetGraphTokenSource = 'actual_model_usage' | 'heuristic_estimate';
+
 const TOKEN_ESTIMATE_PER_SIGNAL = 3750;
 const COST_PER_RUN_ESTIMATE_USD = 0.006;
 const DEFAULT_SNOOZE_HOURS = 24;
@@ -389,7 +391,22 @@ export async function ensureFleetGraphTables(): Promise<void> {
 
   await pool.query(`
     ALTER TABLE fleetgraph_runs
-      ADD COLUMN IF NOT EXISTS external_trace_url TEXT;
+      ADD COLUMN IF NOT EXISTS external_trace_url TEXT,
+      ADD COLUMN IF NOT EXISTS model_id TEXT,
+      ADD COLUMN IF NOT EXISTS token_source TEXT NOT NULL DEFAULT 'heuristic_estimate',
+      ADD COLUMN IF NOT EXISTS runtime_spend_usd NUMERIC(10, 6),
+      ADD COLUMN IF NOT EXISTS billed_spend_usd NUMERIC(10, 6);
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_fleetgraph_runs_workspace_created_at
+      ON fleetgraph_runs(workspace_id, created_at DESC);
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_fleetgraph_runs_workspace_model_id
+      ON fleetgraph_runs(workspace_id, model_id)
+      WHERE model_id IS NOT NULL;
   `);
 
   await pool.query(`
@@ -420,6 +437,29 @@ export async function ensureFleetGraphTables(): Promise<void> {
           OR trace_url ~* '^https?://'
           OR trace_url LIKE 'internal://fleetgraph/%'
         );
+    `);
+
+    await pool.query(`
+      UPDATE fleetgraph_runs
+      SET runtime_spend_usd = cost_estimate_usd
+      WHERE runtime_spend_usd IS NULL;
+    `);
+
+    await pool.query(`
+      UPDATE fleetgraph_runs
+      SET token_source = CASE
+          WHEN token_source IS NULL OR btrim(token_source) = '' THEN 'heuristic_estimate'
+          WHEN token_source IN ('actual_model_usage', 'heuristic_estimate') THEN token_source
+          ELSE 'heuristic_estimate'
+        END;
+    `);
+
+    await pool.query(`
+      UPDATE fleetgraph_runs
+      SET billed_spend_usd = runtime_spend_usd
+      WHERE billed_spend_usd IS NULL
+        AND token_source = 'actual_model_usage'
+        AND runtime_spend_usd IS NOT NULL;
     `);
 
     await pool.query(`
@@ -1474,8 +1514,11 @@ export async function executeFleetGraphRun(
   let summary = fallbackSummary;
   let tokenEstimate =
     signals.length === 0 ? 0 : TOKEN_ESTIMATE_PER_SIGNAL * signals.length;
-  let costEstimateUsd =
+  let runtimeSpendUsd =
     signals.length === 0 ? 0 : Number((COST_PER_RUN_ESTIMATE_USD * signals.length).toFixed(6));
+  let billedSpendUsd: number | null = null;
+  let modelId: string | null = null;
+  let tokenSource: FleetGraphTokenSource = 'heuristic_estimate';
   let synthesized = false;
 
   if (trigger === 'on_demand' && signals.length > 0) {
@@ -1489,8 +1532,11 @@ export async function executeFleetGraphRun(
     summary = synthesis.summary;
     if (synthesis.synthesized) {
       tokenEstimate = synthesis.inputTokens + synthesis.outputTokens;
-      costEstimateUsd = synthesis.costEstimateUsd;
+      runtimeSpendUsd = synthesis.costEstimateUsd;
+      billedSpendUsd = synthesis.billedSpendUsd;
       synthesized = true;
+      modelId = synthesis.modelId;
+      tokenSource = synthesis.tokenSource;
     }
     markEvent(
       'synthesis',
@@ -1517,7 +1563,7 @@ export async function executeFleetGraphRun(
     userId: context.userId,
     latencyMs,
     tokenEstimate,
-    costEstimateUsd,
+    costEstimateUsd: runtimeSpendUsd,
     signalTypes,
     signalCount: signals.length,
     summary,
@@ -1541,11 +1587,13 @@ export async function executeFleetGraphRun(
   await pool.query(
     `INSERT INTO fleetgraph_runs (
        id, workspace_id, user_id, trigger, branch, trace_id, trace_url, external_trace_url,
-       latency_ms, token_estimate, cost_estimate_usd, run_input, run_output
+       latency_ms, token_estimate, cost_estimate_usd, runtime_spend_usd, billed_spend_usd,
+       model_id, token_source, run_input, run_output
      )
      VALUES (
        $1, $2, $3, $4, $5, $6, $7, $8,
-       $9, $10, $11, $12::jsonb, $13::jsonb
+       $9, $10, $11, $12, $13,
+       $14, $15, $16::jsonb, $17::jsonb
      )`,
     [
       runId,
@@ -1558,7 +1606,11 @@ export async function executeFleetGraphRun(
       resolveExternalTraceUrl(trace.externalTraceUrl),
       latencyMs,
       tokenEstimate,
-      costEstimateUsd,
+      runtimeSpendUsd,
+      runtimeSpendUsd,
+      billedSpendUsd,
+      modelId,
+      tokenSource,
       JSON.stringify({
         documentId: context.documentId ?? null,
         documentType: context.documentType ?? null,
@@ -1570,6 +1622,9 @@ export async function executeFleetGraphRun(
         branch,
         summary,
         synthesized,
+        billedSpendUsd,
+        modelId,
+        tokenSource,
       }),
     ]
   );
@@ -1581,7 +1636,7 @@ export async function executeFleetGraphRun(
       runId,
       signalCount: signals.length,
       tokenEstimate,
-      costEstimateUsd,
+      costEstimateUsd: runtimeSpendUsd,
     },
     persistencePhaseMs
   );
@@ -1631,7 +1686,7 @@ export async function executeFleetGraphRun(
       completedAt: completedAtIso,
       latencyMs,
       tokenEstimate,
-      costEstimateUsd,
+      costEstimateUsd: runtimeSpendUsd,
     },
     signals,
     summary,
@@ -1877,9 +1932,34 @@ export async function decideFleetGraphHitlRequest(
 export async function getFleetGraphMetrics(workspaceId: string): Promise<{
   runCount: number;
   avgLatencyMs: number;
-  totalTokenEstimate: number;
-  totalCostEstimateUsd: number;
-  monthlyProjectionUsd: { users100: number; users1000: number; users10000: number };
+  tokenTotals: {
+    all: number;
+    actualModelUsage: number;
+    heuristicEstimate: number;
+    current30Days: number;
+    previous30Days: number;
+  };
+  spend: {
+    runtimeTotalUsd: number;
+    billedTotalUsd: number;
+    deltaUsd: number | null;
+    billedCoverageRuns: number;
+    billedCoveragePct: number;
+  };
+  monthlyProjection: {
+    basis: 'trailing_30_day_daily_average';
+    runtimeUsd: number;
+    billedUsd: number | null;
+    deltaUsd: number | null;
+  };
+  modelUsage: Array<{
+    modelId: string;
+    runCount: number;
+    tokenTotal: number;
+    runtimeSpendUsd: number;
+    billedSpendUsd: number;
+    tokenSource: FleetGraphTokenSource;
+  }>;
   recentTraceUrls: string[];
   traceConfig: ReturnType<typeof getFleetGraphTraceConfig>;
 }> {
@@ -1889,15 +1969,70 @@ export async function getFleetGraphMetrics(workspaceId: string): Promise<{
     run_count: string;
     avg_latency_ms: string | null;
     total_tokens: string | null;
-    total_cost: string | null;
+    actual_tokens: string | null;
+    heuristic_tokens: string | null;
+    runtime_spend_total: string | null;
+    billed_spend_total: string | null;
+    billed_coverage_runs: string | null;
+    current_30d_tokens: string | null;
+    previous_30d_tokens: string | null;
+    current_30d_runtime_spend: string | null;
+    current_30d_billed_spend: string | null;
+    current_30d_billed_runs: string | null;
   }>(
     `SELECT
        COUNT(*)::text AS run_count,
        AVG(latency_ms)::text AS avg_latency_ms,
        SUM(token_estimate)::text AS total_tokens,
-       SUM(cost_estimate_usd)::text AS total_cost
+       SUM(CASE WHEN token_source = 'actual_model_usage' THEN token_estimate ELSE 0 END)::text AS actual_tokens,
+       SUM(CASE WHEN token_source = 'heuristic_estimate' THEN token_estimate ELSE 0 END)::text AS heuristic_tokens,
+       SUM(COALESCE(runtime_spend_usd, cost_estimate_usd, 0))::text AS runtime_spend_total,
+       SUM(COALESCE(billed_spend_usd, 0))::text AS billed_spend_total,
+       COUNT(*) FILTER (WHERE billed_spend_usd IS NOT NULL)::text AS billed_coverage_runs,
+       SUM(token_estimate) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS current_30d_tokens,
+       SUM(token_estimate) FILTER (
+         WHERE created_at >= NOW() - INTERVAL '60 days'
+           AND created_at < NOW() - INTERVAL '30 days'
+       )::text AS previous_30d_tokens,
+       SUM(COALESCE(runtime_spend_usd, cost_estimate_usd, 0))
+         FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS current_30d_runtime_spend,
+       SUM(COALESCE(billed_spend_usd, 0))
+         FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS current_30d_billed_spend,
+       COUNT(*) FILTER (
+         WHERE created_at >= NOW() - INTERVAL '30 days'
+           AND billed_spend_usd IS NOT NULL
+       )::text AS current_30d_billed_runs
      FROM fleetgraph_runs
      WHERE workspace_id = $1`,
+    [workspaceId]
+  );
+
+  const modelUsageResult = await pool.query<{
+    model_id: string;
+    run_count: string;
+    token_total: string;
+    runtime_spend_total: string;
+    billed_spend_total: string;
+    token_source: FleetGraphTokenSource;
+  }>(
+    `SELECT
+       model_id,
+       COUNT(*)::text AS run_count,
+       SUM(token_estimate)::text AS token_total,
+       SUM(COALESCE(runtime_spend_usd, cost_estimate_usd, 0))::text AS runtime_spend_total,
+       SUM(COALESCE(billed_spend_usd, 0))::text AS billed_spend_total,
+       CASE
+         WHEN COUNT(*) FILTER (WHERE token_source = 'actual_model_usage') >= COUNT(*) FILTER (WHERE token_source = 'heuristic_estimate')
+           THEN 'actual_model_usage'
+         ELSE 'heuristic_estimate'
+       END::text AS token_source
+     FROM fleetgraph_runs
+     WHERE workspace_id = $1
+       AND model_id IS NOT NULL
+       AND btrim(model_id) <> ''
+     GROUP BY model_id
+     ORDER BY SUM(token_estimate) DESC, model_id ASC
+     LIMIT 5`,
     [workspaceId]
   );
 
@@ -1913,25 +2048,62 @@ export async function getFleetGraphMetrics(workspaceId: string): Promise<{
   const row = aggregateResult.rows[0];
   const runCount = Number(row?.run_count ?? 0);
   const avgLatencyMs = Number(row?.avg_latency_ms ?? 0);
-  const totalTokenEstimate = Number(row?.total_tokens ?? 0);
-  const totalCostEstimateUsd = Number(row?.total_cost ?? 0);
+  const totalTokens = Number(row?.total_tokens ?? 0);
+  const actualTokens = Number(row?.actual_tokens ?? 0);
+  const heuristicTokens = Number(row?.heuristic_tokens ?? 0);
+  const runtimeSpendTotalUsd = Number(row?.runtime_spend_total ?? 0);
+  const billedSpendTotalUsd = Number(row?.billed_spend_total ?? 0);
+  const billedCoverageRuns = Number(row?.billed_coverage_runs ?? 0);
+  const current30DayTokens = Number(row?.current_30d_tokens ?? 0);
+  const previous30DayTokens = Number(row?.previous_30d_tokens ?? 0);
+  const current30DayRuntimeSpend = Number(row?.current_30d_runtime_spend ?? 0);
+  const current30DayBilledSpend = Number(row?.current_30d_billed_spend ?? 0);
+  const current30DayBilledRuns = Number(row?.current_30d_billed_runs ?? 0);
+  const billedCoveragePct =
+    runCount > 0 ? Number(((billedCoverageRuns / runCount) * 100).toFixed(1)) : 0;
+  const spendDeltaUsd = billedCoverageRuns > 0
+    ? Number((billedSpendTotalUsd - runtimeSpendTotalUsd).toFixed(6))
+    : null;
 
-  // Keep projections aligned with PRD reporting assumptions.
-  const projectionPer100 = 440 * 30 * COST_PER_RUN_ESTIMATE_USD;
-  const users100 = Number(projectionPer100.toFixed(2));
-  const users1000 = Number((projectionPer100 * 10).toFixed(2));
-  const users10000 = Number((projectionPer100 * 100).toFixed(2));
+  const runtimeDailyAvg = current30DayRuntimeSpend / 30;
+  const billedDailyAvg = current30DayBilledSpend / 30;
+  const runtimeProjectionUsd = Number((runtimeDailyAvg * 30).toFixed(6));
+  const billedProjectionUsd =
+    current30DayBilledRuns > 0 ? Number((billedDailyAvg * 30).toFixed(6)) : null;
+  const projectionDeltaUsd =
+    billedProjectionUsd === null ? null : Number((billedProjectionUsd - runtimeProjectionUsd).toFixed(6));
 
   return {
     runCount,
     avgLatencyMs,
-    totalTokenEstimate,
-    totalCostEstimateUsd,
-    monthlyProjectionUsd: {
-      users100,
-      users1000,
-      users10000,
+    tokenTotals: {
+      all: totalTokens,
+      actualModelUsage: actualTokens,
+      heuristicEstimate: heuristicTokens,
+      current30Days: current30DayTokens,
+      previous30Days: previous30DayTokens,
     },
+    spend: {
+      runtimeTotalUsd: runtimeSpendTotalUsd,
+      billedTotalUsd: billedSpendTotalUsd,
+      deltaUsd: spendDeltaUsd,
+      billedCoverageRuns,
+      billedCoveragePct,
+    },
+    monthlyProjection: {
+      basis: 'trailing_30_day_daily_average',
+      runtimeUsd: runtimeProjectionUsd,
+      billedUsd: billedProjectionUsd,
+      deltaUsd: projectionDeltaUsd,
+    },
+    modelUsage: modelUsageResult.rows.map((entry) => ({
+      modelId: entry.model_id,
+      runCount: Number(entry.run_count),
+      tokenTotal: Number(entry.token_total),
+      runtimeSpendUsd: Number(entry.runtime_spend_total),
+      billedSpendUsd: Number(entry.billed_spend_total),
+      tokenSource: entry.token_source,
+    })),
     recentTraceUrls: recentTracesResult.rows.map((entry) =>
       canonicalizeFleetGraphTraceUrl(entry.trace_id, entry.trace_url)
     ),
