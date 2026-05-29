@@ -43,12 +43,12 @@ Planned / Docs-Only
 - Public review/login URL: `https://ship-web-jyqh.onrender.com/login` (HEAD `200 OK` verified 2026-05-28)
 - Public app base URL: `https://ship-web-jyqh.onrender.com/`
 - FleetGraph visual trace index: `/fleetgraph/traces` (deployed: `https://ship-web-jyqh.onrender.com/fleetgraph/traces`, authenticated)
-- LangSmith project traces (public reviewer view): `https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces`
+- LangSmith project traces (required external evidence): `https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces`
 - FleetGraph findings endpoint: `/api/fleetgraph/findings` (authenticated)
 - FleetGraph traces endpoint: `/api/fleetgraph/traces` (authenticated)
 - FleetGraph metrics endpoint: `/api/fleetgraph/metrics` (authenticated)
 
-All `/fleetgraph/*` and `/api/fleetgraph/*` evidence links are in-app authenticated Ship links. Trace IDs are persisted runtime records from captured FleetGraph runs, not source files.
+For this submission, both evidence channels are required: internal in-app Ship traces (`/fleetgraph/*`, `/api/fleetgraph/*`) and external LangSmith project traces. Trace IDs are persisted runtime records from captured FleetGraph runs, not source files.
 
 ### Fast human onboarding and visual verification
 
@@ -58,7 +58,7 @@ Use the canonical quick checklist in [`QUICKSTART.md`](./QUICKSTART.md) → **Pa
 - Local and deployed side-by-side manual trace verification steps
 - Pass/fail criteria for branch-divergent internal trace evidence
 
-For optional external monitoring, see [`QUICKSTART.md`](./QUICKSTART.md) → **Optional — LangSmith Automations Setup (External Observability)** for high-value automations and conservative/aggressive threshold defaults.
+For required external monitoring/evidence setup, see [`QUICKSTART.md`](./QUICKSTART.md) → **Required — LangSmith Evidence and Automations (External Observability)** for high-value automations and conservative/aggressive threshold defaults.
 
 ## 2) PRD Requirement Checklist (Pass/Fail)
 
@@ -155,19 +155,29 @@ Last fully green verification: `2026-05-25 23:44 (UTC-5)` (`2026-05-26T04:44Z` a
 
 Latest targeted FleetGraph trace-index verification: `2026-05-28 11:17 (America/Chicago)`.
 
-Current repo spot-check: `2026-05-28` verified referenced files/routes/migrations exist, the deployed login URL returns `200 OK`, and the targeted FleetGraph API suite currently declares `48` tests across `5` files. A local test rerun on 2026-05-28 discovered the same tests but did not execute them because no local Postgres was listening on `localhost:5432` (`ECONNREFUSED`).
+Current repo spot-check: `2026-05-29` verified referenced files/routes/migrations exist, the deployed login URL returns `200 OK`, and the targeted FleetGraph API suite currently declares `51` tests across `5` files. A local test rerun can discover the same tests but may not execute them if no local Postgres is listening on `localhost:5432` (`ECONNREFUSED`).
+
+Count drift guard (run before final submission updates):
+
+```powershell
+rg "\bit\(" api/src/services/fleetgraph/runtime.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/trace.test.ts --count
+rg "\bit\(" api/src/routes/fleetgraph.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/proactive.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/notifications.test.ts --count
+```
 
 - API type-check: pass (`pnpm --filter @ship/api type-check`)
 - Web type-check: pass (`pnpm --filter @ship/web type-check`)
 - FleetGraph API/runtime/route trace suites: recorded pass (`37` tests, `3` files)
-- FleetGraph targeted API suite declarations: current repo has `48` tests across `5` files (`trace` 5, `runtime` 19, `routes` 13, `proactive` 9, `notifications` 2)
+- FleetGraph targeted API suite declarations: current repo has `51` tests across `5` files (`trace` 7, `runtime` 20, `routes` 13, `proactive` 9, `notifications` 2)
 - FleetGraph trace index UI regression: current pass (`6` tests, `1` file), including visible Trace column order and page/table scroll containers; trace-link helper coverage currently has `4` tests in [`fleetgraphVisuals.test.ts`](../../web/src/lib/fleetgraphVisuals.test.ts)
 - Local route/API smoke: `/fleetgraph/traces` returned `200`; repaired legacy row resolved to `/fleetgraph/traces/e317cde4-bfa3-46c9-ab0d-5a0d2da00858`; production-build browser check confirmed the Trace column renders as the second table column with full trace ID link text and scrollable vertical/horizontal overflow.
 
 ### Tests
 
 - Command: `pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts`
-- Recorded result: pass (`48` tests, `5` files)
+- Recorded result: pass (`51` tests, `5` files)
 - Notes: includes notifications, graph-context expansion, HITL action execution, proactive scheduler/webhook behavior, internal trace URL generation, metrics/traces endpoints, snooze, and latency assertions.
 
 ### Command transcript snippets (copy-ready)

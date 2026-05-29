@@ -61,9 +61,9 @@ Pass criteria (both paths):
 - At least two branch-divergent traces are visible and shareable to authenticated workspace members.
 - Trace API (`/api/fleetgraph/traces`) and trace detail route are both accessible.
 
-### Optional — LangSmith Automations Setup (External Observability)
+### Required — LangSmith Evidence and Automations (External Observability)
 
-Use this section to add external alerting and automations on top of internal FleetGraph traces.
+LangSmith links are required evidence for this submission and should be maintained alongside internal FleetGraph trace evidence.
 
 - LangSmith project traces URL: `https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces`
 
@@ -118,13 +118,25 @@ Run these first to confirm FleetGraph runtime, routes, proactive polling, and PR
 
 | File | Tests | Purpose |
 | --- | --- | --- |
-| `api/src/services/fleetgraph/trace.test.ts` | 5 | Internal trace URL generation + safe trace config diagnostics |
-| `api/src/services/fleetgraph/runtime.test.ts` | 19 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence, legacy trace-link repair |
+| `api/src/services/fleetgraph/trace.test.ts` | 7 | Internal trace URL generation + safe trace config diagnostics, LangSmith additive emission, and fail-open behavior |
+| `api/src/services/fleetgraph/runtime.test.ts` | 20 | PRD TC1–TC8 + HITL, snooze, dedupe, metrics, latency, branch divergence, legacy trace-link repair, and external trace metadata passthrough |
 | `api/src/routes/fleetgraph.test.ts` | 13 | All `/api/fleetgraph/*` endpoints (auth, CSRF, snooze, JSON shape) |
 | `api/src/services/fleetgraph/proactive.test.ts` | 9 | Proactive poll, webhook debounce, scan tiers, scheduler env guard |
 | `api/src/services/fleetgraph/notifications.test.ts` | 2 | Role-based notification draft routing |
 | `api/src/services/fleetgraph/seed-helpers.ts` | — | Shared document seed helpers (used by tests and `db:seed:fleetgraph`) |
 | `api/src/services/fleetgraph/__tests__/fixtures.ts` | — | Test workspace/auth helpers and cleanup |
+
+Current targeted FleetGraph API suite declaration total: `51` tests across `5` files (`trace` 7, `runtime` 20, `routes` 13, `proactive` 9, `notifications` 2).
+
+To prevent drift before submission, re-count directly from test files:
+
+```powershell
+rg "\bit\(" api/src/services/fleetgraph/runtime.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/trace.test.ts --count
+rg "\bit\(" api/src/routes/fleetgraph.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/proactive.test.ts --count
+rg "\bit\(" api/src/services/fleetgraph/notifications.test.ts --count
+```
 
 PRD test-case mapping lives in `runtime.test.ts` describe blocks (`TC1 weak weekly plan` … `TC8 overdue plan approval`). Trace URLs from those runs are documented in `FLEETGRAPH.md` → **Test Cases**.
 
@@ -400,7 +412,7 @@ Goal: Verify FleetGraph can surface findings without manual prompt.
 **Fast path with seeded data:**
 
 - **Local:** wait up to 3 minutes (`FLEETGRAPH_POLL_INTERVAL_MS=180000` on Render) or trigger webhook if wired; TC7/TC8 `[FG-PRD]` sprints are built for proactive detectors.
-- **Render:** proactive mode is on via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](./render.yaml).
+- **Render:** proactive mode is on via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](../../render.yaml).
 
 Pass if:
 
@@ -504,7 +516,7 @@ Verified on deployed app `https://ship-web-jyqh.onrender.com/` (2026-05-26):
 
 - `/health` returns HTTP 200 (public deployment reachable).
 - Login page loads; authenticated FleetGraph UI/endpoints require workspace credentials.
-- Proactive mode enabled via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](./render.yaml).
+- Proactive mode enabled via `FLEETGRAPH_PROACTIVE_ENABLED=1` in [`render.yaml`](../../render.yaml).
 - Remote synthetic workspace **`GFA Synthetic HITL Workspace`** seeded with `[SYNTH-HITL]` UC1–UC4 data (`seed:remote-synthetic`).
 - Local **`Ship Workspace`** supports `[FG-PRD]` TC1–TC8 demo data via `db:seed:fleetgraph`.
 - Automated signoff: FleetGraph Vitest suite verifies TC1–TC8 paths and `capture-fleetgraph-traces.ts` produces internal trace links.
