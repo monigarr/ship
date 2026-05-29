@@ -62,7 +62,6 @@ deliverables/**/evidence/csrf-token.json
 
 # Playwright test artifacts
 playwright-report/
-test-results/
 
 # Plans
 /plans
