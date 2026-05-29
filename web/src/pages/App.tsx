@@ -424,12 +424,6 @@ export function AppLayout() {
               onClick={() => handleModeClick('team')}
               showBadge={standupDue}
             />
-            <RailLink
-              icon={<FleetGraphTraceIcon />}
-              label="FleetGraph traces"
-              active={activeMode === 'fleetgraph'}
-              to="/fleetgraph/traces"
-            />
             <RailIcon
               icon={<FleetGraphAssistantIcon />}
               label={fleetGraphDrawerOpen ? 'Close FleetGraph in left sidebar' : 'Open FleetGraph in left sidebar'}
@@ -698,23 +692,6 @@ function RailIcon({
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
         )}
       </button>
-    </Tooltip>
-  );
-}
-
-function RailLink({ icon, label, active, to }: { icon: React.ReactNode; label: string; active: boolean; to: string }) {
-  return (
-    <Tooltip content={label} side="right">
-      <Link
-        to={to}
-        className={cn(
-          'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
-          active ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'
-        )}
-        aria-label={label}
-      >
-        {icon}
-      </Link>
     </Tooltip>
   );
 }
@@ -1941,16 +1918,6 @@ function TeamIcon() {
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-
-function FleetGraphTraceIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5l4.25-4.25 3.25 2.5L18 8" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 17.5V19m4.25-5.75V15m3.25.75v1.5M18 8v1.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 17.5a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zm4.25-4.25a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM12 15.75a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0zM16.5 8a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0z" />
     </svg>
   );
 }
