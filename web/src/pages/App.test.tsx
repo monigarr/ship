@@ -272,4 +272,19 @@ describe('AppLayout FleetGraph drawer', () => {
 
     expect(await screen.findByText(/Scoped to sprint:\s*Sprint Alpha/i)).toBeInTheDocument();
   });
+
+  it('uses accent styling for rail trigger and closed-edge opener', () => {
+    renderApp('/dashboard');
+
+    const railTrigger = screen.getByLabelText('Close FleetGraph assistant');
+    expect(railTrigger.className).toContain('text-accent');
+    expect(railTrigger.className).toContain('bg-accent/25');
+
+    localStorage.setItem('ship:fleetGraphDrawerOpen', 'false');
+    renderApp('/dashboard');
+
+    const edgeOpener = screen.getByLabelText('Open FleetGraph drawer');
+    expect(edgeOpener.className).toContain('text-accent');
+    expect(edgeOpener.className).toContain('bg-accent/15');
+  });
 });

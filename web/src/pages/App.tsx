@@ -435,6 +435,11 @@ export function AppLayout() {
               label={fleetGraphDrawerOpen ? 'Close FleetGraph assistant' : 'Open FleetGraph assistant'}
               active={fleetGraphDrawerOpen}
               onClick={() => setFleetGraphDrawerOpen((open) => !open)}
+              className={
+                fleetGraphDrawerOpen
+                  ? 'bg-accent/25 text-accent hover:bg-accent/30 hover:text-accent'
+                  : 'text-accent hover:bg-accent/15 hover:text-accent'
+              }
             />
             <RailExternalLink
               icon={<LangSmithIcon />}
@@ -643,7 +648,7 @@ export function AppLayout() {
           type="button"
           onClick={() => setFleetGraphDrawerOpen(true)}
           aria-label="Open FleetGraph drawer"
-          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-border bg-background/95 px-2 py-3 text-muted shadow-sm transition-colors hover:text-foreground"
+          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-accent/40 bg-accent/15 px-2 py-3 text-accent shadow-sm transition-colors hover:bg-accent/25 hover:text-accent"
         >
           <ExpandLeftIcon />
         </button>
@@ -681,14 +686,29 @@ export function AppLayout() {
   );
 }
 
-function RailIcon({ icon, label, active, onClick, showBadge }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; showBadge?: boolean }) {
+function RailIcon({
+  icon,
+  label,
+  active,
+  onClick,
+  showBadge,
+  className,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  showBadge?: boolean;
+  className?: string;
+}) {
   return (
     <Tooltip content={label} side="right">
       <button
         onClick={onClick}
         className={cn(
           'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
-          active ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'
+          active ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground',
+          className
         )}
         aria-label={label}
       >
