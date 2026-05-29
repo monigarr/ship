@@ -193,7 +193,7 @@ export function AppLayout() {
   const isMyWeekPage = location.pathname.startsWith('/my-week');
   const isWeeklyDoc = currentDocumentType === 'weekly_plan' || currentDocumentType === 'weekly_retro';
   const isStandup = currentDocumentType === 'standup';
-  const hideLeftSidebar = isMyWeekPage || isWeeklyDoc || isStandup || activeMode === 'fleetgraph';
+  const hideLeftSidebar = isMyWeekPage || isWeeklyDoc || isStandup;
 
   // Get the active document ID from URL - works for /documents/:id and legacy routes
   const getActiveDocumentId = (): string | undefined => {
@@ -432,7 +432,7 @@ export function AppLayout() {
             />
             <RailIcon
               icon={<FleetGraphAssistantIcon />}
-              label={fleetGraphDrawerOpen ? 'Close FleetGraph assistant' : 'Open FleetGraph assistant'}
+              label={fleetGraphDrawerOpen ? 'Close FleetGraph in left sidebar' : 'Open FleetGraph in left sidebar'}
               active={fleetGraphDrawerOpen}
               onClick={() => setFleetGraphDrawerOpen((open) => !open)}
               className={
@@ -492,16 +492,29 @@ export function AppLayout() {
             {/* Sidebar header */}
             <div className="flex h-10 items-center justify-between border-b border-border px-3">
               <h2 className="text-sm font-medium text-foreground m-0">
-                {activeMode === 'dashboard' && 'Dashboard'}
-                {activeMode === 'docs' && 'Docs'}
-                {activeMode === 'issues' && 'Issues'}
-                {activeMode === 'projects' && 'Projects'}
-                {activeMode === 'programs' && 'Programs'}
-                {activeMode === 'sprints' && 'Weeks'}
-                {activeMode === 'team' && 'Teams'}
-                {activeMode === 'fleetgraph' && 'FleetGraph'}
-                {activeMode === 'settings' && 'Settings'}
-                {activeMode === 'project-context' && 'Project'}
+                {fleetGraphDrawerOpen
+                  ? 'FleetGraph Assistant (context-aware)'
+                  : activeMode === 'dashboard'
+                    ? 'Dashboard'
+                    : activeMode === 'docs'
+                      ? 'Docs'
+                      : activeMode === 'issues'
+                        ? 'Issues'
+                        : activeMode === 'projects'
+                          ? 'Projects'
+                          : activeMode === 'programs'
+                            ? 'Programs'
+                            : activeMode === 'sprints'
+                              ? 'Weeks'
+                              : activeMode === 'team'
+                                ? 'Teams'
+                                : activeMode === 'fleetgraph'
+                                  ? 'FleetGraph'
+                                  : activeMode === 'settings'
+                                    ? 'Settings'
+                                    : activeMode === 'project-context'
+                                      ? 'Project'
+                                      : 'Sidebar'}
               </h2>
               <div className="flex items-center gap-1">
                 {activeMode === 'docs' && (
@@ -551,21 +564,30 @@ export function AppLayout() {
 
             {/* Sidebar content */}
             <div className="flex-1 overflow-auto py-2">
-              {activeMode === 'docs' && (
+              {fleetGraphDrawerOpen && (
+                <div className="h-full px-3 pb-3">
+                  <FleetGraphAssistant
+                    documentId={fleetGraphContext?.documentId ?? null}
+                    documentType={fleetGraphContext?.documentType ?? null}
+                    contextLabel={fleetGraphContext?.contextLabel}
+                  />
+                </div>
+              )}
+              {!fleetGraphDrawerOpen && activeMode === 'docs' && (
                 <DocumentsTree
                   documents={documents}
                   activeId={activeDocumentId}
                   onSelect={(id) => navigate(`/documents/${id}`)}
                 />
               )}
-              {activeMode === 'issues' && (
+              {!fleetGraphDrawerOpen && activeMode === 'issues' && (
                 <IssuesSidebar
                   issues={issues}
                   activeId={activeDocumentId}
                   onUpdateIssue={updateIssue}
                 />
               )}
-              {activeMode === 'projects' && (
+              {!fleetGraphDrawerOpen && activeMode === 'projects' && (
                 <ProjectsList
                   projects={projects}
                   activeId={activeDocumentId}
@@ -573,7 +595,7 @@ export function AppLayout() {
                   onUpdateProject={updateProject}
                 />
               )}
-              {activeMode === 'programs' && (
+              {!fleetGraphDrawerOpen && activeMode === 'programs' && (
                 <ProgramsList
                   programs={programs}
                   activeId={activeDocumentId}
@@ -581,16 +603,16 @@ export function AppLayout() {
                   onUpdateProgram={updateProgram}
                 />
               )}
-              {activeMode === 'team' && (
+              {!fleetGraphDrawerOpen && activeMode === 'team' && (
                 <TeamSidebar />
               )}
-              {activeMode === 'settings' && (
+              {!fleetGraphDrawerOpen && activeMode === 'settings' && (
                 <div className="px-3 py-2 text-sm text-muted">Settings</div>
               )}
-              {activeMode === 'dashboard' && (
+              {!fleetGraphDrawerOpen && activeMode === 'dashboard' && (
                 <DashboardSidebar />
               )}
-              {activeMode === 'project-context' && currentDocumentProjectId && (
+              {!fleetGraphDrawerOpen && activeMode === 'project-context' && currentDocumentProjectId && (
                 <ProjectContextSidebar
                   projectId={currentDocumentProjectId}
                   activeDocumentId={activeDocumentId}
@@ -608,51 +630,10 @@ export function AppLayout() {
           </ErrorBoundary>
         </main>
 
-        <aside
-          aria-label="FleetGraph assistant"
-          className={cn(
-            'relative flex flex-col border-l border-border transition-[width] duration-200 overflow-hidden bg-background',
-            fleetGraphDrawerOpen ? 'w-[24rem]' : 'w-0 border-l-0'
-          )}
-        >
-          <div className="flex h-full w-[24rem] flex-col">
-            <div className="flex h-10 items-center justify-between border-b border-border px-3">
-              <h2 className="text-sm font-medium text-foreground m-0">FleetGraph</h2>
-              <Tooltip content="Close FleetGraph drawer" side="left">
-                <button
-                  onClick={() => setFleetGraphDrawerOpen(false)}
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
-                  aria-label="Close FleetGraph drawer"
-                >
-                  <CollapseRightIcon />
-                </button>
-              </Tooltip>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <FleetGraphAssistant
-                documentId={fleetGraphContext?.documentId ?? null}
-                documentType={fleetGraphContext?.documentType ?? null}
-                contextLabel={fleetGraphContext?.contextLabel}
-              />
-            </div>
-          </div>
-        </aside>
-
         {/* Properties sidebar landmark - always present for proper accessibility structure */}
         {/* Portal content from Editor will be rendered here via React Portal */}
         <aside id="properties-portal" aria-label="Document properties" className="flex flex-col" />
       </div>
-
-      {!fleetGraphDrawerOpen && (
-        <button
-          type="button"
-          onClick={() => setFleetGraphDrawerOpen(true)}
-          aria-label="Open FleetGraph drawer"
-          className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-l-md border border-r-0 border-accent/80 bg-accent/45 px-2 py-3 text-accent-foreground shadow-lg shadow-accent/80 ring-1 ring-accent/70 transition-colors hover:bg-accent/55 hover:shadow-xl hover:shadow-accent hover:ring-accent"
-        >
-          <ExpandLeftIcon />
-        </button>
-      )}
 
       {/* Command Palette (Cmd+K) */}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />

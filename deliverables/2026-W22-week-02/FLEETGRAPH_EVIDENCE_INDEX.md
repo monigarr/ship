@@ -2,6 +2,11 @@
 
 This file is the sprint-folder packaging checklist for PRD submission evidence on branch `gfa2_wk5`.
 
+## Reviewer Blockers Closed (Final)
+
+- Public trace accessibility: FLEETGRAPH.md Test Cases now include per-case public LangSmith URLs copied from each trace's "View in LangSmith" link.
+- Chat discoverability: FleetGraph chat is now anchored in the left sidebar as the primary context-aware interaction surface.
+
 ## **AGENTS, EVALS, GRAPHS, RAGS **
 
 **Agents (FleetGraph runtime + UI)**
@@ -81,13 +86,13 @@ For required external monitoring/evidence setup, see [`QUICKSTART.md`](./QUICKST
 
 ## 3) Shared Trace Links To Submit
 
-Internal policy: keep observability links inside Ship and verify they resolve for authenticated workspace members.
+Submission policy: include internal FleetGraph trace links and public LangSmith links for reviewer-openable verification.
 
 | Checkpoint | Trace A (Path 1) | Trace B (Path 2) | Notes |
 | --- | --- | --- | --- |
-| MVP | `/fleetgraph/traces/d543c205-754e-44d8-8ffd-ef7c95f8a75c` | `/fleetgraph/traces/aac37d8f-711c-43c9-a4a7-aa3817b1c614` | Fresh TC1 vs TC7 capture on 2026-05-26; verification target is authenticated in-app accessibility |
-| Early Submission | `/fleetgraph/traces/449ccd4f-99db-4aed-903c-ea835f717d1d` | `/fleetgraph/traces/d0f25512-b219-4766-afaa-5c0888e2a9f1` | TC2 vs TC4 divergent internal traces |
-| Final Submission | `/fleetgraph/traces/5b4a47f1-c766-40d8-a005-e6f3cd18f50b` | `/fleetgraph/traces/d7cdaac0-6352-49d8-b395-84f6bc9da39a` | TC3 vs TC8 divergent internal traces |
+| MVP | `/fleetgraph/traces/d543c205-754e-44d8-8ffd-ef7c95f8a75c` + public LangSmith per-run URL in `FLEETGRAPH.md` | `/fleetgraph/traces/aac37d8f-711c-43c9-a4a7-aa3817b1c614` + public LangSmith per-run URL in `FLEETGRAPH.md` | Fresh TC1 vs TC7 capture on 2026-05-26; dual-channel reviewer verification (internal + public LangSmith) |
+| Early Submission | `/fleetgraph/traces/449ccd4f-99db-4aed-903c-ea835f717d1d` + public LangSmith per-run URL in `FLEETGRAPH.md` | `/fleetgraph/traces/d0f25512-b219-4766-afaa-5c0888e2a9f1` + public LangSmith per-run URL in `FLEETGRAPH.md` | TC2 vs TC4 divergent traces with public reviewer-openable links |
+| Final Submission | `/fleetgraph/traces/5b4a47f1-c766-40d8-a005-e6f3cd18f50b` + public LangSmith per-run URL in `FLEETGRAPH.md` | `/fleetgraph/traces/d7cdaac0-6352-49d8-b395-84f6bc9da39a` + public LangSmith per-run URL in `FLEETGRAPH.md` | TC3 vs TC8 divergent traces with public reviewer-openable links |
 
 Open shared trace links as `https://ship-web-jyqh.onrender.com/fleetgraph/traces/{traceId}` after authenticating, or locally as `http://localhost:5173/fleetgraph/traces/{traceId}`.
 
