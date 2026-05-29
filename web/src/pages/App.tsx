@@ -237,6 +237,11 @@ export function AppLayout() {
   }, [currentDocumentId, currentDocumentType, issues, projects, documents]);
 
   const handleModeClick = (mode: Mode) => {
+    // Left-rail behavior contract:
+    // - Rail icons always navigate immediately.
+    // - FleetGraph stays pinned until explicitly toggled off from chat icon.
+    // - Sidebar is uncollapsed so icon clicks feel responsive and visible.
+    setLeftSidebarCollapsed(false);
     switch (mode) {
       case 'dashboard': navigate('/my-week'); break;
       case 'docs': navigate('/docs'); break;
@@ -249,6 +254,22 @@ export function AppLayout() {
       case 'settings': navigate('/settings'); break;
     }
   };
+
+  const activeModeLabel = (() => {
+    switch (activeMode) {
+      case 'dashboard': return 'Dashboard';
+      case 'docs': return 'Docs';
+      case 'issues': return 'Issues';
+      case 'projects': return 'Projects';
+      case 'programs': return 'Programs';
+      case 'sprints': return 'Weeks';
+      case 'team': return 'Teams';
+      case 'fleetgraph': return 'FleetGraph traces';
+      case 'settings': return 'Settings';
+      case 'project-context': return 'Project';
+      default: return 'Current view';
+    }
+  })();
 
   const handleCreateIssue = async () => {
     const issue = await createIssue();
@@ -563,6 +584,9 @@ export function AppLayout() {
             <div className="flex-1 overflow-auto py-2">
               {fleetGraphDrawerOpen && (
                 <div className="h-full px-3 pb-3">
+                  <p className="mb-2 text-xs text-muted">
+                    FleetGraph is pinned. Current route: {activeModeLabel}. Close FleetGraph to see this view&apos;s sidebar.
+                  </p>
                   <FleetGraphAssistant
                     documentId={fleetGraphContext?.documentId ?? null}
                     documentType={fleetGraphContext?.documentType ?? null}

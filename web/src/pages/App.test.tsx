@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -192,6 +192,13 @@ function renderApp(route: string) {
         <Routes>
           <Route path="/" element={<AppLayout />}>
             <Route path="dashboard" element={<div>Dashboard Route</div>} />
+            <Route path="my-week" element={<div>My Week Route</div>} />
+            <Route path="docs" element={<div>Docs Route</div>} />
+            <Route path="issues" element={<div>Issues Route</div>} />
+            <Route path="projects" element={<div>Projects Route</div>} />
+            <Route path="programs" element={<div>Programs Route</div>} />
+            <Route path="team" element={<div>Teams Route</div>} />
+            <Route path="settings" element={<div>Settings Route</div>} />
             <Route path="documents/:id" element={<div>Document Route</div>} />
           </Route>
         </Routes>
@@ -200,93 +207,73 @@ function renderApp(route: string) {
   );
 }
 
-describe('AppLayout FleetGraph drawer', () => {
+describe('AppLayout left rail navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCurrentDocument.currentDocumentId = null;
     mockCurrentDocument.currentDocumentType = null;
     mockCurrentDocument.currentDocumentProjectId = null;
-    localStorage.setItem('ship:fleetGraphDrawerOpen', 'true');
-  });
-
-  it('shows no-context fallback on non-entity routes', async () => {
-    renderApp('/dashboard');
-
-    expect(
-      await screen.findByText(
-        'View an Issue, Project, or Sprint for FleetGraph support. Workspace diagnostics and traces remain available.'
-      )
-    ).toBeInTheDocument();
-  });
-
-  it('updates scoped FleetGraph context across issue, project, and sprint routes', async () => {
-    mockCurrentDocument.currentDocumentId = 'issue-1';
-    mockCurrentDocument.currentDocumentType = 'issue';
-    const view = renderApp('/documents/issue-1');
-
-    expect(await screen.findByText(/Scoped to issue:\s*Issue Alpha/i)).toBeInTheDocument();
-
-    mockCurrentDocument.currentDocumentId = 'project-1';
-    mockCurrentDocument.currentDocumentType = 'project';
-    view.rerender(
-      <QueryClientProvider
-        client={
-          new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-          })
-        }
-      >
-        <MemoryRouter key="/documents/project-1" initialEntries={['/documents/project-1']}>
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              <Route path="dashboard" element={<div>Dashboard Route</div>} />
-              <Route path="documents/:id" element={<div>Document Route</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
-
-    expect(await screen.findByText(/Scoped to project:\s*Project Alpha/i)).toBeInTheDocument();
-
-    mockCurrentDocument.currentDocumentId = 'sprint-1';
-    mockCurrentDocument.currentDocumentType = 'sprint';
-    view.rerender(
-      <QueryClientProvider
-        client={
-          new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-          })
-        }
-      >
-        <MemoryRouter key="/documents/sprint-1" initialEntries={['/documents/sprint-1']}>
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              <Route path="dashboard" element={<div>Dashboard Route</div>} />
-              <Route path="documents/:id" element={<div>Document Route</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
-
-    expect(await screen.findByText(/Scoped to sprint:\s*Sprint Alpha/i)).toBeInTheDocument();
-  });
-
-  it('uses bright glow styling for rail trigger and closed-edge opener', () => {
-    renderApp('/dashboard');
-
-    const railTrigger = screen.getByLabelText('Close FleetGraph assistant');
-    expect(railTrigger.className).toContain('text-accent-foreground');
-    expect(railTrigger.className).toContain('bg-accent/45');
-    expect(railTrigger.className).toContain('shadow-accent/80');
-
     localStorage.setItem('ship:fleetGraphDrawerOpen', 'false');
+  });
+
+  it('navigates with each non-chat left rail icon', async () => {
     renderApp('/dashboard');
 
-    const edgeOpener = screen.getByLabelText('Open FleetGraph drawer');
-    expect(edgeOpener.className).toContain('text-accent-foreground');
-    expect(edgeOpener.className).toContain('bg-accent/45');
-    expect(edgeOpener.className).toContain('shadow-accent/80');
+    fireEvent.click(screen.getByLabelText('Docs'));
+    expect(await screen.findByText('Docs Route')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Projects'));
+    expect(await screen.findByText('Projects Route')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Programs'));
+    expect(await screen.findByText('Programs Route')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Teams'));
+    expect(await screen.findByText('Teams Route')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Settings'));
+    expect(await screen.findByText('Settings Route')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Dashboard'));
+    expect(await screen.findByText('My Week Route')).toBeInTheDocument();
+  });
+
+  it('keeps FleetGraph pinned across route changes until chat icon toggles it off', async () => {
+    renderApp('/dashboard');
+
+    fireEvent.click(screen.getByLabelText('Open FleetGraph in left sidebar'));
+    expect(await screen.findByText('FleetGraph Assistant (context-aware)')).toBeInTheDocument();
+    expect(screen.getByTestId('fleetgraph-assistant-mock')).toBeInTheDocument();
+    expect(screen.getByText(/FleetGraph is pinned. Current route:/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Docs'));
+    expect(await screen.findByText('Docs Route')).toBeInTheDocument();
+    expect(screen.getByTestId('fleetgraph-assistant-mock')).toBeInTheDocument();
+    expect(screen.getByText(/Current route: Docs/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Close FleetGraph in left sidebar'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('fleetgraph-assistant-mock')).not.toBeInTheDocument();
+    });
+  });
+
+  it('opens FleetGraph from a weekly document context where sidebar is normally hidden', async () => {
+    mockCurrentDocument.currentDocumentId = 'weekly-1';
+    mockCurrentDocument.currentDocumentType = 'weekly_plan';
+    renderApp('/documents/weekly-1');
+
+    expect(screen.queryByText('FleetGraph Assistant (context-aware)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Open FleetGraph in left sidebar'));
+
+    expect(await screen.findByText('FleetGraph Assistant (context-aware)')).toBeInTheDocument();
+    expect(screen.getByTestId('fleetgraph-assistant-mock')).toBeInTheDocument();
+  });
+
+  it('renders external LangSmith traces link on the rail', () => {
+    renderApp('/dashboard');
+
+    const externalLink = screen.getByLabelText('LangSmith traces (external)');
+    expect(externalLink).toBeInTheDocument();
+    expect(externalLink).toHaveAttribute('href');
   });
 });
