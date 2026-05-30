@@ -22,7 +22,8 @@ This file is the sprint-folder packaging checklist for PRD submission evidence o
 - web/src/pages/FleetGraphTracesPage.tsx — trace index UI.
 - web/src/pages/FleetGraphTracePage.tsx — trace detail UI.
 - web/src/lib/fleetgraphVisuals.ts — shared FleetGraph status/severity/trace-link helpers.
-- web/src/components/sidebars/IssueSidebar.tsx, ProjectSidebar.tsx, WeekSidebar.tsx — assistant embedding points.
+- web/src/pages/App.tsx — left-sidebar shell host that pins FleetGraphAssistant and passes route-derived issue/project/week context.
+- web/src/components/sidebars/IssueSidebar.tsx, ProjectSidebar.tsx, WeekSidebar.tsx — underlying context sidebars shown when FleetGraph is not pinned.
 
 **Evals (implemented as test-driven scenario validation)**
 - api/src/services/fleetgraph/runtime.test.ts — TC1–TC8 scenario assertions, branch divergence, latency, dedupe, HITL lifecycle.
@@ -72,7 +73,7 @@ For required external monitoring/evidence setup, see [`QUICKSTART.md`](./QUICKST
 | Proactive mode implemented | Complete | [`proactive.ts`](../../api/src/services/fleetgraph/proactive.ts), `POST /api/fleetgraph/proactive/webhook` in [`fleetgraph.ts`](../../api/src/routes/fleetgraph.ts) |
 | On-demand mode implemented | Complete | [`FleetGraphAssistant.tsx`](../../web/src/components/sidebars/FleetGraphAssistant.tsx), `POST /api/fleetgraph/run` |
 | Shared graph architecture for both modes | Complete | [`runtime.ts`](../../api/src/services/fleetgraph/runtime.ts) |
-| Context-embedded chat (no standalone bot) | Complete | FleetGraph panel embedded in [`IssueSidebar.tsx`](../../web/src/components/sidebars/IssueSidebar.tsx), [`ProjectSidebar.tsx`](../../web/src/components/sidebars/ProjectSidebar.tsx), [`WeekSidebar.tsx`](../../web/src/components/sidebars/WeekSidebar.tsx) |
+| Context-embedded chat (no standalone bot) | Complete | FleetGraph panel is pinned in the left sidebar shell in [`App.tsx`](../../web/src/pages/App.tsx) and rendered via [`FleetGraphAssistant.tsx`](../../web/src/components/sidebars/FleetGraphAssistant.tsx), with route-derived issue/project/week context passed from the active view |
 | HITL gate for protected actions | Complete | `fleetgraph_hitl_requests`, `POST /api/fleetgraph/hitl/:requestId/approve`, `POST /api/fleetgraph/hitl/:requestId/reject`, snooze via `POST /api/fleetgraph/findings/:findingId/snooze` |
 | Internal FleetGraph trace links | Complete | Visual trace index `/fleetgraph/traces`, internal trace detail endpoint `/api/fleetgraph/traces/:traceId`, in-app route `/fleetgraph/traces/:traceId`, trace persistence migration [`040_add_fleetgraph_trace_events.sql`](../../api/src/db/migrations/040_add_fleetgraph_trace_events.sql), and trace URL repair migrations [`041`](../../api/src/db/migrations/041_canonicalize_fleetgraph_trace_urls.sql), [`042`](../../api/src/db/migrations/042_enforce_internal_fleetgraph_trace_urls.sql), [`043`](../../api/src/db/migrations/043_repair_fleetgraph_trace_detail_links.sql) |
 | Snooze lifecycle | Complete | `fleetgraph_findings.snoozed_until`, [`038_fleetgraph_snooze.sql`](../../api/src/db/migrations/038_fleetgraph_snooze.sql), UI snooze buttons in [`FleetGraphAssistant.tsx`](../../web/src/components/sidebars/FleetGraphAssistant.tsx) |
