@@ -128,6 +128,45 @@ The script prints JSON with:
 - Run latency (`executeFleetGraphRun` runtime execution latency): `51 ms`
 - Pass condition: `< 5 minutes`
 
+### Fresh capture update (2026-05-29)
+
+- Test run ID: `f582cd62-1dda-4176-8860-2f799a05f177`
+- Event introduced at (UTC): `2026-05-29T22:43:40.529Z`
+- First surfaced finding at (UTC): `2026-05-29T22:43:40.599Z`
+- Detection latency (`event -> surfaced finding`): `70 ms`
+- Run latency (`executeFleetGraphRun` runtime execution latency): `60 ms`
+- Internal trace URL: `/fleetgraph/traces/f582cd62-1dda-4176-8860-2f799a05f177`
+- External trace URL: `null` (LangSmith not configured in this local capture session)
+
+### Deployed write → scheduled poll → sidebar render evidence
+
+Captured on deployed app `https://ship-web-jyqh.onrender.com` with authenticated workspace session:
+
+- Probe entity type: `project`
+- Probe entity id: `2d4837ff-1e8d-447f-bed5-25071c50fa35`
+- Probe title: `[FG-LATENCY-POLL] 2026-05-30T00:50:54.364Z`
+- Triggered finding title: `Hypothesis drift: [FG-LATENCY-POLL] 2026-05-30T00:50:54.364Z`
+- Trace id: `6980701c-440b-4098-a966-ab7850539dfc`
+- Internal trace URL: `/fleetgraph/traces/6980701c-440b-4098-a966-ab7850539dfc`
+- Confirmed trigger type from trace detail: `proactive_poll`
+- Branch: `execution_risk`
+
+Timestamps (UTC):
+
+- `T0` (deployed write created): `2026-05-30T00:50:54.467Z`
+- `T1` (first finding surfaced via `/api/fleetgraph/findings` for probe entity): `2026-05-30T00:55:39.820Z`
+- `T2` (finding visible in FleetGraph sidebar UI): `2026-05-30T00:57:04.034Z`
+
+Computed latency:
+
+- `T1 - T0` detection latency: `285,353 ms` (`4m 45.353s`) — **passes `< 5 min` PRD target**
+- `T2 - T0` end-user surfacing latency: `369,567 ms` (`6m 09.567s`)
+- `T2 - T1` UI visibility lag after API finding: `84,214 ms` (`1m 24.214s`)
+
+Visual artifact:
+
+- Sidebar capture with visible finding card: `fleetgraph-deployed-latency-sidebar-t2.png` (captured in-session)
+
 ## 5) Cost and Telemetry Capture
 
 Use `/api/fleetgraph/metrics` for runtime-derived telemetry.
@@ -160,7 +199,7 @@ Last fully green verification: `2026-05-25 23:44 (UTC-5)` (`2026-05-26T04:44Z` a
 
 Latest targeted FleetGraph trace-index verification: `2026-05-28 11:17 (America/Chicago)`.
 
-Current repo spot-check: `2026-05-29` verified referenced files/routes/migrations exist, the deployed login URL returns `200 OK`, and the targeted FleetGraph API suite currently declares `51` tests across `5` files. A local test rerun can discover the same tests but may not execute them if no local Postgres is listening on `localhost:5432` (`ECONNREFUSED`).
+Current repo spot-check: `2026-05-29` verified referenced files/routes/migrations exist, the deployed login URL returns `200 OK`, and targeted FleetGraph API + web regression suites were re-run successfully.
 
 Count drift guard (run before final submission updates):
 
@@ -175,14 +214,14 @@ rg "\bit\(" api/src/services/fleetgraph/notifications.test.ts --count
 - API type-check: pass (`pnpm --filter @ship/api type-check`)
 - Web type-check: pass (`pnpm --filter @ship/web type-check`)
 - FleetGraph API/runtime/route trace suites: recorded pass (`37` tests, `3` files)
-- FleetGraph targeted API suite declarations: current repo has `51` tests across `5` files (`trace` 7, `runtime` 20, `routes` 13, `proactive` 9, `notifications` 2)
-- FleetGraph trace index UI regression: current pass (`6` tests, `1` file), including visible Trace column order and page/table scroll containers; trace-link helper coverage currently has `4` tests in [`fleetgraphVisuals.test.ts`](../../web/src/lib/fleetgraphVisuals.test.ts)
+- FleetGraph targeted API suite: current pass (`52` tests, `5` files) via `pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts` (`trace` 7, `runtime` 21, `routes` 13, `proactive` 9, `notifications` 2).
+- FleetGraph web regression subset: current pass (`15` tests, `3` files) via `pnpm --filter @ship/web test -- src/pages/App.test.tsx src/pages/FleetGraphTracesPage.test.tsx src/lib/fleetgraphVisuals.test.ts` (`FleetGraphTracesPage` 6, `App` 4, `fleetgraphVisuals` 5).
 - Local route/API smoke: `/fleetgraph/traces` returned `200`; repaired legacy row resolved to `/fleetgraph/traces/e317cde4-bfa3-46c9-ab0d-5a0d2da00858`; production-build browser check confirmed the Trace column renders as the second table column with full trace ID link text and scrollable vertical/horizontal overflow.
 
 ### Tests
 
 - Command: `pnpm --filter @ship/api test -- src/services/fleetgraph src/routes/fleetgraph.test.ts`
-- Recorded result: pass (`51` tests, `5` files)
+- Recorded result: pass (`52` tests, `5` files)
 - Notes: includes notifications, graph-context expansion, HITL action execution, proactive scheduler/webhook behavior, internal trace URL generation, metrics/traces endpoints, snooze, and latency assertions.
 
 ### Command transcript snippets (copy-ready)

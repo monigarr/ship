@@ -158,7 +158,7 @@ describe('FleetGraph trace', () => {
     );
     expect(finished.traceUrl).toBe(`/fleetgraph/traces/${finished.traceId}`);
     expect(finished.externalTraceUrl).toBe(
-      'https://smith.langchain.com/o/demo/projects/p/demo?runview=traces'
+      `https://smith.langchain.com/o/demo/projects/p/demo/r/${finished.traceId}`
     );
   });
 

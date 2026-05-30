@@ -78,12 +78,24 @@ function getLangSmithProjectTracesUrl(): string {
   return DEFAULT_LANGSMITH_TRACES_URL;
 }
 
+function buildLangSmithRunUrl(projectTracesUrl: string, traceId: string): string {
+  try {
+    const parsed = new URL(projectTracesUrl);
+    parsed.search = '';
+    parsed.hash = '';
+    parsed.pathname = `${parsed.pathname.replace(/\/+$/, '')}/r/${encodeURIComponent(traceId)}`;
+    return parsed.toString();
+  } catch {
+    return projectTracesUrl;
+  }
+}
+
 function resolveLangSmithRunUrl(traceId: string): string {
   const template = process.env.LANGSMITH_RUN_URL_TEMPLATE?.trim();
   if (template) {
     return template.replaceAll('{runId}', encodeURIComponent(traceId));
   }
-  return getLangSmithProjectTracesUrl();
+  return buildLangSmithRunUrl(getLangSmithProjectTracesUrl(), traceId);
 }
 
 function getLangSmithApiBaseUrl(): string {
