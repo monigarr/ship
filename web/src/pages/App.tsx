@@ -41,6 +41,7 @@ import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'settings' | 'dashboard' | 'project-context';
 const DEFAULT_LANGSMITH_TRACES_URL =
   'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces';
+const DEFAULT_INTERNAL_TRACES_URL = 'https://ship-web-jyqh.onrender.com/fleetgraph/traces/';
 
 export function AppLayout() {
   const { user, logout, isSuperAdmin, impersonating, endImpersonation } = useAuth();
@@ -190,6 +191,7 @@ export function AppLayout() {
 
   const activeMode = getActiveMode();
   const langSmithTracesUrl = import.meta.env.VITE_LANGSMITH_TRACES_URL?.trim() || DEFAULT_LANGSMITH_TRACES_URL;
+  const internalTracesUrl = import.meta.env.VITE_INTERNAL_TRACES_URL?.trim() || DEFAULT_INTERNAL_TRACES_URL;
   const isMyWeekPage = location.pathname.startsWith('/my-week');
   const isWeeklyDoc = currentDocumentType === 'weekly_plan' || currentDocumentType === 'weekly_retro';
   const isStandup = currentDocumentType === 'standup';
@@ -458,6 +460,11 @@ export function AppLayout() {
                   ? 'bg-accent/45 text-accent-foreground ring-1 ring-accent shadow-lg shadow-accent/80 hover:bg-accent/55 hover:shadow-xl hover:shadow-accent'
                   : 'bg-accent/20 text-accent ring-1 ring-accent/60 shadow-md shadow-accent/60 hover:bg-accent/35 hover:text-accent-foreground hover:shadow-lg hover:shadow-accent/90'
               }
+            />
+            <RailExternalLink
+              icon={<InternalTracesIcon />}
+              label="Internal traces list"
+              href={internalTracesUrl}
             />
             <RailExternalLink
               icon={<LangSmithIcon />}
@@ -1953,6 +1960,15 @@ function FleetGraphAssistantIcon() {
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10.5h8m-8 3h5m-7 6l-3-3.5V6.5A2.5 2.5 0 015.5 4h13A2.5 2.5 0 0121 6.5v7A2.5 2.5 0 0118.5 16H9z" />
+    </svg>
+  );
+}
+
+function InternalTracesIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h8M8 12h8M8 17h8" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
     </svg>
   );
 }

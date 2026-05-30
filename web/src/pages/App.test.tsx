@@ -276,4 +276,12 @@ describe('AppLayout left rail navigation', () => {
     expect(externalLink).toBeInTheDocument();
     expect(externalLink).toHaveAttribute('href');
   });
+
+  it('renders internal traces list link on the rail', () => {
+    renderApp('/dashboard');
+
+    const internalLink = screen.getByLabelText('Internal traces list');
+    expect(internalLink).toBeInTheDocument();
+    expect(internalLink).toHaveAttribute('href', 'https://ship-web-jyqh.onrender.com/fleetgraph/traces/');
+  });
 });
