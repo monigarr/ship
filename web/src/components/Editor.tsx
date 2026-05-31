@@ -42,8 +42,30 @@ import { useCommentsQuery, useCreateComment, useUpdateComment } from '@/hooks/us
 import { BubbleMenu } from '@tiptap/react';
 import 'tippy.js/dist/tippy.css';
 
-// Create lowlight instance with common languages
-const lowlight = createLowlight(common);
+function createCodeBlockLowlightExtension() {
+  try {
+    const lowlight = createLowlight(common);
+    const hasCompatibleApi =
+      typeof (lowlight as { highlight?: unknown }).highlight === 'function' &&
+      typeof (lowlight as { highlightAuto?: unknown }).highlightAuto === 'function' &&
+      typeof (lowlight as { listLanguages?: unknown }).listLanguages === 'function';
+
+    if (!hasCompatibleApi) {
+      console.warn('[Editor] CodeBlockLowlight disabled: incompatible lowlight instance');
+      return null;
+    }
+
+    return CodeBlockLowlight.configure({
+      lowlight,
+      HTMLAttributes: {
+        class: 'code-block-lowlight',
+      },
+    });
+  } catch (error) {
+    console.warn('[Editor] CodeBlockLowlight disabled after initialization failure', error);
+    return null;
+  }
+}
 
 interface EditorProps {
   documentId: string;
@@ -538,19 +560,17 @@ export function Editor({
     setPendingCommentId(commentId);
   }, []);
 
+  const codeBlockLowlightExtension = useMemo(() => createCodeBlockLowlightExtension(), []);
+
   // Build extensions - only include CollaborationCursor when provider is ready
   const baseExtensions = [
     StarterKit.configure({
       history: false,
       dropcursor: false,
-      codeBlock: false, // Disable default code block to use CodeBlockLowlight
+      // Keep plain code blocks if lowlight extension is unavailable.
+      codeBlock: codeBlockLowlightExtension ? false : undefined,
     }),
-    CodeBlockLowlight.configure({
-      lowlight,
-      HTMLAttributes: {
-        class: 'code-block-lowlight',
-      },
-    }),
+    ...(codeBlockLowlightExtension ? [codeBlockLowlightExtension] : []),
     Placeholder.configure({ placeholder }),
     Collaboration.configure({ document: ydoc }),
     Link.configure({
