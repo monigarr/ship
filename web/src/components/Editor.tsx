@@ -8,8 +8,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import { ResizableImage } from './editor/ResizableImage';
 import Dropcursor from '@tiptap/extension-dropcursor';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { common, createLowlight } from 'lowlight';
+// CodeBlockLowlight temporarily removed (lowlight v3 + Tiptap v2.10.4 incompatibility on blank/empty CRDT docs causes hard crash).
+// import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+// import { common, createLowlight } from 'lowlight';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
@@ -42,19 +43,8 @@ import { useCommentsQuery, useCreateComment, useUpdateComment } from '@/hooks/us
 import { BubbleMenu } from '@tiptap/react';
 import 'tippy.js/dist/tippy.css';
 
-// Guarded lowlight creation — prevents module-level crash when lowlight v3 + CodeBlockLowlight are incompatible
-// (e.g. on blank/empty CRDT documents or certain Render build environments).
-let lowlightInstance: ReturnType<typeof createLowlight> | null = null;
-let codeBlockLowlightSupported = false;
-try {
-  lowlightInstance = createLowlight(common);
-  // Basic shape check — lowlight v2 instances have an 'all' property structure the Tiptap extension relies on.
-  if (lowlightInstance && typeof (lowlightInstance as any).all !== 'undefined') {
-    codeBlockLowlightSupported = true;
-  }
-} catch (err) {
-  console.warn('[Editor] CodeBlockLowlight disabled: failed to initialize lowlight instance', err);
-}
+// lowlight / CodeBlockLowlight fully disabled for now (see import comment above).
+// This guarantees the crashing code path is never reached on blank/empty documents.
 
 interface EditorProps {
   documentId: string;
@@ -554,19 +544,8 @@ export function Editor({
     StarterKit.configure({
       history: false,
       dropcursor: false,
-      codeBlock: false, // Disable default code block to use CodeBlockLowlight
+      codeBlock: false,
     }),
-    // Only add CodeBlockLowlight when the lowlight instance initialized successfully.
-    // This prevents a hard crash on blank/empty documents or when lowlight v3 is incompatible.
-    ...(codeBlockLowlightSupported && lowlightInstance
-      ? [CodeBlockLowlight.configure({
-          lowlight: lowlightInstance,
-          HTMLAttributes: {
-            class: 'code-block-lowlight',
-          },
-        })]
-      : []),
-    Placeholder.configure({ placeholder }),
     Collaboration.configure({ document: ydoc }),
     Link.configure({
       openOnClick: true,
