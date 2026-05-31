@@ -195,11 +195,11 @@ function SignalCard({ signal }: { signal: FleetGraphSignal }) {
   return (
     <div className={`rounded border px-2 py-1.5 ${severityClass(signal.severity)}`}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium">{signal.title}</p>
-        <span className="text-[10px] uppercase tracking-wide opacity-80">{signal.severity}</span>
+        <p className="text-sm font-medium">{signal.title}</p>
+        <span className="text-xs uppercase tracking-wide opacity-80">{signal.severity}</span>
       </div>
-      <p className="text-[11px] text-foreground/80 mt-0.5">{signal.summary}</p>
-      <p className="text-[10px] text-muted mt-1">
+      <p className="mt-0.5 text-sm text-foreground/80">{signal.summary}</p>
+      <p className="mt-1 text-xs text-muted">
         Confidence: {(signal.confidence * 100).toFixed(0)}%
         {signal.entityType && (
           <>
@@ -214,12 +214,12 @@ function SignalCard({ signal }: { signal: FleetGraphSignal }) {
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="text-[10px] text-accent hover:underline"
+            className="text-xs text-accent hover:underline"
           >
             {expanded ? 'Hide evidence' : `Show evidence (${signal.evidence.length})`}
           </button>
           {expanded && (
-            <ul className="mt-1 space-y-0.5 list-disc list-inside text-[10px] text-muted">
+            <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-muted">
               {signal.evidence.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -229,8 +229,8 @@ function SignalCard({ signal }: { signal: FleetGraphSignal }) {
       )}
       {signal.notificationDrafts && signal.notificationDrafts.length > 0 && (
         <div className="mt-1.5 rounded border border-border/60 bg-background/40 px-1.5 py-1">
-          <p className="text-[10px] font-medium text-muted uppercase tracking-wide">Suggested notify</p>
-          <ul className="mt-0.5 space-y-0.5 text-[10px] text-muted">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">Suggested notify</p>
+          <ul className="mt-0.5 space-y-0.5 text-xs text-muted">
             {signal.notificationDrafts.map((draft) => (
               <li key={`${draft.role}-${draft.reason}`}>
                 <span className="text-foreground/90">{draft.role.replace(/_/g, ' ')}</span>: {draft.reason}
@@ -267,32 +267,32 @@ function HitlGate({
   return (
     <div className="rounded border border-orange-500/30 bg-orange-500/10 p-2 space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-orange-300">Human approval required</p>
+        <p className="text-sm font-medium text-orange-300">Human approval required</p>
         <button
           type="button"
           onClick={onClose}
-          className="text-[10px] text-muted hover:text-foreground"
+          className="text-xs text-muted hover:text-foreground"
         >
           Close
         </button>
       </div>
 
       <div className="space-y-1">
-        <p className="text-[10px] uppercase tracking-wide text-muted">Proposed action</p>
-        <p className="text-xs text-foreground">
+        <p className="text-xs uppercase tracking-wide text-muted">Proposed action</p>
+        <p className="text-sm text-foreground">
           {proposedActionLabel(target.signalType, target.title)}
         </p>
       </div>
 
       <div className="space-y-1">
-        <p className="text-[10px] uppercase tracking-wide text-muted">Rationale</p>
-        <p className="text-[11px] text-foreground/90">{target.summary}</p>
+        <p className="text-xs uppercase tracking-wide text-muted">Rationale</p>
+        <p className="text-sm text-foreground/90">{target.summary}</p>
         {target.runSummary && (
-          <p className="text-[11px] text-muted">{target.runSummary}</p>
+          <p className="text-sm text-muted">{target.runSummary}</p>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 text-[10px]">
+      <div className="flex flex-wrap gap-2 text-xs">
         <span className={`rounded border px-1.5 py-0.5 ${severityClass(target.severity)}`}>
           {target.severity}
         </span>
@@ -315,8 +315,8 @@ function HitlGate({
 
       {target.evidence.length > 0 && (
         <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wide text-muted">Supporting evidence</p>
-          <ul className="space-y-0.5 list-disc list-inside text-[10px] text-muted">
+          <p className="text-xs uppercase tracking-wide text-muted">Supporting evidence</p>
+          <ul className="list-inside list-disc space-y-0.5 text-xs text-muted">
             {target.evidence.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -329,7 +329,7 @@ function HitlGate({
         onChange={(e) => onNoteChange(e.target.value)}
         placeholder="Decision note (optional)"
         rows={2}
-        className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+        className="w-full resize-none rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
       />
 
       <div className="grid grid-cols-2 gap-2">
@@ -337,7 +337,7 @@ function HitlGate({
           type="button"
           onClick={onApprove}
           disabled={isPending}
-          className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-500 disabled:opacity-50"
+          className="rounded bg-green-600 px-2 py-1.5 text-sm text-white hover:bg-green-500 disabled:opacity-50"
         >
           Approve
         </button>
@@ -345,7 +345,7 @@ function HitlGate({
           type="button"
           onClick={onReject}
           disabled={isPending}
-          className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-500 disabled:opacity-50"
+          className="rounded bg-red-600 px-2 py-1.5 text-sm text-white hover:bg-red-500 disabled:opacity-50"
         >
           Reject
         </button>
@@ -353,7 +353,7 @@ function HitlGate({
           type="button"
           onClick={onRequestChanges}
           disabled={isPending}
-          className="rounded bg-orange-600 px-2 py-1 text-xs text-white hover:bg-orange-500 disabled:opacity-50"
+          className="rounded bg-orange-600 px-2 py-1.5 text-sm text-white hover:bg-orange-500 disabled:opacity-50"
         >
           Request changes
         </button>
@@ -361,7 +361,7 @@ function HitlGate({
           type="button"
           onClick={onSnooze}
           disabled={isPending}
-          className="rounded bg-yellow-600 px-2 py-1 text-xs text-white hover:bg-yellow-500 disabled:opacity-50"
+          className="rounded bg-yellow-600 px-2 py-1.5 text-sm text-white hover:bg-yellow-500 disabled:opacity-50"
         >
           Snooze 24h
         </button>
@@ -574,19 +574,19 @@ export function FleetGraphAssistant({
   const showNoContextFallback = !hasEntityContext;
 
   return (
-    <div className={`rounded-2xl border border-border/60 bg-background/95 shadow-xl shadow-black/5 backdrop-blur-sm p-4 space-y-4 ring-1 ring-inset ring-white/5 ${className ?? ''}`}>
+    <div className={`rounded-2xl border border-border/60 bg-background/95 shadow-xl shadow-black/5 backdrop-blur-sm p-4 space-y-4 ring-1 ring-inset ring-white/5 flex min-h-0 flex-col ${className ?? ''}`}>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
             <h4 className="text-sm font-semibold tracking-tight text-foreground">FleetGraph</h4>
           </div>
-          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent uppercase tracking-[0.5px]">On-demand</span>
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium uppercase tracking-[0.5px] text-accent">On-demand</span>
         </div>
         {showNoContextFallback ? (
-          <p className="text-[11px] text-muted">Context required to run FleetGraph for a specific record.</p>
+          <p className="text-sm text-muted">Context required to run FleetGraph for a specific record.</p>
         ) : (
-          <p className="text-[11px] text-muted">
+          <p className="text-sm text-muted">
             Scoped to {formatEntityType(activeDocumentType ?? 'record')}:{' '}
             <span className="text-foreground">{contextDisplay}</span>
           </p>
@@ -599,7 +599,7 @@ export function FleetGraphAssistant({
             <span className="mt-0.5 text-accent" aria-hidden="true">
               <NoContextIcon />
             </span>
-            <p className="text-[11px] text-muted">
+            <p className="text-sm text-muted">
               View an Issue, Project, or Sprint for FleetGraph support. Workspace diagnostics and traces remain available.
             </p>
           </div>
@@ -607,14 +607,14 @@ export function FleetGraphAssistant({
       )}
 
       {decisionBanner && (
-        <div className="rounded border border-green-500/30 bg-green-500/10 px-2 py-1 text-[11px] text-green-300">
+        <div className="rounded border border-green-500/30 bg-green-500/10 px-2 py-1.5 text-sm text-green-300">
           {decisionBanner}
         </div>
       )}
 
-      <div className="space-y-3 max-h-[420px] overflow-y-auto rounded-2xl border border-border/50 bg-background/40 p-3 shadow-inner">
+      <div className="space-y-3 flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-background/40 p-3 shadow-inner min-h-[15rem]">
         {chatMessages.length === 0 && !runMutation.isPending && (
-          <p className="text-[11px] text-muted">
+          <p className="text-sm text-muted">
             {showNoContextFallback
               ? 'Select an Issue, Project, or Sprint to ask context-scoped FleetGraph questions.'
               : `Ask about this ${formatEntityType(activeDocumentType ?? 'record')} — FleetGraph answers from records you can access in this view.`}
@@ -624,22 +624,22 @@ export function FleetGraphAssistant({
         {chatMessages.map((message, index) =>
           message.role === 'user' ? (
             <div key={`user-${index}`} className="flex justify-end">
-              <div className="max-w-[90%] rounded bg-accent/20 px-2 py-1 text-[11px] text-foreground">
+              <div className="max-w-[90%] rounded-lg bg-accent/20 px-3 py-1.5 text-sm text-foreground">
                 {message.text}
               </div>
             </div>
           ) : (
             <div key={`assistant-${index}`} className="space-y-1.5">
-              <div className="rounded border border-border bg-background/70 px-2 py-1.5">
-                <p className="text-xs text-foreground">{message.summary}</p>
-                <p className="text-[10px] text-muted mt-1">
+              <div className="rounded-lg border border-border bg-background/70 px-2.5 py-2">
+                <p className="text-sm text-foreground">{message.summary}</p>
+                <p className="mt-1 text-xs text-muted">
                   Branch: {message.run.branch} | Latency: {message.run.latencyMs}ms
                 </p>
                 <a
                   href={resolveInternalTraceHref(message.run.traceUrl, message.run.traceId)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-accent hover:underline"
+                  className="text-xs text-accent hover:underline"
                 >
                   Open trace details
                 </a>
@@ -648,7 +648,7 @@ export function FleetGraphAssistant({
                     href={resolveExternalTraceHref(message.run.externalTraceUrl) || undefined}
                     target="_blank"
                     rel="noreferrer"
-                    className="ml-2 text-[10px] text-muted hover:text-foreground hover:underline"
+                    className="ml-2 text-xs text-muted hover:text-foreground hover:underline"
                   >
                     View in LangSmith
                   </a>
@@ -670,7 +670,7 @@ export function FleetGraphAssistant({
       </div>
 
       {runMutation.isError && (
-        <p className="text-[11px] text-red-400">
+        <p className="text-sm text-red-400">
           FleetGraph could not complete this run. Try again or check your connection.
         </p>
       )}
@@ -757,20 +757,20 @@ export function FleetGraphAssistant({
 
       <div className="border-t border-border pt-2 space-y-1.5">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium text-muted uppercase tracking-wide">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Findings for this view
           </p>
-          <span className="rounded bg-border px-1.5 py-0.5 text-[10px] text-muted">
+          <span className="rounded bg-border px-1.5 py-0.5 text-xs text-muted">
             {scopedFindings.length}
           </span>
         </div>
 
-        {findingsQuery.isLoading && <p className="text-xs text-muted">Loading findings...</p>}
+        {findingsQuery.isLoading && <p className="text-sm text-muted">Loading findings...</p>}
         {!findingsQuery.isLoading && showNoContextFallback && (
-          <p className="text-xs text-muted">Context-specific findings appear once an Issue, Project, or Sprint is open.</p>
+          <p className="text-sm text-muted">Context-specific findings appear once an Issue, Project, or Sprint is open.</p>
         )}
         {!findingsQuery.isLoading && scopedFindings.length === 0 && (
-          <p className="text-xs text-muted">No open FleetGraph findings for this view.</p>
+          <p className="text-sm text-muted">No open FleetGraph findings for this view.</p>
         )}
 
         {scopedFindings.map((finding) => (
@@ -783,14 +783,14 @@ export function FleetGraphAssistant({
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-xs text-foreground font-medium">{finding.title}</p>
-              <span className={`text-[10px] uppercase ${severityClass(finding.severity)} px-1 rounded`}>
+              <p className="text-sm font-medium text-foreground">{finding.title}</p>
+              <span className={`rounded px-1 text-xs uppercase ${severityClass(finding.severity)}`}>
                 {finding.severity}
               </span>
             </div>
-            <p className="text-[11px] text-muted">{finding.summary}</p>
+            <p className="text-sm text-muted">{finding.summary}</p>
             {finding.evidence.length > 0 && (
-              <ul className="space-y-0.5 list-disc list-inside text-[10px] text-muted">
+              <ul className="list-inside list-disc space-y-0.5 text-xs text-muted">
                 {finding.evidence.slice(0, 3).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -798,8 +798,8 @@ export function FleetGraphAssistant({
             )}
             {finding.notificationDrafts && finding.notificationDrafts.length > 0 && (
               <div className="rounded border border-border/50 bg-background/30 px-1.5 py-1">
-                <p className="text-[10px] font-medium text-muted uppercase">Suggested notify</p>
-                <ul className="mt-0.5 space-y-0.5 text-[10px] text-muted">
+                <p className="text-xs font-medium uppercase text-muted">Suggested notify</p>
+                <ul className="mt-0.5 space-y-0.5 text-xs text-muted">
                   {finding.notificationDrafts.slice(0, 2).map((draft) => (
                     <li key={`${finding.id}-${draft.role}`}>
                       {draft.role.replace(/_/g, ' ')}: {draft.reason}
@@ -809,14 +809,14 @@ export function FleetGraphAssistant({
               </div>
             )}
             {finding.snoozedUntil && (
-              <p className="text-[10px] text-yellow-400">Snoozed until {finding.snoozedUntil}</p>
+              <p className="text-xs text-yellow-400">Snoozed until {finding.snoozedUntil}</p>
             )}
             <div className="flex flex-wrap gap-2">
               {finding.status === 'pending_approval' && finding.hitlRequestId && (
                 <button
                   type="button"
                   onClick={() => openFindingHitl(finding)}
-                  className="rounded bg-orange-600 px-2 py-0.5 text-[10px] text-white hover:bg-orange-500"
+                  className="rounded bg-orange-600 px-2 py-0.5 text-xs text-white hover:bg-orange-500"
                 >
                   Review
                 </button>
@@ -826,7 +826,7 @@ export function FleetGraphAssistant({
                   type="button"
                   onClick={() => snoozeMutation.mutate({ findingId: finding.id })}
                   disabled={snoozeMutation.isPending}
-                  className="rounded border border-yellow-500/40 px-2 py-0.5 text-[10px] text-yellow-300 hover:bg-yellow-500/10 disabled:opacity-50"
+                  className="rounded border border-yellow-500/40 px-2 py-0.5 text-xs text-yellow-300 hover:bg-yellow-500/10 disabled:opacity-50"
                 >
                   Snooze 24h
                 </button>
@@ -835,7 +835,7 @@ export function FleetGraphAssistant({
                 href={resolveInternalTraceHref(finding.traceUrl, finding.traceId)}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[10px] text-accent hover:underline self-center"
+                className="self-center text-xs text-accent hover:underline"
               >
                 Trace details
               </a>
@@ -844,7 +844,7 @@ export function FleetGraphAssistant({
                   href={resolveExternalTraceHref(finding.externalTraceUrl) || undefined}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-muted hover:text-foreground hover:underline self-center"
+                  className="self-center text-xs text-muted hover:text-foreground hover:underline"
                 >
                   LangSmith
                 </a>
@@ -855,29 +855,29 @@ export function FleetGraphAssistant({
       </div>
 
       <details className="border-t border-border pt-2">
-        <summary className="cursor-pointer text-[11px] font-medium text-muted uppercase tracking-wide">
+        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-muted">
           Diagnostics
         </summary>
         <div className="mt-2 space-y-2">
-          <a href="/fleetgraph/traces" className="inline-block text-[11px] text-accent hover:underline">
+          <a href="/fleetgraph/traces" className="inline-block text-sm text-accent hover:underline">
             Open full trace index
           </a>
           {metricsQuery.data && (
             <div className="space-y-1">
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Runs: {metricsQuery.data.runCount} | Avg latency:{' '}
                 {Math.round(metricsQuery.data.avgLatencyMs)}ms
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Tokens: {metricsQuery.data.tokenTotals.all.toLocaleString()} (30d:{' '}
                 {metricsQuery.data.tokenTotals.current30Days.toLocaleString()} | Prev 30d:{' '}
                 {metricsQuery.data.tokenTotals.previous30Days.toLocaleString()})
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Runtime spend: ${metricsQuery.data.spend.runtimeTotalUsd.toFixed(3)} | Billed spend: $
                 {metricsQuery.data.spend.billedTotalUsd.toFixed(3)}
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Spend delta:{' '}
                 {metricsQuery.data.spend.deltaUsd === null
                   ? 'N/A (no billed coverage)'
@@ -885,7 +885,7 @@ export function FleetGraphAssistant({
                 | Coverage: {metricsQuery.data.spend.billedCoverageRuns} run(s) (
                 {metricsQuery.data.spend.billedCoveragePct.toFixed(1)}%)
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Model:{' '}
                 {metricsQuery.data.modelUsage.length > 0
                   ? metricsQuery.data.modelUsage[0]?.modelId
@@ -897,7 +897,7 @@ export function FleetGraphAssistant({
                     )
                   : 'heuristic estimate'}
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-sm text-muted">
                 Monthly projection ({metricsQuery.data.monthlyProjection.basis.replaceAll('_', ' ')}): runtime $
                 {metricsQuery.data.monthlyProjection.runtimeUsd.toFixed(2)}
                 {metricsQuery.data.monthlyProjection.billedUsd === null
@@ -918,7 +918,7 @@ export function FleetGraphAssistant({
                     href={resolveInternalTraceHref(run.traceUrl, run.traceId)}
                     target="_blank"
                     rel="noreferrer"
-                    className="block rounded border border-border px-2 py-1 text-[11px] text-accent hover:bg-border/30"
+                    className="block rounded border border-border px-2 py-1.5 text-sm text-accent hover:bg-border/30"
                   >
                     {run.branch} ({run.trigger})
                   </a>
@@ -927,7 +927,7 @@ export function FleetGraphAssistant({
                       href={resolveExternalTraceHref(run.externalTraceUrl) || undefined}
                       target="_blank"
                       rel="noreferrer"
-                      className="block px-2 text-[10px] text-muted hover:text-foreground hover:underline"
+                      className="block px-2 text-xs text-muted hover:text-foreground hover:underline"
                     >
                       View this run in LangSmith
                     </a>

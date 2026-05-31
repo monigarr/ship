@@ -509,11 +509,20 @@ export function AppLayout() {
         <aside
           className={cn(
             'flex flex-col border-r border-border transition-all duration-200 overflow-hidden select-none',
-            (leftSidebarCollapsed || hideLeftSidebar) ? 'w-0 border-r-0' : fleetGraphDrawerOpen ? 'w-80' : 'w-56'
+            (leftSidebarCollapsed || hideLeftSidebar)
+              ? 'w-0 border-r-0'
+              : fleetGraphDrawerOpen
+                ? 'w-[48vw] min-w-[42rem] max-w-[56rem]'
+                : 'w-56'
           )}
           aria-label="Document list"
         >
-          <div className={cn('flex flex-col h-full', fleetGraphDrawerOpen ? 'w-80' : 'w-56')}>
+          <div
+            className={cn(
+              'flex flex-col h-full',
+              fleetGraphDrawerOpen ? 'w-[48vw] min-w-[42rem] max-w-[56rem]' : 'w-56'
+            )}
+          >
             {/* Sidebar header */}
             <div className="flex h-10 items-center justify-between border-b border-border px-3">
               <h2 className="text-sm font-medium text-foreground m-0">
@@ -598,6 +607,7 @@ export function AppLayout() {
                     documentId={fleetGraphContext?.documentId ?? null}
                     documentType={fleetGraphContext?.documentType ?? null}
                     contextLabel={fleetGraphContext?.contextLabel}
+                    className="h-full"
                   />
                 </div>
               )}
