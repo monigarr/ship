@@ -509,11 +509,11 @@ export function AppLayout() {
         <aside
           className={cn(
             'flex flex-col border-r border-border transition-all duration-200 overflow-hidden select-none',
-            (leftSidebarCollapsed || hideLeftSidebar) ? 'w-0 border-r-0' : 'w-56'
+            (leftSidebarCollapsed || hideLeftSidebar) ? 'w-0 border-r-0' : fleetGraphDrawerOpen ? 'w-80' : 'w-56'
           )}
           aria-label="Document list"
         >
-          <div className="flex w-56 flex-col h-full">
+          <div className={cn('flex flex-col h-full', fleetGraphDrawerOpen ? 'w-80' : 'w-56')}>
             {/* Sidebar header */}
             <div className="flex h-10 items-center justify-between border-b border-border px-3">
               <h2 className="text-sm font-medium text-foreground m-0">

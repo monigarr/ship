@@ -574,11 +574,14 @@ export function FleetGraphAssistant({
   const showNoContextFallback = !hasEntityContext;
 
   return (
-    <div className={`rounded-lg border border-border bg-background/80 p-3 space-y-3 ${className ?? ''}`}>
-      <div className="space-y-1">
+    <div className={`rounded-2xl border border-border/60 bg-background/95 shadow-xl shadow-black/5 backdrop-blur-sm p-4 space-y-4 ring-1 ring-inset ring-white/5 ${className ?? ''}`}>
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold tracking-wide text-muted uppercase">FleetGraph</h4>
-          <span className="text-[10px] text-muted uppercase">On-demand</span>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+            <h4 className="text-sm font-semibold tracking-tight text-foreground">FleetGraph</h4>
+          </div>
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent uppercase tracking-[0.5px]">On-demand</span>
         </div>
         {showNoContextFallback ? (
           <p className="text-[11px] text-muted">Context required to run FleetGraph for a specific record.</p>
@@ -609,7 +612,7 @@ export function FleetGraphAssistant({
         </div>
       )}
 
-      <div className="space-y-2 max-h-56 overflow-y-auto rounded border border-border/60 bg-border/10 p-2">
+      <div className="space-y-3 max-h-[420px] overflow-y-auto rounded-2xl border border-border/50 bg-background/40 p-3 shadow-inner">
         {chatMessages.length === 0 && !runMutation.isPending && (
           <p className="text-[11px] text-muted">
             {showNoContextFallback
@@ -701,13 +704,13 @@ export function FleetGraphAssistant({
           }
           rows={2}
           disabled={runMutation.isPending || showNoContextFallback}
-          className="flex-1 rounded border border-border bg-border/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent resize-none disabled:opacity-50"
+          className="flex-1 rounded-xl border border-border/70 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/60 resize-y min-h-[52px] disabled:opacity-50"
         />
         <button
           type="button"
           onClick={() => submitPrompt(prompt)}
           disabled={runMutation.isPending || !prompt.trim() || showNoContextFallback}
-          className="self-end rounded bg-accent px-2 py-1.5 text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+          className="self-end rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 active:scale-[0.985] disabled:opacity-50 transition-all"
         >
           {runMutation.isPending ? '...' : 'Send'}
         </button>
