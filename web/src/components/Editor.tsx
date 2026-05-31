@@ -8,9 +8,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import { ResizableImage } from './editor/ResizableImage';
 import Dropcursor from '@tiptap/extension-dropcursor';
-// CodeBlockLowlight temporarily removed (lowlight v3 + Tiptap v2.10.4 incompatibility on blank/empty CRDT docs causes hard crash).
-// import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-// import { common, createLowlight } from 'lowlight';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
@@ -43,8 +42,8 @@ import { useCommentsQuery, useCreateComment, useUpdateComment } from '@/hooks/us
 import { BubbleMenu } from '@tiptap/react';
 import 'tippy.js/dist/tippy.css';
 
-// lowlight / CodeBlockLowlight fully disabled for now (see import comment above).
-// This guarantees the crashing code path is never reached on blank/empty documents.
+// Create lowlight instance with common languages
+const lowlight = createLowlight(common);
 
 interface EditorProps {
   documentId: string;
@@ -544,8 +543,15 @@ export function Editor({
     StarterKit.configure({
       history: false,
       dropcursor: false,
-      codeBlock: false,
+      codeBlock: false, // Disable default code block to use CodeBlockLowlight
     }),
+    CodeBlockLowlight.configure({
+      lowlight,
+      HTMLAttributes: {
+        class: 'code-block-lowlight',
+      },
+    }),
+    Placeholder.configure({ placeholder }),
     Collaboration.configure({ document: ydoc }),
     Link.configure({
       openOnClick: true,
