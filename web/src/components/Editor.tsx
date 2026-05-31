@@ -42,8 +42,19 @@ import { useCommentsQuery, useCreateComment, useUpdateComment } from '@/hooks/us
 import { BubbleMenu } from '@tiptap/react';
 import 'tippy.js/dist/tippy.css';
 
-// Create lowlight instance with common languages
-const lowlight = createLowlight(common);
+// Guarded lowlight creation — prevents module-level crash when lowlight v3 + CodeBlockLowlight are incompatible
+// (e.g. on blank/empty CRDT documents or certain Render build environments).
+let lowlightInstance: ReturnType<typeof createLowlight> | null = null;
+let codeBlockLowlightSupported = false;
+try {
+  lowlightInstance = createLowlight(common);
+  // Basic shape check — lowlight v2 instances have an 'all' property structure the Tiptap extension relies on.
+  if (lowlightInstance && typeof (lowlightInstance as any).all !== 'undefined') {
+    codeBlockLowlightSupported = true;
+  }
+} catch (err) {
+  console.warn('[Editor] CodeBlockLowlight disabled: failed to initialize lowlight instance', err);
+}
 
 interface EditorProps {
   documentId: string;
@@ -545,12 +556,16 @@ export function Editor({
       dropcursor: false,
       codeBlock: false, // Disable default code block to use CodeBlockLowlight
     }),
-    CodeBlockLowlight.configure({
-      lowlight,
-      HTMLAttributes: {
-        class: 'code-block-lowlight',
-      },
-    }),
+    // Only add CodeBlockLowlight when the lowlight instance initialized successfully.
+    // This prevents a hard crash on blank/empty documents or when lowlight v3 is incompatible.
+    ...(codeBlockLowlightSupported && lowlightInstance
+      ? [CodeBlockLowlight.configure({
+          lowlight: lowlightInstance,
+          HTMLAttributes: {
+            class: 'code-block-lowlight',
+          },
+        })]
+      : []),
     Placeholder.configure({ placeholder }),
     Collaboration.configure({ document: ydoc }),
     Link.configure({
