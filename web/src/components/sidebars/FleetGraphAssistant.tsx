@@ -612,7 +612,7 @@ export function FleetGraphAssistant({
         </div>
       )}
 
-      <div className="space-y-3 flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-background/40 p-3 shadow-inner min-h-[15rem]">
+      <div className="fleetgraph-drawer-scroll space-y-3 flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-background/40 p-3 shadow-inner min-h-[15rem]">
         {chatMessages.length === 0 && !runMutation.isPending && (
           <p className="text-sm text-muted">
             {showNoContextFallback
@@ -863,50 +863,89 @@ export function FleetGraphAssistant({
             Open full trace index
           </a>
           {metricsQuery.data && (
-            <div className="space-y-1">
-              <p className="text-sm text-muted">
-                Runs: {metricsQuery.data.runCount} | Avg latency:{' '}
-                {Math.round(metricsQuery.data.avgLatencyMs)}ms
-              </p>
-              <p className="text-sm text-muted">
-                Tokens: {metricsQuery.data.tokenTotals.all.toLocaleString()} (30d:{' '}
-                {metricsQuery.data.tokenTotals.current30Days.toLocaleString()} | Prev 30d:{' '}
-                {metricsQuery.data.tokenTotals.previous30Days.toLocaleString()})
-              </p>
-              <p className="text-sm text-muted">
-                Runtime spend: ${metricsQuery.data.spend.runtimeTotalUsd.toFixed(3)} | Billed spend: $
-                {metricsQuery.data.spend.billedTotalUsd.toFixed(3)}
-              </p>
-              <p className="text-sm text-muted">
-                Spend delta:{' '}
-                {metricsQuery.data.spend.deltaUsd === null
+            <div className="space-y-2 rounded-xl border border-border/60 bg-background/50 p-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted">Runs (all-time)</p>
+                  <p className="text-sm font-medium text-foreground">{metricsQuery.data.runCount.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted">Avg run latency (ms)</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {Math.round(metricsQuery.data.avgLatencyMs).toLocaleString()}ms
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-1.5 space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted">Token volume (all-time)</p>
+                <p className="text-sm font-medium text-foreground">
+                  {metricsQuery.data.tokenTotals.all.toLocaleString()}
+                </p>
+                <p className="text-xs text-muted">
+                  Trailing 30d tokens: {metricsQuery.data.tokenTotals.current30Days.toLocaleString()} | Prior 30d
+                  tokens: {metricsQuery.data.tokenTotals.previous30Days.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-1.5 space-y-1">
+                <p
+                  className="text-xs text-muted"
+                  title="Derived from runtime telemetry and may include estimated cost values."
+                >
+                  Runtime cost (all-time, estimated): $
+                  {metricsQuery.data.spend.runtimeTotalUsd.toFixed(3)}
+                </p>
+                <p
+                  className="text-xs text-muted"
+                  title="Only includes runs where provider billed values are recorded."
+                >
+                  Provider billed cost (all-time): ${metricsQuery.data.spend.billedTotalUsd.toFixed(3)}
+                </p>
+                <p className="text-xs text-muted">Billed minus runtime: {metricsQuery.data.spend.deltaUsd === null
                   ? 'N/A (no billed coverage)'
-                  : `$${metricsQuery.data.spend.deltaUsd.toFixed(3)}`}{' '}
-                | Coverage: {metricsQuery.data.spend.billedCoverageRuns} run(s) (
-                {metricsQuery.data.spend.billedCoveragePct.toFixed(1)}%)
-              </p>
-              <p className="text-sm text-muted">
-                Model:{' '}
-                {metricsQuery.data.modelUsage.length > 0
-                  ? metricsQuery.data.modelUsage[0]?.modelId
-                  : 'None (deterministic only)'}{' '}
-                | Token basis:{' '}
-                {metricsQuery.data.modelUsage.length > 0
-                  ? tokenSourceLabel(
-                      metricsQuery.data.modelUsage[0]?.tokenSource ?? 'heuristic_estimate'
-                    )
-                  : 'heuristic estimate'}
-              </p>
-              <p className="text-sm text-muted">
-                Monthly projection ({metricsQuery.data.monthlyProjection.basis.replaceAll('_', ' ')}): runtime $
-                {metricsQuery.data.monthlyProjection.runtimeUsd.toFixed(2)}
-                {metricsQuery.data.monthlyProjection.billedUsd === null
-                  ? ' | billed N/A'
-                  : ` | billed $${metricsQuery.data.monthlyProjection.billedUsd.toFixed(2)}`}
-                {metricsQuery.data.monthlyProjection.deltaUsd === null
-                  ? ''
-                  : ` | delta $${metricsQuery.data.monthlyProjection.deltaUsd.toFixed(2)}`}
-              </p>
+                  : `$${metricsQuery.data.spend.deltaUsd.toFixed(3)}`}</p>
+                <p
+                  className="text-xs text-muted"
+                  title="Percent of all runs with a non-null billed spend value."
+                >
+                  Billed coverage: {metricsQuery.data.spend.billedCoverageRuns} run(s) (
+                  {metricsQuery.data.spend.billedCoveragePct.toFixed(1)}%)
+                </p>
+                <p className="text-xs text-muted">
+                  Model:{' '}
+                  {metricsQuery.data.modelUsage.length > 0
+                    ? metricsQuery.data.modelUsage[0]?.modelId
+                    : 'None (deterministic only)'}{' '}
+                  | Token basis:{' '}
+                  {metricsQuery.data.modelUsage.length > 0
+                    ? tokenSourceLabel(
+                        metricsQuery.data.modelUsage[0]?.tokenSource ?? 'heuristic_estimate'
+                      )
+                    : 'heuristic estimate'}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-accent/30 bg-accent/5 px-2 py-1.5 space-y-1">
+                <p
+                  className="text-[11px] uppercase tracking-wide text-muted"
+                  title="Computed from trailing 30 days and monthlyized; this is not a predictive forecast."
+                >
+                  Trailing-30d monthlyized spend
+                </p>
+                <p className="text-xs text-muted">
+                  Basis: {metricsQuery.data.monthlyProjection.basis.replaceAll('_', ' ')}
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  Runtime (30d): ${metricsQuery.data.monthlyProjection.runtimeUsd.toFixed(2)}
+                  {metricsQuery.data.monthlyProjection.billedUsd === null
+                    ? ' | Billed (30d monthlyized): N/A'
+                    : ` | Billed (30d monthlyized): $${metricsQuery.data.monthlyProjection.billedUsd.toFixed(2)}`}
+                  {metricsQuery.data.monthlyProjection.deltaUsd === null
+                    ? ''
+                    : ` | Gap: $${metricsQuery.data.monthlyProjection.deltaUsd.toFixed(2)}`}
+                </p>
+              </div>
             </div>
           )}
 
