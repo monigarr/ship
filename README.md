@@ -44,6 +44,15 @@ pnpm dev
 - API: `http://localhost:3000` (or next available `300x` port)
 - Swagger UI: `<api-url>/api/docs`
 - OpenAPI JSON: `<api-url>/api/openapi.json`
+- Public OpenAPI JSON (MVP): `<api-url>/api/v1/openapi.json`
+
+### Week 03 MVP Public API Notes
+
+- Static public OpenAPI copy: `docs/openapi.json` (generated via `pnpm --filter @ship/api openapi:generate:public`)
+- Live public OpenAPI URL on deployed instance: `https://ship-web-jyqh.onrender.com/api/v1/openapi.json`
+- Grader OAuth app provisioning:
+  - Register a read-only app with `documents:read` scope via `POST /api/v1/oauth/apps` while logged in as admin.
+  - Store and share the one-time `client_secret` in a secure grader handoff (never commit raw secret).
 
 If ports are shifted (multi-worktree dev), check `.ports` in repo root while `pnpm dev` is running.
 

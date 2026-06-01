@@ -39,6 +39,7 @@ import { initializeCAIA } from './services/caia.js';
 import { normalizeClientIp } from './utils/normalize-client-ip.js';
 import { ERROR_CODES, HTTP_STATUS } from '@ship/shared';
 import { pool } from './db/client.js';
+import { createPlatformRouter } from './platform/router.js';
 
 // Validate SESSION_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
@@ -304,6 +305,11 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
   // Comments routes
   app.use('/api/documents', conditionalCsrf, documentCommentsRouter);
   app.use('/api/comments', conditionalCsrf, commentsRouter);
+
+  // Public platform contract routes (OAuth + /api/v1)
+  // These routes intentionally avoid the legacy conditional CSRF/session wrapper and
+  // use OAuth bearer semantics as a separate public boundary.
+  app.use('/api/v1', createPlatformRouter());
 
   // Initialize CAIA OAuth client at startup
   initializeCAIA().catch((err) => {

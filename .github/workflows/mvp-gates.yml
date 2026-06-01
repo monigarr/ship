@@ -1,0 +1,48 @@
+name: MVP Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  mvp-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm build:shared
+
+      - name: Generate public OpenAPI
+        run: pnpm --filter @ship/api openapi:generate:public
+
+      - name: API unit tests
+        run: pnpm --filter @ship/api test
+
+      - name: SDK type-check
+        run: pnpm --filter @ship/sdk type-check
+
+      - name: E2E OAuth PKCE gate
+        run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
+
+      - name: Perf regression check (+10%)
+        run: node scripts/mvp/perf-regression-check.mjs

@@ -53,6 +53,12 @@ export interface FleetGraphRunResult {
   run: FleetGraphRunRecord;
   signals: FleetGraphSignal[];
   summary: string;
+  intent?: 'blockers' | 'describe_issue' | 'risk_scan' | 'general';
+  responseKind?: 'signals' | 'blockers' | 'issue_description';
+  contextSummary?: {
+    blockers?: string[];
+    issueDescription?: string;
+  };
   findings: Array<{
     id: string;
     status: 'open' | 'snoozed' | 'resolved' | 'pending_approval' | 'rejected';

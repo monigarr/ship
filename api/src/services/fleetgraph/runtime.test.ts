@@ -215,6 +215,43 @@ describe('FleetGraph runtime', () => {
       );
       expect(result.signals.some((s) => s.entityId === issueId)).toBe(true);
     });
+
+    it('returns distinct blocker vs describe responses for same issue context', async () => {
+      await cleanupFleetGraphTables(ctx.workspaceId);
+      const issueId = await seedIssueWithOpenBlocker({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        blockerText: 'Blocked on API contract alignment with external team.',
+      });
+
+      const blockersResult = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        documentId: issueId,
+        documentType: 'issue',
+        prompt: 'What are the current blockers?',
+      });
+
+      const describeResult = await executeFleetGraphRun('on_demand', {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        documentId: issueId,
+        documentType: 'issue',
+        prompt: 'Describe this issue',
+      });
+
+      expect(blockersResult.intent).toBe('blockers');
+      expect(blockersResult.responseKind).toBe('blockers');
+      expect(blockersResult.contextSummary?.blockers?.length).toBeGreaterThanOrEqual(1);
+      expect(blockersResult.summary.toLowerCase()).toContain('blocker');
+
+      expect(describeResult.intent).toBe('describe_issue');
+      expect(describeResult.responseKind).toBe('issue_description');
+      expect(describeResult.contextSummary?.issueDescription).toBeTypeOf('string');
+      expect(describeResult.signals).toHaveLength(0);
+
+      expect(describeResult.summary).not.toEqual(blockersResult.summary);
+    });
   });
 
   describe('TC7 missing standup accountability', () => {
