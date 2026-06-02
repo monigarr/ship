@@ -1,4 +1,5 @@
 import { test, expect, Page } from './fixtures/isolated-env'
+import { modShortcut, selectAll } from './fixtures/test-helpers'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
@@ -353,13 +354,13 @@ test.describe('Edge Cases', () => {
     await page.keyboard.type('Bold and italic text')
 
     // Select all
-    await page.keyboard.press('Meta+a')
+    await selectAll(page)
 
     // Apply bold
-    await page.keyboard.press('Meta+b')
+    await modShortcut(page, 'b')
 
     // Apply italic
-    await page.keyboard.press('Meta+i')
+    await modShortcut(page, 'i')
 
     // Wait for formatting to apply
     await page.waitForTimeout(500)

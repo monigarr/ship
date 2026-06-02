@@ -1004,6 +1004,22 @@ export function Editor({
             {editor && !editor.isDestroyed && (
               <BubbleMenu
                 editor={editor}
+                pluginKey="tableBubbleMenu"
+                shouldShow={({ editor: ed }) => ed.isActive('table')}
+                tippyOptions={{ placement: 'top', duration: 150 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().deleteTable().run()}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800 border border-zinc-600 rounded-md text-xs text-zinc-200 hover:bg-zinc-700 transition-colors shadow-lg"
+                >
+                  Delete table
+                </button>
+              </BubbleMenu>
+            )}
+            {editor && !editor.isDestroyed && (
+              <BubbleMenu
+                editor={editor}
                 pluginKey="commentBubbleMenu"
                 shouldShow={({ state }) => {
                   if (state.selection.empty) return false;

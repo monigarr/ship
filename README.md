@@ -50,9 +50,41 @@ pnpm dev
 
 - Static public OpenAPI copy: `docs/openapi.json` (generated via `pnpm --filter @ship/api openapi:generate:public`)
 - Live public OpenAPI URL on deployed instance: `https://ship-web-jyqh.onrender.com/api/v1/openapi.json`
-- Grader OAuth app provisioning:
-  - Register a read-only app with `documents:read` scope via `POST /api/v1/oauth/apps` while logged in as admin.
-  - Store and share the one-time `client_secret` in a secure grader handoff (never commit raw secret).
+- Deployed app (grader login): `https://ship-web-jyqh.onrender.com/login`
+
+#### Pre-registered grader OAuth app (read-only)
+
+A **read-only** OAuth client is pre-registered on the deployed instance for MVP grading (Authorization Code + PKCE; `documents:read` only).
+
+| Field | Value |
+| --- | --- |
+| App name | Gauntlet Grader (read-only) |
+| **client_id** | `ship_9ba67d9391c53a610558563b93627298` |
+| Registered redirect URI | `https://example.local/oauth/callback` |
+| Scopes | `documents:read` |
+| **client_secret** | **Not in git.** Submit via the Gauntlet course portal (Week 03 submission form) or request from the author. Issued once at registration (2026-06-01). If lost, contact the author to rotate or re-register. |
+
+**PKCE smoke test (no secret in URL):**
+
+```bash
+pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
+```
+
+**Full regression (MVP gate):** `pnpm test:e2e` (requires Docker for isolated DB). Evidence log: `deliverables/2026-W23-week-03/evidence/e2e-full-run-2026-06-01.log`.
+
+Optional local handoff copy (gitignored): `deliverables/2026-W23-week-03/GRADER_HANDOFF.md` — super-admin provisioning steps only; never commit `client_secret` or production passwords.
+
+**Re-register (super admin only):** `POST /api/v1/oauth/apps` with session cookie + `x-csrf-token` from `GET /api/csrf-token`:
+
+```json
+{
+  "name": "Gauntlet Grader (read-only)",
+  "redirect_uris": ["https://example.local/oauth/callback"],
+  "requested_scopes": ["documents:read"]
+}
+```
+
+Response `201` returns `client_id` and a one-time `client_secret` (hashed at rest; not retrievable later).
 
 If ports are shifted (multi-worktree dev), check `.ports` in repo root while `pnpm dev` is running.
 

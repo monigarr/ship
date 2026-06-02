@@ -25,15 +25,44 @@ test.describe('Drag Handle - Block Reordering', () => {
     await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 5000 })
   }
 
+  /**
+   * Type editor text. Strings with `@` use insertText so TipTap mention mode
+   * (allowSpaces) does not swallow Enter and following keystrokes.
+   */
+  async function typeEditorText(page: Page, text: string) {
+    if (text.includes('@')) {
+      await page.keyboard.insertText(text)
+      return
+    }
+    await page.keyboard.type(text)
+  }
+
+  async function dismissMentionPopup(page: Page) {
+    const mentionList = page.getByRole('listbox', { name: /Mention suggestions/i })
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!(await mentionList.isVisible().catch(() => false))) return
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(100)
+    }
+    await expect(mentionList).toBeHidden({ timeout: 3000 })
+  }
+
+  async function startNewParagraph(page: Page) {
+    await dismissMentionPopup(page)
+    await page.keyboard.press('End')
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(200)
+  }
+
   // Helper to add multiple paragraphs to the editor
   async function addParagraphs(page: Page, texts: string[]) {
     const editor = page.locator('.ProseMirror')
     await editor.click()
 
     for (let i = 0; i < texts.length; i++) {
-      await page.keyboard.type(texts[i])
+      await typeEditorText(page, texts[i])
       if (i < texts.length - 1) {
-        await page.keyboard.press('Enter')
+        await startNewParagraph(page)
       }
     }
 
@@ -56,6 +85,22 @@ test.describe('Drag Handle - Block Reordering', () => {
     })
   }
 
+  /** DOM indices of non-empty paragraphs (matches getParagraphTexts ordering). */
+  async function getNonEmptyParagraphIndices(page: Page): Promise<number[]> {
+    return await page.evaluate(() => {
+      const paragraphs = document.querySelectorAll('.ProseMirror p')
+      const indices: number[] = []
+      paragraphs.forEach((p, i) => {
+        const clone = p.cloneNode(true) as HTMLElement
+        clone.querySelectorAll('.collaboration-cursor__label, .collaboration-cursor__caret').forEach(el => el.remove())
+        if ((clone.textContent || '').trim() !== '') {
+          indices.push(i)
+        }
+      })
+      return indices
+    })
+  }
+
   // Helper to perform drag operation using HTML5 drag events
   // Uses dispatchEvent approach because Playwright's dragTo has issues with
   // ProseMirror's pointer event handling
@@ -66,26 +111,39 @@ test.describe('Drag Handle - Block Reordering', () => {
     position: 'before' | 'after' = 'after'
   ) {
     const paragraphs = page.locator('.ProseMirror p')
-    const sourceParagraph = paragraphs.nth(sourceIndex)
+    const nonEmptyIndices = await getNonEmptyParagraphIndices(page)
+    const sourceDomIndex = nonEmptyIndices[sourceIndex]
+    const targetDomIndex = nonEmptyIndices[targetIndex]
+    if (sourceDomIndex === undefined || targetDomIndex === undefined) {
+      throw new Error(
+        `Paragraph index out of range (source=${sourceIndex}, target=${targetIndex}, nonEmpty=${nonEmptyIndices.length})`
+      )
+    }
+
+    const sourceParagraph = paragraphs.nth(sourceDomIndex)
+    const targetParagraph = paragraphs.nth(targetDomIndex)
+
+    await expect(sourceParagraph).toBeVisible({ timeout: 5000 })
+    await expect(targetParagraph).toBeVisible({ timeout: 5000 })
 
     // Hover over source to show drag handle
+    await sourceParagraph.scrollIntoViewIfNeeded()
     await sourceParagraph.hover()
     await page.waitForTimeout(200)
 
     const dragHandleLocator = page.locator('.editor-drag-handle')
     await expect(dragHandleLocator).toBeVisible({ timeout: 2000 })
 
-    // Use $ to get element handles for dispatchEvent
-    const dragHandle = await page.$('.editor-drag-handle')
-    const targetPara = await page.$(`.ProseMirror p:nth-child(${targetIndex + 1})`)
-    const editor = await page.$('.ProseMirror')
+    const dragHandle = await dragHandleLocator.elementHandle()
+    const editor = await page.locator('.ProseMirror').first().elementHandle()
 
-    if (!dragHandle || !targetPara || !editor) {
-      throw new Error('Required elements not found')
+    if (!dragHandle || !editor) {
+      throw new Error('Drag handle or editor not found')
     }
 
-    const targetBox = await targetPara.boundingBox()
-    if (!targetBox) throw new Error('Target paragraph bounding box not found')
+    await targetParagraph.scrollIntoViewIfNeeded()
+    const targetBox = await targetParagraph.boundingBox()
+    if (!targetBox) throw new Error(`Target paragraph bounding box not found (index ${targetIndex})`)
 
     // Calculate drop coordinates - drop in top/bottom quarter of target element
     // (not above/below it, as that may not hit a valid block position)
@@ -301,6 +359,7 @@ test.describe('Drag Handle - Block Reordering', () => {
       await createNewDocument(page)
       const longContent = 'This is a longer paragraph with multiple words and some special chars: @#$%'
       await addParagraphs(page, [longContent, 'Second block'])
+      await expect.poll(async () => (await getParagraphTexts(page)).length, { timeout: 10_000 }).toBe(2)
 
       // Drag first to after second
       await dragBlockToPosition(page, 0, 1, 'after')

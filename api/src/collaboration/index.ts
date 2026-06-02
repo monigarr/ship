@@ -214,10 +214,12 @@ function schedulePersist(docName: string, doc: Y.Doc) {
   const existing = pendingSaves.get(docName);
   if (existing) clearTimeout(existing);
 
+  const debounceMs = process.env.NODE_ENV === 'test' ? 500 : 2000;
+
   pendingSaves.set(docName, setTimeout(() => {
     persistDocument(docName, doc);
     pendingSaves.delete(docName);
-  }, 2000));
+  }, debounceMs));
 }
 
 // Track which docs were loaded fresh from JSON (not from yjs_state)

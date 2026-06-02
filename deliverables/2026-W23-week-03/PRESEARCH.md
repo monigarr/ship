@@ -1,199 +1,246 @@
-# PRESEARCH
+# PRESEARCH — Week 03 (PlugForge)
 
-## Source of Truth
+**Source of truth:** [`PRD.md`](./PRD.md)  
+**Dev branch:** `gfa2_wk6` · **Last updated:** 2026-06-01  
+**Architecture:** [`docs/architecture.md`](../../docs/architecture.md) · **Evidence tracker:** [`DELIVERABLES.md`](./DELIVERABLES.md)
 
-This pre-search document is drafted directly from `deliverables/2026-W23-week-03/PRD.md`.  
-If any statement here conflicts with implementation reality, update code and this file to match the PRD contract.
+This document captures pre-build decisions (Phases 1–3) and records **what is implemented vs planned** on the current branch. When code and pre-search diverge, update both—pre-search describes intent; `DELIVERABLES.md` tracks proof.
 
----
-
-## Phase 1: Define Constraints and Must-Ship Scope
-
-### 1.1 Delivery Scope and Hard Gates
-
-- **MVP hard gate scope for this week**
-  - OAuth app registration with one-time secret reveal and hashed storage.
-  - Authorization Code + PKCE flow passing end-to-end (including invalid verifier negative case).
-  - Bearer middleware + scope enforcement on `/api/v1/*`.
-  - At least one resource (`documents`) with list/get/create.
-  - Consistent `ApiError` envelope across all public failures.
-  - Generated OpenAPI 3.1 spec at `/api/v1/openapi.json`.
-  - SDK skeleton with typed authenticated call.
-  - Existing regression suite intact within +10% performance/query/bundle budgets.
-
-- **Non-negotiable architecture commitments from PRD**
-  - Public/internal split: public routes only under `/api/v1/*`.
-  - OpenAPI generated from route metadata (never hand-authored).
-  - Scopes-as-data registry (no middleware surgery for each new scope).
-  - Event publication in domain layer (not route handlers).
-  - Agent rewired as OAuth app + SDK consumer (platform citizen model).
-
-### 1.2 Time and Risk Constraints
-
-- **Highest-risk items**
-  - OAuth correctness (PKCE + device flow + refresh rotation).
-  - Public/internal boundary enforcement linting.
-  - Webhook retry + dead-letter + replay correctness.
-  - SDK/spec parity and drift prevention.
-  - TTFE drill flake risk in CI.
-
-- **Risk-reduction sequence (PRD-aligned)**
-  1. OAuth foundation + negative tests.
-  2. `/api/v1` boundary and lint guard.
-  3. Error envelope and route fitness tests.
-  4. OpenAPI generation and schema validation.
-  5. Webhook pipeline with deterministic retry tests.
-  6. SDK + CLI reference integration.
-  7. Agent rewire behind feature flag.
-
-### 1.3 Security and Data Sensitivity
-
-- **Secrets and tokens**
-  - `client_secret` shown once at creation/rotation; only hashed at rest.
-  - Refresh tokens are one-time-use with family invalidation on reuse detection.
-  - No secret leakage in logs, docs examples, or portal defaults.
-
-- **Webhook trust model**
-  - Stripe-style signature header with timestamp and HMAC-SHA256.
-  - Reject replay/tamper/expired timestamp in SDK verifier.
-  - Preserve idempotency key through replay path.
+**AI conversation artifact (PRD attachment):** [`deliverables/2026-W23-week-03/AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) — session index, Pre-Search phase mapping, architecture decisions, MVP hard-gate status, and [`evidence/`](./evidence/) test logs from June 1, 2026.
 
 ---
 
-## Phase 2: Architecture Discovery and Decisions
+## Phase 1: Define constraints and must-ship scope
 
-### 2.1 OAuth and Authorization Decisions
+### 1.1 Delivery scope and hard gates
 
-- **Auth flows**
-  - Web apps: Authorization Code + PKCE.
-  - CLI: Device Authorization Grant.
-  - Both must map to same scope and audit model as public platform clients.
+**PRD MVP hard gate — implementation status on `gfa2_wk6`:**
 
-- **Scope model**
-  - Start with PRD baseline scopes:  
-    `documents:read`, `documents:write`, `issues:read`, `issues:write`, `sprints:read`, `sprints:write`, `webhooks:manage`.
-  - Missing scope must return `403` with named missing scope.
+| Item | Status | Proof |
+| --- | --- | --- |
+| OAuth app registration; one-time secret; hashed at rest | **Done** | `api/src/platform/oauth.ts`, migration `047_oauth_public_platform.sql` |
+| Authorization Code + PKCE (+ invalid verifier) | **Done** | `e2e/oauth-pkce.spec.ts`, `public-api-mvp.test.ts` |
+| Bearer middleware + scope enforcement on `/api/v1/*` | **Done** | `oauth.ts` `requireBearerToken` / `requireScope` |
+| Documents list/get/create | **Done** | `api/src/platform/routes/v1/documents.ts` |
+| Consistent `ApiError` envelope | **Done** | `api/src/platform/http.ts`, fitness tests |
+| OpenAPI 3.1 at `/api/v1/openapi.json` | **Done** | Live: https://ship-web-jyqh.onrender.com/api/v1/openapi.json |
+| SDK skeleton + typed `me()` | **Done** | `sdk/src/client.ts` |
+| Regression within +10% baseline | **Done** | `.github/workflows/mvp-gates.yml`, `perf-baseline.json` |
 
-- **Token validation outcomes**
-  - Missing/invalid/expired token => `401`.
-  - Insufficient scope => `403`.
-  - OAuth contract errors (ex: PKCE mismatch) => standards-aligned error body (`invalid_grant`, etc.).
+**Non-negotiable architecture commitments:**
 
-### 2.2 Public API Contract Decisions
+| Commitment | Status | Notes |
+| --- | --- | --- |
+| Public routes only under `/api/v1/*` | **Done** | Mounted in `app.ts`; separate from session/CSRF stack |
+| OpenAPI generated from route metadata | **Done** | `spec/route-metadata.ts` → `spec/openapi.ts` |
+| Scopes-as-data registry | **Done** | `scopes.ts`; all PRD scopes registered |
+| Event publication in domain layer | **Not started** | Required for webhooks |
+| Agent as OAuth app + SDK consumer | **Not started** | Epic 7 |
 
-- **Error envelope contract**
-  - Every public failure returns:
-    - `code`
-    - `message`
-    - optional `details`
-    - `request_id`
+### 1.2 Scale, load, and demo assumptions
 
-- **Pagination contract**
-  - List endpoints return `data` and `next_cursor`.
-  - Cursor is opaque and stable across reordering-sensitive operations.
+- **Demo API rate:** Low—grader + team CLI sessions; estimate &lt;50 req/min on Render instance during review window.
+- **Webhook fanout (when built):** One `document.created` × N subscriptions per app; seed 1–2 grader subscriptions max for demo to stay within in-memory deliverer P95 &lt;2 s target.
+- **Concurrent device-flow polls:** Plan for 3–5 simultaneous CLI logins; implement RFC 8628 `slow_down` before demo week.
+- **Delivery log growth:** ~10–50 rows/day during active dev; retain 30 days for demo (assumption for cost model—table not created yet).
 
-- **OpenAPI parity contract**
-  - Route metadata is canonical.
-  - Fitness test asserts route/spec parity and fails on drift.
+### 1.3 Budget and cost ceilings
 
-### 2.3 Webhook Reliability Decisions
+- **LLM spend (Epic 7 rewire):** Platform layer is LLM-free; agent rewire should not increase tokens per turn—verify with before/after trace comparison when rewire lands.
+- **CI minutes:** MVP gates today ≈ unit tests + OpenAPI generate + PKCE Playwright + perf script. TTFE drill (when added) budget ≤5 min/PR.
+- **SDK install size:** Target &lt;250 KB min+gzip prod deps; enforce with bundle size check when CLI package added.
+- **Runaway webhook cost:** Cap retries at 6 attempts then DLQ; no unbounded fanout without active subscriptions.
 
-- **Event model**
-  - Event types are data, each with typed schema.
-  - Domain writes publish events through `IEventBus`.
+### 1.4 Timeline and scope reality
 
-- **Delivery model**
-  - Retry schedule with jitter: `1s, 4s, 16s, 1m, 5m, 30m`.
-  - `5xx`/timeout => retry.
-  - `4xx` => permanent failure + dead-letter.
-  - After 6 failures => DLQ with replay support.
+**Must-ship for passing grade (PRD):** MVP hard gate + CLI + TTFE + webhooks + dev portal + agent rewire + submission artifacts.
 
-- **Replay model**
-  - Replay from delivery log.
-  - Preserve original idempotency key for subscriber dedupe.
+**Current branch reality:** MVP platform slice is in place; remaining work is the majority of the PRD surface area.
 
-### 2.4 SDK and Developer Experience Decisions
+**Kill criterion for developer portal:** Minimum viable = read-only app list + delivery log viewer + replay button (no full subscription CRUD UI on day one if time-constrained).
 
-- **SDK shape**
-  - Resource-segregated clients (`documents`, `issues`, `sprints`, `webhooks`).
-  - OAuth helpers for auth code and device flows.
-  - Async iterator pagination for clean consumer loop.
-  - Typed discriminated error union.
+### 1.5 Security and data sensitivity
 
-- **CLI (must-ship)**
-  - `ship login` (device flow)
-  - `ship docs create`
-  - `ship webhooks tail`
-  - Used as operational proof for TTFE.
+**Implemented:**
 
-### 2.5 Agent-as-Citizen Rewire Decisions
+- `client_secret` shown once at registration; SHA-256 hash stored (`oauth.ts`).
+- Access tokens opaque, hashed, 1 h TTL; no refresh tokens yet.
+- PKCE S256 required on authorization code exchange.
 
-- **Before**
-  - Internal direct service calls with privileged pathing.
+**Planned:**
 
-- **After**
-  - First-party OAuth app + SDK + public API, same constraints as external developers.
-  - Feature flag supports compatibility during migration.
+- Refresh token rotation + family invalidation on reuse.
+- Webhook payloads: ship document id + metadata only in `document.created` (fetch content via API if needed)—reduces leakage surface.
+- Portal secret display: one-time modal, no back-button recovery, no logging of raw secret.
+
+### 1.6 Team skill inventory
+
+- OAuth consumed before; Week 03 implements hand-rolled RFC 6749 + 7636 PKCE in TypeScript.
+- Zod + in-process OpenAPI generation chosen over hand-written spec; fitness tests as drift guard.
+- SDK hand-written (not generated) for type quality; parity enforced by tests as routes grow.
 
 ---
 
-## Phase 3: Validation, Cost, and Deployment Planning
+## Phase 2: Architecture discovery and decisions
 
-### 3.1 Verification and Fitness Tests
+### 2.1 OAuth and authorization
 
-- **Mandatory acceptance coverage**
-  - PKCE success + invalid verifier negative case.
-  - Device flow with slow-down handling and `/api/v1/me` validation.
-  - Route fitness: scope declarations, OpenAPI parity, error shape, pagination.
-  - Webhook signature verification (positive and tamper/expired negatives).
-  - Retry schedule validation and DLQ/replay confirmation.
+| Decision | Choice | Status |
+| --- | --- | --- |
+| Web app flow | Authorization Code + PKCE | **Implemented** |
+| CLI flow | Device Authorization Grant | **Planned** |
+| Scope upgrades | Re-consent on expanded scope request | **Implemented** (new authorize with broader scope) |
+| Consent UX | `/api/v1/oauth/authorize` with session cookie; `approve=1` query for automated tests | **Implemented** |
+| Device verify UX | User enters `user_code` at dedicated verify URL (RFC 8628) | **Planned** |
+| Refresh tokens | One-time-use with rotation from day one of post-MVP slice | **Planned** |
+| Token errors | Missing/invalid → `401`; expired → `401 token_expired`; scope → `403` + `missing_scope` | **Implemented** |
 
-- **TTFE drill**
-  - Measure install -> auth -> subscribe -> trigger -> verify.
-  - Keep CI runtime under PRD target and fail on regression.
+### 2.2 Public API shape
 
-### 3.2 Cost and Performance Guardrails
+| Decision | Choice | Status |
+| --- | --- | --- |
+| Error envelope | `{ code, message, details?, request_id }` on all `/api/v1` failures | **Implemented** |
+| Pagination | Opaque base64 cursor `{ id, timestamp }`; `{ data, next_cursor }` | **Implemented** (documents) |
+| Versioning policy | Additive in v1; breaking → `/api/v2/` | **Documented**; v1 only exists today |
+| Static lists | `/openapi.json`, future `/scopes` may skip cursor pagination | **Accepted**; fitness test filters list routes |
 
-- **Performance**
-  - Keep latency/query/bundle budgets within +10% over baseline.
-  - Track webhook P95 first-attempt latency and auth flow P95.
+### 2.3 Webhook reliability
 
-- **Cost**
-  - Platform AI spend is zero by design.
-  - Track CI minutes (TTFE + OAuth + regressions) explicitly.
-  - Track delivery/audit log retention assumptions for storage cost.
+| Decision | Choice | Status |
+| --- | --- | --- |
+| Signed payload | Raw body + timestamp in `Ship-Signature` header | **Planned** |
+| Retry schedule | `1s, 4s, 16s, 1m, 5m, 30m` with jitter | **Planned** |
+| 4xx vs 5xx | 4xx permanent → DLQ; 5xx/timeout → retry | **Planned** |
+| Test strategy | Deterministic clock injection; no `setTimeout` in tests | **Planned** |
+| Idempotency | Replay preserves `Idempotency-Key` | **Planned** |
 
-### 3.3 Deployment and Demo Readiness
+### 2.4 SDK and developer experience
 
-- **Public readiness checklist**
-  - Deployed app publicly accessible.
-  - `/api/v1/openapi.json` resolvable.
-  - Pre-registered read-only OAuth app for graders.
-  - Developer portal reachable for app/subscription/log/replay flows.
+| Decision | Choice | Status |
+| --- | --- | --- |
+| SDK authoring | Hand-written TypeScript, fitness-tested against OpenAPI | **Partial** — documents + `me()` only |
+| Error model | Discriminated union on `kind` | **Planned** — throws `Error` today |
+| Pagination | Async iterators (`for await`) primary API | **Planned** |
+| `ITokenStore` | File store for CLI; pluggable for browser | **Planned** |
+| CLI location | `integrations/cli/` importing only `@ship/sdk` | **Planned** — directory does not exist yet |
 
-- **Demo loop**
-  - Fresh terminal install.
-  - Device login.
-  - Document creation via SDK/CLI.
-  - Signed webhook observed and verified.
+### 2.5 Developer portal
+
+| Decision | Choice | Status |
+| --- | --- | --- |
+| Data access | Portal consumes `/api/v1` like any OAuth client (dogfood) | **Planned** |
+| Secret rotation | Old secret invalidated immediately on rotate | **Planned** |
+| Delivery log UI | Server-side pagination; payload behind click-to-reveal | **Planned** |
+
+### 2.6 Agent-as-citizen rewire
+
+| Decision | Choice | Status |
+| --- | --- | --- |
+| Agent OAuth flow | Client credentials or device grant for first-party M2M (TBD at Epic 7) | **Open** |
+| App seeding | Migration seeds first-party app in deployed envs | **Planned** |
+| Scopes | Read-heavy minimum; write only where agent mutates state | **Planned** |
+| Feature flag | Dual path until Part 2 tests pass flag on/off | **Planned** |
 
 ---
 
-## Open Questions to Resolve Early
+## Phase 3: Validation, cost, and deployment
 
-1. Refresh-token family schema and invalidation strategy details.
-2. Boundary lint rule implementation location and enforcement mechanics.
-3. Deterministic test-time clock strategy for retry schedule assertions.
-4. SDK generation-vs-handwritten balance for type quality and drift resistance.
-5. Agent rewire OAuth flow choice and seeding guarantees across environments.
+### 3.1 Verification and fitness tests
+
+**Implemented on `gfa2_wk6`:**
+
+| Scenario | Test location |
+| --- | --- |
+| PKCE success + invalid verifier | `public-api-mvp.test.ts`, `e2e/oauth-pkce.spec.ts` |
+| Route OpenAPI parity | `public-api-fitness.test.ts` |
+| Scope declarations on bearer routes | `public-api-fitness.test.ts` |
+| ApiError on failure paths | `public-api-fitness.test.ts` |
+| OpenAPI 3.1 schema validation | `openapi-schema.test.ts` |
+| Public/internal import boundary | `public-boundary.test.ts` |
+
+**Not yet implemented (PRD testing scenarios):**
+
+- Device flow + slow-down + `/api/v1/me`
+- Webhook sign/tamper/retry/DLQ/replay
+- SDK/spec method parity for full surface
+- TTFE drill (`pnpm drill ttfe`) in CI
+
+### 3.2 Cost and performance guardrails
+
+- **Performance:** MVP perf gate enforces +10% on P95 latency, bundle size, query counts vs `perf-baseline.json`.
+- **Platform AI cost:** $0 for platform layer; LLM only on user-initiated agent turns (unchanged from Part 2).
+- **Production projection table:** Required in final submission `AI cost analysis` artifact—not yet written for Week 03.
+
+### 3.3 Deployment and demo readiness
+
+**Live today:**
+
+| Check | URL |
+| --- | --- |
+| Deployed app | https://ship-web-jyqh.onrender.com/login |
+| Public OpenAPI | https://ship-web-jyqh.onrender.com/api/v1/openapi.json |
+| Static spec in repo | `docs/openapi.json` |
+
+**Not ready:**
+
+- Pre-registered grader OAuth app with credentials in README (manual admin registration documented in `README.md` / `DEPLOYMENT.md`)
+- Developer portal
+- Five-line demo loop (install SDK → device login → create doc → webhook tail)
+
+**Grader one-command local verify:**
+
+```bash
+pnpm install
+pnpm --filter @ship/api test
+pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
+```
 
 ---
 
-## Definition of “Architecturally Ready” for Week 03
+## Resolved and open questions
 
-- OAuth + scope + token middleware passes positive and negative contract tests.
-- `/api/v1` boundary is enforced by lint/dep rules.
-- OpenAPI generation + validation is in CI.
-- Webhooks (sign/retry/DLQ/replay) are end-to-end testable.
-- SDK + CLI complete the five-line developer story.
-- Agent path through public API is implemented behind feature flag with audit proof.
+### Resolved on current branch
+
+1. **Boundary lint:** Implemented as Vitest import scan in `public-boundary.test.ts` (not ESLint rule yet).
+2. **SDK strategy:** Hand-written with typed clients; expand as routes land.
+3. **OpenAPI path:** PRD `/api/v1/openapi.json` is live on Render deployment.
+
+### Still open
+
+1. Refresh-token family schema and invalidation mechanics.
+2. Deterministic clock module location for webhook retry tests.
+3. Agent OAuth flow choice (client credentials vs device grant).
+4. ESLint/workspace rule blocking `integrations/*` → `api/src/` imports (PRD recommends both Vitest and lint).
+
+---
+
+## Definition of “architecturally ready” (PRD)
+
+| Criterion | `gfa2_wk6` |
+| --- | --- |
+| OAuth + scope + token middleware with contract tests | **Yes** |
+| `/api/v1` boundary enforced | **Yes** (import test) |
+| OpenAPI generation + validation in CI | **Yes** |
+| Webhooks sign/retry/DLQ/replay testable | **No** |
+| SDK + CLI complete five-line story | **No** |
+| Agent through public API with audit proof | **No** |
+
+**Bottom line:** Pre-search decisions remain valid for remaining slices. MVP foundation is shipped and verifiable; pre-search should be read as **decisions + status**, not as claim of full PRD completion.
+
+---
+
+## MVP submit readiness (summary)
+
+**Can `gfa2_wk6` be submitted as-is for the PRD § MVP hard gate?**  
+**Yes, with caveats.** All ten MVP bullets are addressed in code/CI/deploy: grader read-only OAuth app is pre-registered and documented in [`README`](../../README.md) (`client_id` + portal secret handoff); full Playwright regression was run and logged ([`evidence/e2e-full-run-2026-06-01.log`](./evidence/e2e-full-run-2026-06-01.log)). The full suite is not 100% green (793/870 passed, 12 failed — mostly pre-existing specs; OAuth PKCE passes in isolation). Details: [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) § MVP submission readiness.
+
+**Full Week 03 PRD / final submission** (webhooks, CLI, TTFE, portal, video, social, cost analysis, epics) is **not** complete on this branch.
+
+---
+
+## Related artifacts
+
+- [`docs/architecture.md`](../../docs/architecture.md) — module layout, diagrams, failure modes
+- [`DELIVERABLES.md`](./DELIVERABLES.md) — grader checklist and proof URLs
+- [`ARCHITECTURE_DEFENSE.md`](./ARCHITECTURE_DEFENSE.md) — Monday defense talk track
+- [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) — June 1 AI session index and outcomes
