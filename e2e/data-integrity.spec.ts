@@ -46,6 +46,46 @@ async function login(page: Page, email: string = 'dev@ship.local', password: str
   await expect(page).not.toHaveURL('/login', { timeout: 5000 })
 }
 
+async function waitForEditorPersisted(page: Page) {
+  const titleInput = page.locator('textarea[placeholder="Untitled"]')
+  await titleInput.click()
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('sync-status').getByText(/Saved|Cached/)).toBeVisible({ timeout: 15000 })
+  await page.waitForTimeout(1500)
+}
+
+async function insertImageViaSlashCommand(page: Page): Promise<string> {
+  const tmpPath = createTestImageFile()
+  const fileChooserPromise = page.waitForEvent('filechooser', { timeout: 15000 })
+  await page.keyboard.type('/image')
+  await page.waitForTimeout(500)
+  const imageOption = page.getByRole('button', { name: /^image$/i }).first()
+  if (await imageOption.isVisible().catch(() => false)) {
+    await imageOption.click()
+  } else {
+    await page.keyboard.press('Enter')
+  }
+  const fileChooser = await fileChooserPromise
+  await fileChooser.setFiles(tmpPath)
+  return tmpPath
+}
+
+async function waitForPersistedImageCount(page: Page, count: number) {
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const imgs = document.querySelectorAll('.ProseMirror img')
+        let persisted = 0
+        imgs.forEach((img) => {
+          const src = img.getAttribute('src') || ''
+          if (src.startsWith('http') || src.includes('/api/files')) persisted++
+        })
+        return persisted
+      }),
+    { timeout: 20000, intervals: [500, 1000, 2000] }
+  ).toBe(count)
+}
+
 // Create test image
 function createTestImageFile(): string {
   const pngBuffer = Buffer.from(
@@ -255,40 +295,25 @@ test.describe('Data Integrity - Images', () => {
   })
 
   test('multiple images persist in correct order', async ({ page }) => {
+    test.setTimeout(120_000)
     await createNewDocument(page)
 
     const editor = page.locator('.ProseMirror')
     await editor.click()
 
-    // Upload first image
     await page.keyboard.type('Image 1:')
     await page.keyboard.press('Enter')
-    await page.keyboard.type('/image')
-    await page.waitForTimeout(500)
+    const tmpPath1 = await insertImageViaSlashCommand(page)
+    await waitForPersistedImageCount(page, 1)
 
-    const tmpPath1 = createTestImageFile()
-    let fileChooserPromise = page.waitForEvent('filechooser')
-    await page.keyboard.press('Enter')
-    let fileChooser = await fileChooserPromise
-    await fileChooser.setFiles(tmpPath1)
-
-    await page.waitForTimeout(2000)
-
-    // Upload second image
     await page.keyboard.press('End')
     await page.keyboard.press('Enter')
     await page.keyboard.type('Image 2:')
     await page.keyboard.press('Enter')
-    await page.keyboard.type('/image')
-    await page.waitForTimeout(500)
+    await editor.click()
+    const tmpPath2 = await insertImageViaSlashCommand(page)
 
-    const tmpPath2 = createTestImageFile()
-    fileChooserPromise = page.waitForEvent('filechooser')
-    await page.keyboard.press('Enter')
-    fileChooser = await fileChooserPromise
-    await fileChooser.setFiles(tmpPath2)
-
-    await page.waitForTimeout(3000)
+    await waitForPersistedImageCount(page, 2)
 
     // Get image sources
     const imgs = await editor.locator('img').all()
@@ -297,11 +322,15 @@ test.describe('Data Integrity - Images', () => {
     const src1 = await imgs[0].getAttribute('src')
     const src2 = await imgs[1].getAttribute('src')
 
-    // Reload
-    await page.reload()
+    const docUrl = page.url()
+    await waitForEditorPersisted(page)
+
+    // Hard reload (same pattern as complete document save test)
+    await page.goto(docUrl)
     await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 5000 })
 
-    // Verify order preserved
+    // Verify order preserved after server load
+    await waitForPersistedImageCount(page, 2)
     const reloadedImgs = await page.locator('.ProseMirror img').all()
     expect(reloadedImgs.length).toBe(2)
 
@@ -385,18 +414,20 @@ test.describe('Data Integrity - Mentions', () => {
       await page.waitForTimeout(500)
     }
 
-    // Wait for save
-    await page.waitForTimeout(2000)
-
+    await expect(editor.locator('.mention')).toHaveCount(2, { timeout: 10000 })
     const mentionCount = await editor.locator('.mention').count()
+    expect(mentionCount).toBe(2)
 
-    // Reload
-    await page.reload()
+    const docUrl = page.url()
+    await waitForEditorPersisted(page)
+
+    await page.goto(docUrl)
     await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 5000 })
 
-    // Same number of mentions should exist
-    const reloadedMentionCount = await page.locator('.ProseMirror .mention').count()
-    expect(reloadedMentionCount).toBe(mentionCount)
+    await expect.poll(
+      async () => page.locator('.ProseMirror .mention').count(),
+      { timeout: 15000, intervals: [500, 1000, 2000] }
+    ).toBe(mentionCount)
   })
 })
 

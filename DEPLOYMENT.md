@@ -130,6 +130,17 @@ aws configure
 # Enter your AWS Access Key ID, Secret Access Key, and default region
 ```
 
+## Week 03 Public API Deployment Checks
+
+- Verify live public OpenAPI endpoint resolves:
+  - `GET https://ship-web-jyqh.onrender.com/api/v1/openapi.json`
+- Regenerate and commit static spec before release:
+  - `pnpm --filter @ship/api openapi:generate:public`
+  - Output: `docs/openapi.json`
+- Pre-register a grader OAuth app (read-only):
+  - Login as admin, call `POST /api/v1/oauth/apps` with `requested_scopes: ["documents:read"]`
+  - Share `client_id` + one-time `client_secret` through approved secure handoff channel
+
 ## Architecture Overview
 
 ```

@@ -1,4 +1,5 @@
 import { test, expect, Page } from './fixtures/isolated-env';
+import { modShortcut, selectAll, modKey } from './fixtures/test-helpers';
 
 // Helper to create a new document using the available buttons
 async function createNewDocument(page: Page) {
@@ -405,9 +406,12 @@ test.describe('Tables', () => {
       // Verify table is gone
       await expect(table).toBeHidden({ timeout: 3000 });
     } else {
-      // Alternative: Select table and press Delete/Backspace
-      await page.keyboard.press('Meta+a'); // Select all in table
-      await page.keyboard.press('Backspace');
+      // Alternative: Select table and delete via editor command exposed in table bubble menu
+      await firstCell.click();
+      await page.waitForTimeout(200);
+      const deleteTableBtn = page.getByRole('button', { name: 'Delete table' });
+      await expect(deleteTableBtn).toBeVisible({ timeout: 3000 });
+      await deleteTableBtn.click();
       await page.waitForTimeout(300);
 
       // Verify table is gone

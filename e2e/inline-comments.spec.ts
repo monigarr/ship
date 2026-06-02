@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/isolated-env'
+import { modKey } from './fixtures/test-helpers'
 
 test.describe('Inline Comments', () => {
   test.beforeEach(async ({ page }) => {
@@ -99,8 +100,8 @@ test.describe('Inline Comments', () => {
 
     await selectText(page, 'keyboard shortcut')
 
-    // Press Cmd+Shift+M
-    await page.keyboard.press('Meta+Shift+m')
+    // Press Cmd+Shift+M or Ctrl+Shift+M
+    await page.keyboard.press(`${modKey()}+Shift+m`)
 
     // Comment input should appear
     const commentInput = page.getByRole('textbox', { name: 'Write a comment...' })

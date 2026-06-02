@@ -1,4 +1,5 @@
 import { test, expect, Page } from './fixtures/isolated-env';
+import { modShortcut, selectAll } from './fixtures/test-helpers';
 
 // Helper to create a new document using the available buttons
 async function createNewDocument(page: Page) {
@@ -77,13 +78,13 @@ test.describe('Inline Code', () => {
     await page.keyboard.type('format this');
 
     // Select the text (Cmd+A or Ctrl+A)
-    await page.keyboard.press('Meta+a'); // Use Meta for Mac, Control for Windows/Linux
+    await selectAll(page);
 
     // Wait a moment
     await page.waitForTimeout(200);
 
     // Press Cmd+E or Ctrl+E to toggle code
-    await page.keyboard.press('Meta+e');
+    await modShortcut(page, 'e');
 
     // Wait for formatting
     await page.waitForTimeout(300);
@@ -94,7 +95,7 @@ test.describe('Inline Code', () => {
     await expect(codeElement).toContainText('format this');
 
     // Press Cmd+E again to remove formatting
-    await page.keyboard.press('Meta+e');
+    await modShortcut(page, 'e');
     await page.waitForTimeout(300);
 
     // Code element should be gone (text should still exist)

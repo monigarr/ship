@@ -24,6 +24,9 @@ import getPort, { portNumbers } from 'get-port';
 import bcrypt from 'bcryptjs';
 import os from 'os';
 
+/** Allow slower API/preview startup during long full-suite runs (many sequential workers). */
+const SERVER_STARTUP_TIMEOUT_MS = 90_000;
+
 /**
  * Get port for a worker with collision avoidance.
  *
@@ -188,7 +191,7 @@ export const test = base.extend<
 
         // Wait for server to be ready
         const apiUrl = `http://localhost:${port}`;
-        await waitForServer(`${apiUrl}/health`, 30000);
+        await waitForServer(`${apiUrl}/health`, SERVER_STARTUP_TIMEOUT_MS);
         if (debug) console.log(`${workerTag} API server ready at ${apiUrl}`);
 
         await use({ url: apiUrl, process: proc });
@@ -228,14 +231,20 @@ export const test = base.extend<
 
       // Use vite preview instead of vite dev - much lighter weight
       // We pass the API port via env var so vite.config.ts can set up the proxy
-      const proc = spawn('npx', ['vite', 'preview', '--port', String(port), '--strictPort'], {
-        cwd: path.join(PROJECT_ROOT, 'web'),
-        env: {
-          ...process.env,
-          API_PORT: apiPort, // Our env var for Vite proxy
-        },
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      const vitePreviewArgs = ['vite', 'preview', '--port', String(port), '--strictPort'];
+      const proc = spawn(
+        process.platform === 'win32' ? 'npx.cmd' : 'npx',
+        vitePreviewArgs,
+        {
+          cwd: path.join(PROJECT_ROOT, 'web'),
+          env: {
+            ...process.env,
+            API_PORT: apiPort, // Our env var for Vite proxy
+          },
+          stdio: ['pipe', 'pipe', 'pipe'],
+          shell: process.platform === 'win32',
+        }
+      );
 
       try {
         // Log output for debugging
@@ -252,7 +261,7 @@ export const test = base.extend<
         });
 
         const webUrl = `http://localhost:${port}`;
-        await waitForServer(webUrl, 30000); // Preview starts much faster than dev
+        await waitForServer(webUrl, SERVER_STARTUP_TIMEOUT_MS); // Preview starts much faster than dev
         if (debug) console.log(`${workerTag} Vite preview server ready at ${webUrl}`);
 
         await use({ url: webUrl, process: proc });

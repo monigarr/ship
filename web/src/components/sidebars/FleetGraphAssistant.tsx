@@ -42,6 +42,12 @@ interface FleetGraphFinding {
 
 interface FleetGraphRunResponse {
   summary: string;
+  intent?: 'blockers' | 'describe_issue' | 'risk_scan' | 'general';
+  responseKind?: 'signals' | 'blockers' | 'issue_description';
+  contextSummary?: {
+    blockers?: string[];
+    issueDescription?: string;
+  };
   run: {
     traceId: string;
     traceUrl: string;
@@ -122,6 +128,8 @@ type ChatMessage =
   | {
       role: 'assistant';
       summary: string;
+      responseKind?: FleetGraphRunResponse['responseKind'];
+      contextSummary?: FleetGraphRunResponse['contextSummary'];
       signals: FleetGraphSignal[];
       run: FleetGraphRunResponse['run'];
       at: string;
@@ -468,6 +476,8 @@ export function FleetGraphAssistant({
         {
           role: 'assistant',
           summary: data.summary,
+          responseKind: data.responseKind,
+          contextSummary: data.contextSummary,
           signals: data.signals,
           run: data.run,
           at,
@@ -654,9 +664,26 @@ export function FleetGraphAssistant({
                   </a>
                 )}
               </div>
-              {message.signals.map((signal, signalIndex) => (
-                <SignalCard key={`${signal.type}-${signalIndex}`} signal={signal} />
-              ))}
+              {message.responseKind === 'blockers' && (message.contextSummary?.blockers?.length ?? 0) > 0 && (
+                <div className="rounded border border-border/70 bg-background/50 px-2 py-1.5">
+                  <p className="text-xs uppercase tracking-wide text-muted">Current blockers</p>
+                  <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-foreground/85">
+                    {message.contextSummary?.blockers?.map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {message.responseKind === 'issue_description' && message.contextSummary?.issueDescription && (
+                <div className="rounded border border-border/70 bg-background/50 px-2 py-1.5">
+                  <p className="text-xs uppercase tracking-wide text-muted">Issue context</p>
+                  <p className="mt-1 text-sm text-foreground/85">{message.contextSummary.issueDescription}</p>
+                </div>
+              )}
+              {(message.responseKind === undefined || message.responseKind === 'signals') &&
+                message.signals.map((signal, signalIndex) => (
+                  <SignalCard key={`${signal.type}-${signalIndex}`} signal={signal} />
+                ))}
             </div>
           )
         )}

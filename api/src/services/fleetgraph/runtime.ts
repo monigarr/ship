@@ -554,6 +554,77 @@ function normalizePrompt(prompt?: string): string {
   return (prompt ?? '').trim().toLowerCase();
 }
 
+type OnDemandIntent = 'blockers' | 'describe_issue' | 'risk_scan' | 'general';
+
+function classifyOnDemandIntent(prompt?: string): OnDemandIntent {
+  const normalized = normalizePrompt(prompt);
+  if (!normalized) return 'general';
+
+  const blockerKeywords = ['blocker', 'blocked', 'blocking', 'stuck'];
+  if (blockerKeywords.some((keyword) => normalized.includes(keyword))) {
+    return 'blockers';
+  }
+
+  const describeKeywords = ['describe', 'description', 'summarize issue', 'what is this issue', 'tell me about this issue'];
+  if (describeKeywords.some((keyword) => normalized.includes(keyword))) {
+    return 'describe_issue';
+  }
+
+  return 'risk_scan';
+}
+
+function buildIssueDescriptionSummary(row: DocumentRow | undefined): string {
+  if (!row) {
+    return 'No issue context is available for this question.';
+  }
+
+  const props = row.properties ?? {};
+  const state = typeof props.state === 'string' ? props.state : 'unknown';
+  const priority = typeof props.priority === 'string' ? props.priority : 'unspecified';
+  const assigneeId = typeof props.assignee_id === 'string' ? props.assignee_id : null;
+  const description = extractText(row.content).replace(/\s+/g, ' ').trim();
+  const descriptionPreview =
+    description.length === 0
+      ? 'No issue description content is currently recorded.'
+      : description.slice(0, 240);
+
+  return `Issue "${row.title ?? 'Untitled issue'}" is currently ${state} with ${priority} priority${
+    assigneeId ? ` and assigned to ${assigneeId.slice(0, 8)}…` : ''
+  }. ${descriptionPreview}`;
+}
+
+function buildBlockersSummary(
+  issueRows: DocumentRow[],
+  issueExecutionContexts: Map<string, IssueExecutionContext>
+): { summary: string; blockers: string[] } {
+  const blockers: string[] = [];
+  for (const issue of issueRows) {
+    const execution = issueExecutionContexts.get(issue.id);
+    if (!execution?.blockerAgeHours || execution.blockerAgeHours < 1) {
+      continue;
+    }
+
+    const blockerText = execution.blockerText?.trim();
+    blockers.push(
+      `${issue.title ?? issue.id}: blocker open ${Math.floor(execution.blockerAgeHours)}h${
+        blockerText ? ` (${blockerText.slice(0, 120)})` : ''
+      }`
+    );
+  }
+
+  if (blockers.length === 0) {
+    return {
+      summary: 'No active blockers were found in the current issue context.',
+      blockers,
+    };
+  }
+
+  return {
+    summary: `Current blockers (${blockers.length}): ${blockers.join(' | ')}`,
+    blockers,
+  };
+}
+
 function calculateSprintEndDate(
   sprintNumber: number,
   workspaceStartDate: string | Date
@@ -1472,6 +1543,9 @@ export async function executeFleetGraphRun(
 
   const contextPhaseMs = Date.now();
   const docs = await fetchContextDocuments(context);
+  const issueRows = docs.filter((row) => row.document_type === 'issue');
+  const issueExecutionContexts = await fetchIssueExecutionContexts(context.workspaceId, issueRows);
+  const intent: OnDemandIntent = trigger === 'on_demand' ? classifyOnDemandIntent(context.prompt) : 'risk_scan';
   markEvent(
     'context',
     'documents_loaded',
@@ -1480,11 +1554,17 @@ export async function executeFleetGraphRun(
       documentCount: docs.length,
       contextDocumentId: context.documentId ?? null,
       contextDocumentType: context.documentType ?? null,
+      intent,
     },
     contextPhaseMs
   );
   const detectionPhaseMs = Date.now();
-  let signals = await detectSignals(context, docs);
+  let signals =
+    trigger === 'on_demand' && intent === 'describe_issue'
+      ? []
+      : await detectSignals(context, docs);
+  let responseKind: FleetGraphRunResult['responseKind'] = 'signals';
+  let contextSummary: FleetGraphRunResult['contextSummary'] | undefined;
   markEvent(
     'detection',
     'signals_detected',
@@ -1495,7 +1575,9 @@ export async function executeFleetGraphRun(
     },
     detectionPhaseMs
   );
-  signals = enrichSignalsWithNotificationDrafts(signals);
+  if (!(trigger === 'on_demand' && intent === 'describe_issue')) {
+    signals = enrichSignalsWithNotificationDrafts(signals);
+  }
   const branch = computeSignalBranch(signals);
   const signalTypes = [...new Set(signals.map((signal) => signal.type))];
   markEvent(
@@ -1521,7 +1603,22 @@ export async function executeFleetGraphRun(
   let tokenSource: FleetGraphTokenSource = 'heuristic_estimate';
   let synthesized = false;
 
-  if (trigger === 'on_demand' && signals.length > 0) {
+  if (trigger === 'on_demand' && intent === 'describe_issue') {
+    responseKind = 'issue_description';
+    const primaryIssue =
+      issueRows.find((row) => row.id === context.documentId) ?? issueRows[0];
+    summary = buildIssueDescriptionSummary(primaryIssue);
+    contextSummary = {
+      issueDescription: summary,
+    };
+  } else if (trigger === 'on_demand' && intent === 'blockers') {
+    responseKind = 'blockers';
+    const blockerView = buildBlockersSummary(issueRows, issueExecutionContexts);
+    summary = blockerView.summary;
+    contextSummary = {
+      blockers: blockerView.blockers,
+    };
+  } else if (trigger === 'on_demand' && signals.length > 0) {
     const synthesisPhaseMs = Date.now();
     const synthesis = await synthesizeFleetGraphResponse({
       prompt: context.prompt,
@@ -1547,6 +1644,7 @@ export async function executeFleetGraphRun(
         inputTokens: synthesis.inputTokens,
         outputTokens: synthesis.outputTokens,
         usedFallbackSummary: !synthesis.synthesized,
+        intent,
       },
       synthesisPhaseMs
     );
@@ -1625,6 +1723,9 @@ export async function executeFleetGraphRun(
         billedSpendUsd,
         modelId,
         tokenSource,
+        intent,
+        responseKind,
+        contextSummary: contextSummary ?? null,
       }),
     ]
   );
@@ -1690,6 +1791,9 @@ export async function executeFleetGraphRun(
     },
     signals,
     summary,
+    intent,
+    responseKind,
+    contextSummary,
     findings,
     hitlRequestId,
   };

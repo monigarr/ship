@@ -1,0 +1,5 @@
+{
+  "latency_p95_ms": 2500,
+  "bundleSizeKb": 1800,
+  "queryCountPerRoute": 120
+}

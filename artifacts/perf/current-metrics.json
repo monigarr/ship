@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-06-02T14:43:11.375Z",
+  "bundleSizeKb": 679,
+  "latency_p95_ms": 471,
+  "queryCountPerRoute": 95,
+  "notes": {
+    "bundle": "gzip sum of web/dist/assets/*.js",
+    "latency": "max C3 internal-route P95 from Week 01 evidence",
+    "queryCount": "estimate when PERF_PROBE_URL unset"
+  }
+}

@@ -929,40 +929,31 @@ test.describe('Phase 2: Serious Violations', () => {
       await expect(sidebar).toBeVisible({ timeout: 5000 })
 
       // Find a document that has children (indicated by aria-expanded attribute)
-      const expandableItem = page.locator('[aria-expanded]').first()
-      const hasExpandable = await expandableItem.count() > 0
+      const sidebarTree = page.locator('[role="tree"][aria-label="Documents"]')
+      await expect(sidebarTree).toBeVisible({ timeout: 5000 })
 
-      // Seed data must provide nested documents for this test
-      expect(hasExpandable, 'Seed data should provide nested documents. Run: pnpm db:seed').toBe(true)
+      // Resolve nested seed docs via API (stable across sort order / expand state)
+      const docsResponse = await page.request.get('/api/documents')
+      expect(docsResponse.ok()).toBeTruthy()
+      const documents = await docsResponse.json() as Array<{ id: string; title: string; parent_id: string | null }>
+      const parent = documents.find((doc) => doc.title === 'Welcome to Ship')
+      const child = documents.find((doc) => doc.title === 'Getting Started' && doc.parent_id === parent?.id)
+      expect(parent, 'Seed should include Welcome to Ship parent wiki').toBeTruthy()
+      expect(child, 'Seed should include Getting Started nested under Welcome').toBeTruthy()
 
-      // Expand to find a nested document
-      const isExpanded = await expandableItem.getAttribute('aria-expanded')
-      if (isExpanded === 'false') {
-        const expander = expandableItem.locator('button, [role="button"]').first()
-        await expect(expander).toBeVisible()
-        await expander.click()
-        await page.waitForTimeout(300)
-      }
+      const childHref = `/documents/${child!.id}`
 
-      // Find a child document link (must be in nested ul, not the parent's own link)
-      const childDoc = expandableItem.locator('ul a[href*="/documents/"]').first()
-      await expect(childDoc).toBeVisible({ timeout: 3000 })
-
-      const childHref = await childDoc.getAttribute('href')
-      expect(childHref).toBeTruthy()
-
-      // Navigate directly to this URL (simulating deep link / refresh)
-      await page.goto(childHref!)
+      // Navigate directly to nested document (simulating deep link / refresh)
+      await page.goto(childHref)
       await page.waitForLoadState('networkidle')
 
-      // CRITICAL: Tree MUST auto-expand to show this document
-      // Use the sidebar tree specifically to avoid conflicts with main content tree
-      const sidebarTree = page.locator('[role="tree"][aria-label*="documents"]').first()
-      const currentDocInTree = sidebarTree.locator(`a[href="${childHref}"]`)
-      await expect(currentDocInTree).toBeVisible({ timeout: 3000 })
+      // CRITICAL: Sidebar tree MUST auto-expand to show this document
+      await expect(sidebar).toBeVisible({ timeout: 5000 })
+      const currentDocInTree = sidebar.locator(`a[href="${childHref}"]`)
+      await expect(currentDocInTree).toBeVisible({ timeout: 5000 })
 
       // Parent MUST be expanded (aria-expanded="true")
-      const expandedParent = page.locator('[aria-expanded="true"]')
+      const expandedParent = sidebar.locator('[aria-expanded="true"]')
       expect(await expandedParent.count()).toBeGreaterThan(0)
     })
 

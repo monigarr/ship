@@ -22,6 +22,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:orphan-check": "tsx src/db/scripts/orphan-diagnostic.ts",
     "openapi:generate": "tsx src/scripts/generate-openapi.ts",
+    "openapi:generate:public": "tsx src/scripts/generate-public-openapi.ts",
     "mcp": "tsx src/mcp/server.ts"
   },
   "dependencies": {
@@ -73,6 +74,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@types/ws": "^8.5.13",
     "@vitest/ui": "^4.0.16",
+    "openapi-schema-validator": "^12.1.3",
     "openapi3-ts": "^4.5.0",
     "supertest": "^7.1.4",
     "tsx": "^4.19.2",

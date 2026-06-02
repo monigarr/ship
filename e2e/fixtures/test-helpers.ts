@@ -6,6 +6,21 @@
  */
 import { expect, type Page, type Locator } from '@playwright/test';
 
+/** Platform-correct modifier for editor shortcuts (Meta on macOS, Control elsewhere). */
+export function modKey(): 'Meta' | 'Control' {
+  return process.platform === 'darwin' ? 'Meta' : 'Control';
+}
+
+/** Press a shortcut with the platform modifier, e.g. modShortcut('e') → Control+e on Windows. */
+export async function modShortcut(page: Page, key: string): Promise<void> {
+  await page.keyboard.press(`${modKey()}+${key}`);
+}
+
+/** Select all in the focused field/editor. */
+export async function selectAll(page: Page): Promise<void> {
+  await modShortcut(page, 'a');
+}
+
 /**
  * Trigger the TipTap mention autocomplete popup by typing '@' in the editor.
  *
