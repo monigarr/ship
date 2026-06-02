@@ -221,6 +221,11 @@ describe('public MVP hard-gates', () => {
       .set('Authorization', `Bearer ${accessToken}`);
     expect(expired.status).toBe(401);
     expect(expired.body.code).toBe('token_expired');
+
+    await pool.query(
+      `UPDATE oauth_access_tokens SET expires_at = NOW() + interval '1 hour' WHERE token_hash = $1`,
+      [crypto.createHash('sha256').update(accessToken).digest('hex')]
+    );
   });
 
   it('requires scopes and names missing scope in 403 body', async () => {

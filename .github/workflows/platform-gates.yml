@@ -57,7 +57,7 @@ jobs:
         run: pnpm --filter @ship/sdk build
 
       - name: Platform API unit tests
-        run: pnpm --filter @ship/api test -- src/platform
+        run: pnpm --filter @ship/api exec vitest run src/platform
 
       - name: SDK type-check
         run: pnpm --filter @ship/sdk type-check

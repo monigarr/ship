@@ -17,10 +17,11 @@ describe('webhook deliverer', () => {
   let appId = '';
   let subscriptionId = '';
   let signingSecret = '';
+  let workspaceId = '';
 
   beforeAll(async () => {
     const ws = await pool.query(`INSERT INTO workspaces (name) VALUES ($1) RETURNING id`, [`WH ${runId}`]);
-    const workspaceId = ws.rows[0].id as string;
+    workspaceId = ws.rows[0].id as string;
     const user = await pool.query(
       `INSERT INTO users (email, password_hash, name, is_super_admin, last_workspace_id)
        VALUES ($1, $2, 'WH', TRUE, $3) RETURNING id`,
@@ -99,7 +100,7 @@ describe('webhook deliverer', () => {
 
     await publishDocumentCreated({
       id: '00000000-0000-4000-8000-000000000099',
-      workspace_id: '00000000-0000-4000-8000-000000000001',
+      workspace_id: workspaceId,
       document_type: 'wiki',
       title: 'evt',
       created_at: new Date().toISOString(),

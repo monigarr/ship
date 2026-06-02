@@ -24,6 +24,11 @@ describe('device authorization grant', () => {
     );
     userId = user.rows[0].id as string;
 
+    await pool.query(
+      `INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES ($1, $2, 'admin')`,
+      [workspaceId, userId]
+    );
+
     const oauthApp = await insertOAuthApp({
       ownerUserId: userId,
       workspaceId,
