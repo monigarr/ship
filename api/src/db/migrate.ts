@@ -96,6 +96,17 @@ async function migrate() {
         migrationsRun++;
       } catch (err) {
         await client.query('ROLLBACK');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        // schema.sql may have created objects that numbered migrations also add.
+        if (errorMessage.includes('already exists')) {
+          await pool.query(
+            'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+            [version],
+          );
+          console.log(`  ℹ️  ${file} skipped (objects already exist)`);
+          migrationsRun++;
+          continue;
+        }
         throw err;
       } finally {
         client.release();
