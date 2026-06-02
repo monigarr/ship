@@ -67,6 +67,14 @@ jobs:
       - name: Build API for E2E
         run: pnpm build:api
 
+      - name: Build web for E2E
+        run: pnpm build:web
+        env:
+          VITE_APP_ENV: test_e2e
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: E2E OAuth PKCE gate
         run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 

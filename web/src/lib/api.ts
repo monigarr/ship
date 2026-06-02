@@ -115,6 +115,32 @@ async function fetchWithCsrf(
   return res;
 }
 
+/** Low-level fetch with session cookies and CSRF for platform/developer routes. */
+export async function apiFetch(endpoint: string, init: RequestInit = {}): Promise<Response> {
+  const method = (init.method ?? 'GET').toUpperCase();
+  const headers = new Headers(init.headers);
+
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    headers.set('X-CSRF-Token', await ensureCsrfToken());
+  }
+  if (init.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...init,
+    method,
+    headers,
+    credentials: 'include',
+  });
+
+  if (res.status === 401) {
+    handleSessionExpired();
+  }
+
+  return res;
+}
+
 export async function apiGet(endpoint: string): Promise<Response> {
   const res = await fetch(`${API_URL}${endpoint}`, {
     credentials: 'include',
