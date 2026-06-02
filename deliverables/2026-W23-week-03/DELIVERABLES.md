@@ -1,7 +1,7 @@
 # Week 03 Deliverables
 
 **Source of truth:** [`PRD.md`](./PRD.md)  
-**Dev branch:** `gfa2_wk6` · **Last updated:** 2026-06-02  
+**Dev branch:** `gfa2_wk6` (slice preserved) · **`master`:** Week 03 MVP merged · **Last updated:** 2026-06-02  
 **Architecture doc (PRD path):** [`docs/architecture.md`](../../docs/architecture.md)
 
 This file tracks submission deliverables, implementation status on the current branch, and reviewer proof URLs. Status keys: **Done** · **Partial** · **Not started**.
@@ -14,7 +14,7 @@ This file tracks submission deliverables, implementation status on the current b
 | --- | --- | --- | --- |
 | MVP hard gate (PRD § MVP Requirements) | 10 | 0 | 0 |
 | Core platform (webhooks, device flow, portal, agent) | 0 | 2 | 8+ |
-| Submission artifacts (video, social, epics, cost) | 2 | 2 | 5 |
+| Submission artifacts (video, social, epics, cost) | 3 | 1 | 5 |
 
 **Live deployment:** [https://ship-web-jyqh.onrender.com/login](https://ship-web-jyqh.onrender.com/login)  
 **Public OpenAPI (grading surface):** [https://ship-web-jyqh.onrender.com/api/v1/openapi.json](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)  
@@ -29,7 +29,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Architectural Defense | Monday checkpoint | **Done** | [`ARCHITECTURE_DEFENSE.md`](./ARCHITECTURE_DEFENSE.md) |
 | MVP checkpoint | Tuesday hard gates | **Done** | MVP hard gates + confirming E2E/perf evidence (2026-06-02) |
 | Early / Final submission | Friday / Sunday | **Not started** | Depends on webhooks, CLI, TTFE, portal |
-| GitHub / GitLab repository | Public, slice branches, PR mapping | **Partial** | [Repo](https://labs.gauntletai.com/monicapeters/ship) · branch `gfa2_wk6` |
+| GitHub / GitLab repository | Public, slice branches, PR mapping | **Done** | [GitLab repo](https://labs.gauntletai.com/monicapeters/ship) · [GitHub repo](https://github.com/monigarr/ship) · slice `gfa2_wk6` preserved · [GitHub PR #1](https://github.com/monigarr/ship/pull/1) · [GitLab MR `gfa2_wk6`→`master`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) (redirects to open MR) · merged to `master` |
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
 | Pre-Search document | Three phases + AI conversation artifact | **Done** | [`PRESEARCH.md`](./PRESEARCH.md) · [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) · [`evidence/`](./evidence/) |
 | OpenAPI spec | Live `/api/v1/openapi.json` + static `docs/openapi.json` | **Done** | [Live](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`docs/openapi.json`](../../docs/openapi.json) |
@@ -85,7 +85,9 @@ This file tracks submission deliverables, implementation status on the current b
 | Action | URL / file |
 | --- | --- |
 | Week 03 deliverable folder | [tree `gfa2_wk6`](https://labs.gauntletai.com/monicapeters/ship/-/tree/gfa2_wk6/deliverables/2026-W23-week-03) |
-| Open MR from dev branch | [MR `gfa2_wk6`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) |
+| GitHub PR (Week 03 MVP slice) | [PR #1 `gfa2_wk6`→`master`](https://github.com/monigarr/ship/pull/1) |
+| GitLab MR (Week 03 MVP slice) | [MR `gfa2_wk6`→`master`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) |
+| `master` after merge | [tree `master`](https://labs.gauntletai.com/monicapeters/ship/-/tree/master/deliverables/2026-W23-week-03) |
 | MVP CI workflow | [`.github/workflows/mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) |
 
 Run locally:
