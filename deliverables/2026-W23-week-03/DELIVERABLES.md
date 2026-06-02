@@ -1,7 +1,7 @@
 # Week 03 Deliverables
 
 **Source of truth:** [`PRD.md`](./PRD.md)  
-**Dev branch:** `gfa2_wk6` (slice preserved) · **`master`:** Week 03 MVP merged · **Last updated:** 2026-06-02  
+**Dev branch:** `gfa2_wk6-final` (Early/Final) · **`gfa2_wk6`:** MVP slice preserved · **Last updated:** 2026-06-02  
 **Architecture doc (PRD path):** [`docs/architecture.md`](../../docs/architecture.md)
 
 This file tracks submission deliverables, implementation status on the current branch, and reviewer proof URLs. Status keys: **Done** · **Partial** · **Not started**.
@@ -13,8 +13,8 @@ This file tracks submission deliverables, implementation status on the current b
 | Track | Done | Partial | Not started |
 | --- | --- | --- | --- |
 | MVP hard gate (PRD § MVP Requirements) | 10 | 0 | 0 |
-| Core platform (webhooks, device flow, portal, agent) | 0 | 2 | 8+ |
-| Submission artifacts (video, social, epics, cost) | 3 | 1 | 5 |
+| Core platform (webhooks, device flow, portal, agent) | 8 | 0 | 0 |
+| Submission artifacts (video, social, epics, cost) | 6 | 1 | 2 |
 
 **Live deployment:** [https://ship-web-jyqh.onrender.com/login](https://ship-web-jyqh.onrender.com/login)  
 **Public OpenAPI (grading surface):** [https://ship-web-jyqh.onrender.com/api/v1/openapi.json](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)  
@@ -28,17 +28,17 @@ This file tracks submission deliverables, implementation status on the current b
 | --- | --- | --- | --- |
 | Architectural Defense | Monday checkpoint | **Done** | [`ARCHITECTURE_DEFENSE.md`](./ARCHITECTURE_DEFENSE.md) |
 | MVP checkpoint | Tuesday hard gates | **Done** | MVP hard gates + confirming E2E/perf evidence (2026-06-02) |
-| Early / Final submission | Friday / Sunday | **Not started** | Depends on webhooks, CLI, TTFE, portal |
+| Early / Final submission | Friday / Sunday | **Done** (code) | [EARLY_SUBMISSION.md](./EARLY_SUBMISSION.md) · redeploy Render from `gfa2_wk6-final` |
 | GitHub / GitLab repository | Public, slice branches, PR mapping | **Done** | [GitLab repo](https://labs.gauntletai.com/monicapeters/ship) · [GitHub repo](https://github.com/monigarr/ship) · slice `gfa2_wk6` preserved · [GitHub PR #1](https://github.com/monigarr/ship/pull/1) · [GitLab MR `gfa2_wk6`→`master`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) (redirects to open MR) · merged to `master` |
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
 | Pre-Search document | Three phases + AI conversation artifact | **Done** | [`PRESEARCH.md`](./PRESEARCH.md) · [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) · [`evidence/`](./evidence/) |
 | OpenAPI spec | Live `/api/v1/openapi.json` + static `docs/openapi.json` | **Done** | [Live](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`docs/openapi.json`](../../docs/openapi.json) |
-| Demo video (3–5 min) | Five-line story + portal replay | **Not started** | Blocked on CLI + webhooks + portal |
-| AI cost analysis | Dev spend, projections, assumptions | **Not started** | — |
-| Per-epic write-up | before → fix → after → proof | **Not started** | — |
-| Three discoveries | Implementation learnings | **Not started** | — |
-| Deployed application | Public URL + grader OAuth app + portal | **Partial** | App live; portal/webhooks/CLI not built; grader app manual |
-| Social post | `@GauntletAI` + webhook tail screenshot | **Not started** | Blocked on CLI/webhooks |
+| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Record locally; add URL when uploaded |
+| AI cost analysis | Dev spend, projections, assumptions | **Done** | [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md) |
+| Per-epic write-up | before → fix → after → proof | **Done** | [epics/](./epics/) E1–E7 |
+| Three discoveries | Implementation learnings | **Done** | [DISCOVERIES.md](./DISCOVERIES.md) |
+| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Redeploy required for new routes; `/developer`, `/oauth/device` |
+| Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Post after demo recording |
 
 ---
 
@@ -60,21 +60,21 @@ This file tracks submission deliverables, implementation status on the current b
 
 ---
 
-## Post-MVP scope (not yet on `gfa2_wk6`)
+## Post-MVP scope (`gfa2_wk6-final`)
 
 | PRD area | Status |
 | --- | --- |
-| Device Authorization Grant | **Not started** |
-| Refresh token rotation + family invalidation | **Not started** |
-| Webhooks (events, sign, retry, DLQ, replay) | **Not started** |
-| Issues / sprints public routes | **Not started** (scopes registered only) |
-| Rate-limit headers on public API | **Not started** |
-| Public audit trail | **Not started** |
-| Developer portal UI | **Not started** |
-| CLI (`ship login`, `ship docs *`, `ship webhooks tail`) | **Not started** |
-| TTFE drill (`pnpm drill ttfe`) in CI | **Not started** |
-| ≥5 integration/flow items (CLI must-ship) | **Not started** (0 of 5) |
-| Agent-as-citizen rewire (Epic 7) | **Not started** |
+| Device Authorization Grant | **Done** |
+| Refresh token rotation + family invalidation | **Done** |
+| Webhooks (events, sign, retry, DLQ, replay) | **Done** |
+| Issues / sprints public routes | **Deferred** (scopes registered only) |
+| Rate-limit headers on public API | **Done** |
+| Public audit trail | **Done** |
+| Developer portal UI | **Done** (`/developer`, `/oauth/device`) |
+| CLI (`ship login`, `ship docs *`, `ship webhooks tail`) | **Done** (`integrations/cli`) |
+| TTFE drill (`pnpm drill:ttfe`) in CI | **Done** (platform-gates; drill needs `TTFE_*` env) |
+| ≥5 integration/flow items | **Done** (CLI + device E2E + refresh drill + webhook replay + TTFE) |
+| Agent-as-citizen rewire (Epic 7) | **Done** (`SHIP_AGENT_USE_PUBLIC_API`) |
 
 ---
 
@@ -177,14 +177,19 @@ Use before submission. Checkboxes reflect **`gfa2_wk6` as of 2026-06-02**.
 
 ### Post-MVP / final submission
 
-- [ ] **Device Authorization Grant**
-- [ ] **Refresh tokens + rotation**
-- [ ] **Webhooks end-to-end**
-- [ ] **Developer portal**
-- [ ] **CLI + TTFE drill**
-- [ ] **≥5 PRD integrations/flows**
-- [ ] **Agent-as-citizen (Epic 7)**
-- [ ] **Final evidence packet complete**
+- [x] **Device Authorization Grant** — `oauth-device.test.ts`
+- [x] **Refresh tokens + rotation** — `oauth-refresh.test.ts`
+- [x] **Webhooks end-to-end** — `webhooks-deliverer.test.ts`
+- [x] **Developer portal** — `/developer`, `/oauth/device`
+- [x] **CLI + TTFE drill** — `integrations/cli`, `pnpm drill:ttfe`
+- [x] **≥5 PRD integrations/flows** — CLI, device, refresh drill, replay, TTFE
+- [x] **Agent-as-citizen (Epic 7)** — `SHIP_AGENT_USE_PUBLIC_API`, `agent-platform.test.ts`
+- [x] **AI cost analysis** — [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md)
+- [x] **Per-epic write-ups** — [epics/](./epics/)
+- [x] **Three discoveries** — [DISCOVERIES.md](./DISCOVERIES.md)
+- [ ] **Demo video** — add URL when recorded
+- [ ] **Social post** — `@GauntletAI` + webhook tail screenshot
+- [ ] **Final evidence packet** — platform test log after CI/Postgres run
 
 ### Week 02 carryover (implemented on branch)
 

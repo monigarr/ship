@@ -1,6 +1,6 @@
 # PlugForge Platform Architecture
 
-**Branch:** `gfa2_wk6` · **Last updated:** 2026-06-01  
+**Branch:** `gfa2_wk6-final` · **Last updated:** 2026-06-02  
 **Source of truth:** [`deliverables/2026-W23-week-03/PRD.md`](../deliverables/2026-W23-week-03/PRD.md)
 
 This document describes the Week 03 public platform layer as implemented on the dev branch, what remains planned per the PRD, and how the pieces connect.
@@ -20,13 +20,13 @@ This document describes the Week 03 public platform layer as implemented on the 
 | `@ship/sdk` skeleton (`me()`, `documents.*`) | **Shipped** |
 | Public/internal import boundary test | **Shipped** |
 | CI MVP gates (unit, OpenAPI, PKCE E2E, perf) | **Shipped** |
-| Device Authorization Grant | **Planned** |
-| Refresh tokens + rotation | **Planned** |
-| Webhooks (sign, retry, DLQ, replay) | **Planned** |
-| Rate-limit headers on public API | **Planned** |
-| Public audit trail + developer portal | **Planned** |
-| CLI + TTFE drill | **Planned** |
-| Agent-as-citizen rewire (Epic 7) | **Planned** |
+| Device Authorization Grant | **Shipped** (`oauth-tokens.ts`, `/oauth/device/*`) |
+| Refresh tokens + rotation | **Shipped** (family revoke on reuse) |
+| Webhooks (sign, retry, DLQ, replay) | **Shipped** (`platform/webhooks/`, `events/`) |
+| Rate-limit headers on public API | **Shipped** (`ratelimit/middleware.ts`) |
+| Public audit trail + developer portal | **Shipped** (`audit/`, `/developer`, `/oauth/device`) |
+| CLI + TTFE drill | **Shipped** (`integrations/cli`, `pnpm drill:ttfe`) |
+| Agent-as-citizen rewire (Epic 7) | **Shipped** (`SHIP_AGENT_USE_PUBLIC_API`, `agent-platform.ts`) |
 
 **Deployed proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)
 

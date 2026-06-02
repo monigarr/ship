@@ -1,0 +1,66 @@
+name: Platform Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - gfa2_wk6-final
+
+jobs:
+  platform-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ship
+          POSTGRES_PASSWORD: ship_dev_password
+          POSTGRES_DB: ship_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ship -d ship_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://ship:ship_dev_password@localhost:5432/ship_dev
+      NODE_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run database migrations
+        run: pnpm --filter @ship/api db:migrate
+
+      - name: Build shared
+        run: pnpm build:shared
+
+      - name: Build SDK
+        run: pnpm --filter @ship/sdk build
+
+      - name: Platform API unit tests
+        run: pnpm --filter @ship/api exec vitest run src/platform
+
+      - name: SDK type-check
+        run: pnpm --filter @ship/sdk type-check
+
+      - name: CLI type-check
+        run: pnpm --filter @ship/cli type-check

@@ -34,6 +34,7 @@
     "db:orphan-check": "pnpm --filter @ship/api db:orphan-check",
     "security:probe": "pnpm --filter @ship/api security:probe",
     "audit:c1": "node scripts/prd/c1-measurement-pass.mjs",
+    "drill:ttfe": "pnpm --filter @ship/cli test:ttfe",
     "security:ci:secrets": "docker run --rm -v \"${PWD}:/repo\" zricethezav/gitleaks:latest git /repo --redact --no-banner --exit-code 1",
     "security:ci:attestation": "node scripts/ci/validate-attestation.mjs",
     "security:ci:dependencies": "node scripts/ci/check-prod-audit.mjs",

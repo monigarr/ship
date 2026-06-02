@@ -11,14 +11,16 @@ RUN npm install -g pnpm@10.27.0 && pnpm config set strict-ssl false
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY api/package.json ./api/
 COPY shared/package.json ./shared/
+COPY sdk/package.json ./sdk/
 
 # Install full workspace deps needed to compile TypeScript.
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy source and build runtime artifacts.
 COPY shared/ ./shared/
+COPY sdk/ ./sdk/
 COPY api/ ./api/
-RUN pnpm build:shared && pnpm --filter @ship/api build
+RUN pnpm build:shared && pnpm --filter @ship/sdk build && pnpm --filter @ship/api build
 
 ENV NODE_ENV=production
 ENV PORT=10000

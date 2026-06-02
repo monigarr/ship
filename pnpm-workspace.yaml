@@ -3,6 +3,7 @@ packages:
   - 'web'
   - 'shared'
   - 'sdk'
+  - 'integrations/cli'
 
 overrides:
   lodash: 4.18.1

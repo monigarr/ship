@@ -70,7 +70,26 @@ A **read-only** OAuth client is pre-registered on the deployed instance for MVP 
 pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 ```
 
-**Full regression (MVP gate):** `pnpm test:e2e` (requires Docker for isolated DB). Evidence log: `deliverables/2026-W23-week-03/evidence/e2e-full-run-2026-06-01.log`.
+**Full regression (MVP gate):** `pnpm test:e2e` (requires Docker for isolated DB). Evidence log: `deliverables/2026-W23-week-03/evidence/e2e-full-run-CONFIRM.log`.
+
+#### CLI + Time-to-First-Event (Early/Final)
+
+```bash
+pnpm install
+pnpm --filter @ship/sdk build
+pnpm --filter @ship/cli build
+export SHIP_API_URL=https://ship-web-jyqh.onrender.com
+export SHIP_CLIENT_ID=<your_oauth_app_client_id>
+ship login
+ship docs create --title "hello"
+ship webhooks tail
+```
+
+Register a CLI OAuth app (super admin): include `webhooks:manage` and `documents:write` in `requested_scopes`. Device verification UI: `/oauth/device` while logged in.
+
+TTFE drill (CI/local, requires running API + env): `pnpm drill:ttfe` with `TTFE_BASE_URL` and `TTFE_CLIENT_ID` set. See `deliverables/2026-W23-week-03/EARLY_SUBMISSION.md`.
+
+Agent public API mode: `SHIP_AGENT_USE_PUBLIC_API=true` on the API server.
 
 Optional local handoff copy (gitignored): `deliverables/2026-W23-week-03/GRADER_HANDOFF.md` — super-admin provisioning steps only; never commit `client_secret` or production passwords.
 

@@ -32,6 +32,7 @@
     "@aws-sdk/client-secrets-manager": "^3.1052.0",
     "@aws-sdk/client-ssm": "^3.1052.0",
     "@aws-sdk/s3-request-presigner": "^3.1052.0",
+    "@ship/sdk": "workspace:*",
     "@ship/shared": "workspace:*",
     "bcryptjs": "^3.0.3",
     "cookie": "^1.1.1",

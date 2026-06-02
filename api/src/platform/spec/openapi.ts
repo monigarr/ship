@@ -8,7 +8,13 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
 
   for (const route of routeMetadata) {
     const pathItem = paths[route.path] ?? {};
-    const security = route.path === '/oauth/token' || route.path === '/oauth/authorize'
+    const publicOAuthPaths = [
+      '/oauth/token',
+      '/oauth/authorize',
+      '/oauth/device/code',
+      '/oauth/device/verify',
+    ];
+    const security = publicOAuthPaths.includes(route.path)
       ? []
       : route.path === '/oauth/apps'
         ? [{ cookieAuth: [] }]
@@ -159,8 +165,10 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
               items: { $ref: '#/components/schemas/Document' },
             },
             next_cursor: {
-              type: ['string', 'null'],
-            },
+              type: 'string',
+              // OpenAPI 3.0 nullable; @asteasolutions/zod-to-openapi SchemaObject typing is narrower
+              nullable: true,
+            } as { type: 'string'; nullable: boolean },
           },
         },
         CreateDocumentRequest: {
@@ -198,7 +206,10 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
             consent_required: { type: 'boolean' },
             client_id: { type: 'string' },
             requested_scopes: { type: 'array', items: { type: 'string' } },
-            state: { type: ['string', 'null'] },
+            state: {
+              type: 'string',
+              nullable: true,
+            } as { type: 'string'; nullable: boolean },
           },
         },
         OAuthConsentRequest: {

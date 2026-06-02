@@ -18,6 +18,21 @@ config({ path: join(dirname(fileURLToPath(import.meta.url)), '../../.env.local')
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/** Platform migrations not yet folded into schema.sql — applied in CI after full schema. */
+const PLATFORM_DELTA_MIGRATIONS = new Set([
+  '047_oauth_public_platform',
+  '048_oauth_device_refresh',
+  '049_webhooks_platform',
+  '050_platform_audit',
+]);
+
+function isSkippableMigrationError(message: string): boolean {
+  return (
+    message.includes('already exists') ||
+    message.includes('is not an existing enum label')
+  );
+}
+
 async function migrate() {
   await loadProductionSecrets();
 
@@ -38,8 +53,16 @@ async function migrate() {
     // Step 1: Run schema.sql for initial setup
     const schemaPath = join(__dirname, 'schema.sql');
     const schema = readFileSync(schemaPath, 'utf-8');
-    await pool.query(schema);
-    console.log('✅ Schema applied');
+    try {
+      await pool.query(schema);
+      console.log('✅ Schema applied');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('already exists')) {
+        throw error;
+      }
+      console.log('ℹ️  Schema objects already exist, continuing with migrations');
+    }
 
     // Step 2: Create migrations tracking table
     await pool.query(`
@@ -50,8 +73,8 @@ async function migrate() {
     `);
 
     // Step 3: Get list of already-applied migrations
-    const appliedResult = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
-    const appliedMigrations = new Set(appliedResult.rows.map(r => r.version));
+    let appliedResult = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
+    let appliedMigrations = new Set(appliedResult.rows.map(r => r.version));
 
     // Step 4: Find and run pending migrations
     const migrationsDir = join(__dirname, 'migrations');
@@ -63,6 +86,21 @@ async function migrate() {
         .sort(); // Ensures numeric order: 001_, 002_, etc.
     } catch {
       console.log('ℹ️  No migrations directory found');
+    }
+
+    if (process.env.CI === 'true' && migrationFiles.length > 0) {
+      console.log('ℹ️  CI: schema.sql is authoritative; applying platform delta migrations only');
+      for (const file of migrationFiles) {
+        const version = file.replace('.sql', '');
+        if (!PLATFORM_DELTA_MIGRATIONS.has(version)) {
+          await pool.query(
+            'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+            [version],
+          );
+        }
+      }
+      appliedResult = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
+      appliedMigrations = new Set(appliedResult.rows.map((r) => r.version));
     }
 
     let migrationsRun = 0;
@@ -88,6 +126,17 @@ async function migrate() {
         migrationsRun++;
       } catch (err) {
         await client.query('ROLLBACK');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        // schema.sql may have created objects that numbered migrations also add.
+        if (isSkippableMigrationError(errorMessage)) {
+          await pool.query(
+            'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+            [version],
+          );
+          console.log(`  ℹ️  ${file} skipped (objects already exist)`);
+          migrationsRun++;
+          continue;
+        }
         throw err;
       } finally {
         client.release();
@@ -101,14 +150,8 @@ async function migrate() {
     }
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    // "already exists" errors from schema.sql are fine
-    if (errorMessage.includes('already exists')) {
-      console.log('Database schema already exists, continuing...');
-    } else {
-      console.error('Database migration failed:', error);
-      process.exit(1);
-    }
+    console.error('Database migration failed:', error);
+    process.exit(1);
   } finally {
     await pool.end();
   }

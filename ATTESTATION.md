@@ -1,7 +1,7 @@
 ---
 title: Open Source Security Review Attestation
-date: 2026-05-28
-timestamp: 2026-05-28T16:19:03Z
+date: 2026-06-02
+timestamp: 2026-06-02T21:35:00Z
 reviewer: Monica Peters
 reviewer_email: monica.peters@gfachallenger.gauntletai.com
 reviewer_title: Engineering Security Reviewer

@@ -5,6 +5,7 @@ import { sendPublicError } from '../../http.js';
 import { oauthBearerMiddleware, requireScope } from '../../oauth.js';
 import { SCOPES } from '../../scopes.js';
 import { registerPublicRoute } from '../../spec/route-metadata.js';
+import { publishDocumentCreated } from '../../events/publish.js';
 
 const router = Router();
 
@@ -189,7 +190,16 @@ router.post(
       ]
     );
 
-    res.status(201).json(rows[0]);
+    const doc = rows[0];
+    await publishDocumentCreated({
+      id: doc.id as string,
+      workspace_id: doc.workspace_id as string,
+      document_type: doc.document_type as string,
+      title: doc.title as string,
+      created_at: (doc.created_at as Date).toISOString?.() ?? String(doc.created_at),
+    });
+
+    res.status(201).json(doc);
   }
 );
 

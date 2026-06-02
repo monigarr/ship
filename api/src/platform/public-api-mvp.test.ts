@@ -70,6 +70,16 @@ describe('public MVP hard-gates', () => {
   });
 
   afterAll(async () => {
+    await pool.query(
+      'DELETE FROM webhook_deliveries WHERE subscription_id IN (SELECT id FROM webhook_subscriptions WHERE app_id IN (SELECT id FROM oauth_apps WHERE owner_user_id = $1))',
+      [adminUserId]
+    );
+    await pool.query(
+      'DELETE FROM webhook_subscriptions WHERE app_id IN (SELECT id FROM oauth_apps WHERE owner_user_id = $1)',
+      [adminUserId]
+    );
+    await pool.query('DELETE FROM oauth_refresh_tokens WHERE user_id = $1', [adminUserId]);
+    await pool.query('DELETE FROM oauth_device_codes WHERE user_id = $1', [adminUserId]);
     await pool.query('DELETE FROM oauth_access_tokens WHERE user_id = $1', [adminUserId]);
     await pool.query('DELETE FROM oauth_authorization_codes WHERE user_id = $1', [adminUserId]);
     await pool.query('DELETE FROM oauth_apps WHERE owner_user_id = $1', [adminUserId]);
@@ -211,6 +221,11 @@ describe('public MVP hard-gates', () => {
       .set('Authorization', `Bearer ${accessToken}`);
     expect(expired.status).toBe(401);
     expect(expired.body.code).toBe('token_expired');
+
+    await pool.query(
+      `UPDATE oauth_access_tokens SET expires_at = NOW() + interval '1 hour' WHERE token_hash = $1`,
+      [crypto.createHash('sha256').update(accessToken).digest('hex')]
+    );
   });
 
   it('requires scopes and names missing scope in 403 body', async () => {
