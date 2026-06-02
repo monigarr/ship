@@ -86,10 +86,11 @@ describe('webhook deliverer', () => {
   });
 
   it('publishes document.created to matching subscriptions', async () => {
-    const fetchFn: FetchFn = vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       status: 200,
       text: async () => 'ok',
     } as Response);
+    const fetchFn = fetchMock as unknown as FetchFn;
 
     const deliverer = new WebhookDeliverer(
       { nowMs: () => Date.now(), sleep: async () => {} },
@@ -106,9 +107,9 @@ describe('webhook deliverer', () => {
       created_at: new Date().toISOString(),
     });
 
-    for (let attempt = 0; attempt < 40 && fetchFn.mock.calls.length === 0; attempt++) {
+    for (let attempt = 0; attempt < 40 && fetchMock.mock.calls.length === 0; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    expect(fetchFn).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalled();
   });
 });

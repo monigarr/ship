@@ -166,8 +166,9 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
             },
             next_cursor: {
               type: 'string',
+              // OpenAPI 3.0 nullable; @asteasolutions/zod-to-openapi SchemaObject typing is narrower
               nullable: true,
-            },
+            } as { type: 'string'; nullable: boolean },
           },
         },
         CreateDocumentRequest: {
@@ -205,7 +206,10 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
             consent_required: { type: 'boolean' },
             client_id: { type: 'string' },
             requested_scopes: { type: 'array', items: { type: 'string' } },
-            state: { type: 'string', nullable: true },
+            state: {
+              type: 'string',
+              nullable: true,
+            } as { type: 'string'; nullable: boolean },
           },
         },
         OAuthConsentRequest: {

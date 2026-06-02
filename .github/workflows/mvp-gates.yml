@@ -61,6 +61,9 @@ jobs:
       - name: SDK type-check
         run: pnpm --filter @ship/sdk type-check
 
+      - name: Build SDK
+        run: pnpm --filter @ship/sdk build
+
       - name: Build API for E2E
         run: pnpm build:api
 
