@@ -106,6 +106,9 @@ describe('webhook deliverer', () => {
       created_at: new Date().toISOString(),
     });
 
+    for (let attempt = 0; attempt < 40 && fetchFn.mock.calls.length === 0; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
     expect(fetchFn).toHaveBeenCalled();
   });
 });

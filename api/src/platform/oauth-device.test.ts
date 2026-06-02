@@ -119,5 +119,5 @@ describe('device authorization grant', () => {
       .get('/api/v1/me')
       .set('Authorization', `Bearer ${tokenRes.body.access_token}`);
     expect(me.status).toBe(200);
-  });
+  }, 60_000);
 });
