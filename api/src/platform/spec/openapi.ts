@@ -165,7 +165,8 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
               items: { $ref: '#/components/schemas/Document' },
             },
             next_cursor: {
-              type: ['string', 'null'],
+              type: 'string',
+              nullable: true,
             },
           },
         },

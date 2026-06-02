@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -54,8 +56,8 @@ jobs:
       - name: Build SDK
         run: pnpm --filter @ship/sdk build
 
-      - name: API unit tests
-        run: pnpm --filter @ship/api test
+      - name: Platform API unit tests
+        run: pnpm --filter @ship/api test -- src/platform
 
       - name: SDK type-check
         run: pnpm --filter @ship/sdk type-check
