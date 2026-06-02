@@ -1,12 +1,26 @@
 import { NextFunction, Request, Response, Router } from 'express';
+import { publicAuditMiddleware } from './audit/middleware.js';
+import { wireWebhookEventBus } from './webhooks/deliverer.js';
 import { publicRequestIdMiddleware, PublicApiError, sendPublicError } from './http.js';
 import { oauthRouter } from './routes/oauth.js';
 import { publicV1Router } from './routes/v1.js';
+import { publicRateLimitMiddleware } from './ratelimit/middleware.js';
+
+let platformWired = false;
+
+function ensurePlatformWiring(): void {
+  if (platformWired) return;
+  wireWebhookEventBus();
+  platformWired = true;
+}
 
 export function createPlatformRouter(): Router {
+  ensurePlatformWiring();
   const router = Router();
 
   router.use(publicRequestIdMiddleware);
+  router.use(publicRateLimitMiddleware);
+  router.use(publicAuditMiddleware);
 
   router.use('/oauth', oauthRouter);
   router.use('/', publicV1Router);

@@ -1,0 +1,25 @@
+# Platform tests — 2026-06-02
+
+Branch: gfa2_wk6-final
+
+## Local verification
+
+- `pnpm --filter @ship/sdk build` — OK
+- `pnpm --filter @ship/api type-check` — OK
+- `pnpm --filter @ship/cli type-check` — OK
+- `pnpm --filter @ship/api openapi:generate:public` — OK → docs/openapi.json
+
+## Unit tests (require Postgres on localhost:5432)
+
+Run when DB is available:
+
+```bash
+pnpm --filter @ship/api test -- src/platform/
+```
+
+Expected suites: `oauth-refresh.test.ts`, `oauth-device.test.ts`, `webhooks-deliverer.test.ts`, `agent-platform.test.ts`, `public-api-mvp.test.ts`.
+
+## CI
+
+- `.github/workflows/platform-gates.yml` — platform unit tests + SDK/CLI type-check
+- `.github/workflows/mvp-gates.yml` — unchanged MVP gates

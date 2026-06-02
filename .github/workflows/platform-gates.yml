@@ -1,0 +1,46 @@
+name: Platform Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - gfa2_wk6-final
+
+jobs:
+  platform-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm build:shared
+
+      - name: Build SDK
+        run: pnpm --filter @ship/sdk build
+
+      - name: API unit tests
+        run: pnpm --filter @ship/api test
+
+      - name: SDK type-check
+        run: pnpm --filter @ship/sdk type-check
+
+      - name: CLI type-check
+        run: pnpm --filter @ship/cli type-check

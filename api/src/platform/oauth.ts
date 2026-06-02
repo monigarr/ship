@@ -96,7 +96,15 @@ export async function redeemAuthorizationCode(input: {
   code: string;
   codeVerifier: string;
   redirectUri: string;
-}): Promise<{ accessToken: string; expiresIn: number; scope: string; userId: string; workspaceId: string; appId: string }> {
+}): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  scope: string;
+  userId: string;
+  workspaceId: string;
+  appId: string;
+}> {
   const codeHash = hashSecret(input.code);
   const secretHash = hashSecret(input.clientSecret);
 
@@ -147,36 +155,30 @@ export async function redeemAuthorizationCode(input: {
     throw new PublicApiError(400, 'invalid_grant', 'code_verifier does not match code_challenge');
   }
 
-  const accessToken = generateOpaqueToken('atk');
-  await pool.query('BEGIN');
-  try {
-    await pool.query(
-      `UPDATE oauth_authorization_codes
-       SET consumed_at = NOW()
-       WHERE id = $1`,
-      [row.id]
-    );
-
-    await pool.query(
-      `INSERT INTO oauth_access_tokens (app_id, user_id, workspace_id, token_hash, scopes, expires_at)
-       VALUES ($1, $2, $3, $4, $5::text[], NOW() + make_interval(secs => $6))`,
-      [row.app_id, row.user_id, row.workspace_id, hashSecret(accessToken), row.scopes, ACCESS_TOKEN_TTL_SECONDS]
-    );
-
-    await pool.query('COMMIT');
-  } catch (error) {
-    await pool.query('ROLLBACK');
-    throw error;
-  }
+  await pool.query(
+    `UPDATE oauth_authorization_codes
+     SET consumed_at = NOW()
+     WHERE id = $1`,
+    [row.id]
+  );
 
   const scopes = (row.scopes as string[]) ?? [];
-  return {
-    accessToken,
-    expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-    scope: scopes.join(' '),
+  const { issueAccessAndRefreshTokens } = await import('./oauth-tokens.js');
+  const issued = await issueAccessAndRefreshTokens({
+    appId: row.app_id as string,
     userId: row.user_id as string,
     workspaceId: row.workspace_id as string,
-    appId: row.app_id as string,
+    scopes,
+  });
+
+  return {
+    accessToken: issued.accessToken,
+    refreshToken: issued.refreshToken,
+    expiresIn: issued.expiresIn,
+    scope: issued.scope,
+    userId: issued.userId,
+    workspaceId: issued.workspaceId,
+    appId: issued.appId,
   };
 }
 
@@ -248,6 +250,7 @@ export function requireScope(scope: string) {
       return;
     }
 
+    (req as Request & { requiredScope?: string }).requiredScope = scope;
     next();
   };
 }

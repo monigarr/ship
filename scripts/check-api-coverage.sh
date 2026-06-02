@@ -105,6 +105,13 @@ done
   grep -h "app\.delete" api/src/app.ts 2>/dev/null | sed -n "s/.*app\.delete('\/api\/\([^']*\)'.*/\1/p"
 } | sed 's/^\///' | grep -v '^$' >> "$TEMP_FILE" || true
 
+# Public platform routes mounted at /api/v1 (registerPublicRoute metadata)
+if [ -d api/src/platform/routes ]; then
+  grep -rh "path: '" api/src/platform/routes 2>/dev/null | \
+    sed -n "s/.*path: '\\([^']*\\)'.*/v1\\1/p" | \
+    sed 's|^v1/|v1/|' >> "$TEMP_FILE" || true
+fi
+
 API_ENDPOINTS=$(cat "$TEMP_FILE" 2>/dev/null | sort -u | grep -v '^$' || true)
 rm -f "$TEMP_FILE"
 
@@ -174,7 +181,8 @@ for file in $FILES; do
          [[ "$call" =~ ^documents/.*backlinks ]] || [[ "$call" =~ ^team/grid ]] || \
          [[ "$call" =~ ^team/accountability-grid ]] || \
          [[ "$call" =~ ^admin/audit-logs/export ]] || \
-         [[ "$call" =~ ^weekly-retros ]] || [[ "$call" =~ ^weekly-plans ]]; then
+         [[ "$call" =~ ^weekly-retros ]] || [[ "$call" =~ ^weekly-plans ]] || \
+         [[ "$call" =~ ^v1/ ]]; then
         continue
       fi
       MISSING+=("$file: /api/$call")

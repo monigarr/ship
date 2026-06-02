@@ -8,7 +8,13 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
 
   for (const route of routeMetadata) {
     const pathItem = paths[route.path] ?? {};
-    const security = route.path === '/oauth/token' || route.path === '/oauth/authorize'
+    const publicOAuthPaths = [
+      '/oauth/token',
+      '/oauth/authorize',
+      '/oauth/device/code',
+      '/oauth/device/verify',
+    ];
+    const security = publicOAuthPaths.includes(route.path)
       ? []
       : route.path === '/oauth/apps'
         ? [{ cookieAuth: [] }]

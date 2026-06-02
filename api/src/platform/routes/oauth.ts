@@ -4,6 +4,12 @@ import { authMiddleware } from '../../middleware/auth.js';
 import { pool } from '../../db/client.js';
 import { PublicApiError, sendPublicError } from '../http.js';
 import { createAuthorizationCode, insertOAuthApp, redeemAuthorizationCode } from '../oauth.js';
+import {
+  createDeviceAuthorization,
+  pollDeviceToken,
+  redeemRefreshToken,
+  verifyDeviceUserCode,
+} from '../oauth-tokens.js';
 import { listRegisteredScopes } from '../scopes.js';
 import { registerPublicRoute } from '../spec/route-metadata.js';
 
@@ -35,13 +41,35 @@ const authorizeConsentSchema = z.object({
   approve: z.boolean(),
 });
 
-const tokenSchema = z.object({
+const tokenAuthCodeSchema = z.object({
   grant_type: z.literal('authorization_code'),
   client_id: z.string().min(1),
   client_secret: z.string().min(1),
   code: z.string().min(1),
   code_verifier: z.string().min(43).max(128),
   redirect_uri: z.string().url(),
+});
+
+const tokenRefreshSchema = z.object({
+  grant_type: z.literal('refresh_token'),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1).optional(),
+  refresh_token: z.string().min(1),
+});
+
+const tokenDeviceSchema = z.object({
+  grant_type: z.literal('urn:ietf:params:oauth:grant-type:device_code'),
+  client_id: z.string().min(1),
+  device_code: z.string().min(1),
+});
+
+const deviceCodeSchema = z.object({
+  client_id: z.string().min(1),
+  scope: z.string().optional(),
+});
+
+const deviceVerifySchema = z.object({
+  user_code: z.string().min(1),
 });
 
 registerPublicRoute({
@@ -76,11 +104,31 @@ registerPublicRoute({
 registerPublicRoute({
   method: 'post',
   path: '/oauth/token',
-  summary: 'Exchange authorization code for access token',
+  summary: 'Exchange authorization code, refresh token, or device code',
   operationId: 'exchangeOAuthToken',
   tags: ['OAuth'],
   requestBodySchemaName: 'OAuthTokenRequest',
   responseSchemaName: 'OAuthTokenResponse',
+});
+
+registerPublicRoute({
+  method: 'post',
+  path: '/oauth/device/code',
+  summary: 'Start device authorization flow',
+  operationId: 'startDeviceAuthorization',
+  tags: ['OAuth'],
+  requestBodySchemaName: 'OAuthDeviceCodeRequest',
+  responseSchemaName: 'OAuthDeviceCodeResponse',
+});
+
+registerPublicRoute({
+  method: 'post',
+  path: '/oauth/device/verify',
+  summary: 'Verify device user code',
+  operationId: 'verifyDeviceUserCode',
+  tags: ['OAuth'],
+  requestBodySchemaName: 'OAuthDeviceVerifyRequest',
+  responseSchemaName: 'OAuthDeviceVerifyResponse',
 });
 
 function parseScopeList(scopeText: string | undefined): string[] {
@@ -134,6 +182,23 @@ function ensureScopesAreAllowed(requestedScopes: string[], allowedScopes: string
     });
   }
 }
+
+router.get('/apps', authMiddleware, async (req: Request, res: Response) => {
+  if (!req.userId) {
+    sendPublicError(req, res, 401, 'unauthorized', 'Login required');
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT id, name, client_id, requested_scopes, created_at
+     FROM oauth_apps
+     WHERE owner_user_id = $1 AND revoked_at IS NULL
+     ORDER BY created_at DESC`,
+    [req.userId]
+  );
+
+  res.json({ data: rows });
+});
 
 router.post('/apps', authMiddleware, async (req: Request, res: Response) => {
   if (!req.userId || !req.workspaceId || !req.isSuperAdmin) {
@@ -296,30 +361,164 @@ router.post('/authorize', authMiddleware, async (req: Request, res: Response) =>
   }
 });
 
-router.post('/token', async (req: Request, res: Response) => {
-  const parsed = tokenSchema.safeParse(req.body);
+router.post('/device/code', async (req: Request, res: Response) => {
+  const parsed = deviceCodeSchema.safeParse(req.body);
   if (!parsed.success) {
-    sendPublicError(req, res, 400, 'invalid_request', 'Invalid token exchange payload', {
+    sendPublicError(req, res, 400, 'invalid_request', 'Invalid device code request', {
       issues: parsed.error.issues,
     });
     return;
   }
 
   try {
-    const issued = await redeemAuthorizationCode({
+    const scopes = parseScopeList(parsed.data.scope);
+    const device = await createDeviceAuthorization({
       clientId: parsed.data.client_id,
-      clientSecret: parsed.data.client_secret,
-      code: parsed.data.code,
-      codeVerifier: parsed.data.code_verifier,
-      redirectUri: parsed.data.redirect_uri,
+      scopes,
     });
 
     res.json({
-      access_token: issued.accessToken,
-      token_type: 'Bearer',
-      expires_in: issued.expiresIn,
-      scope: issued.scope,
+      device_code: device.deviceCode,
+      user_code: device.userCode,
+      verification_uri: device.verificationUri,
+      expires_in: device.expiresIn,
+      interval: device.interval,
     });
+  } catch (error) {
+    if (error instanceof PublicApiError) {
+      sendPublicError(req, res, error.status, error.code, error.message, error.details);
+      return;
+    }
+    sendPublicError(req, res, 500, 'server_error', 'Device authorization failed');
+  }
+});
+
+router.post('/device/verify', authMiddleware, async (req: Request, res: Response) => {
+  if (!req.userId || !req.workspaceId) {
+    sendPublicError(req, res, 401, 'unauthorized', 'Login required');
+    return;
+  }
+
+  const parsed = deviceVerifySchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendPublicError(req, res, 400, 'invalid_request', 'Invalid device verify payload', {
+      issues: parsed.error.issues,
+    });
+    return;
+  }
+
+  try {
+    await verifyDeviceUserCode({
+      userCode: parsed.data.user_code,
+      userId: req.userId,
+      workspaceId: req.workspaceId,
+    });
+    res.json({ verified: true });
+  } catch (error) {
+    if (error instanceof PublicApiError) {
+      sendPublicError(req, res, error.status, error.code, error.message, error.details);
+      return;
+    }
+    sendPublicError(req, res, 500, 'server_error', 'Device verification failed');
+  }
+});
+
+router.post('/token', async (req: Request, res: Response) => {
+  const grantType = req.body?.grant_type;
+
+  try {
+    if (grantType === 'authorization_code') {
+      const parsed = tokenAuthCodeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        sendPublicError(req, res, 400, 'invalid_request', 'Invalid token exchange payload', {
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+
+      const issued = await redeemAuthorizationCode({
+        clientId: parsed.data.client_id,
+        clientSecret: parsed.data.client_secret,
+        code: parsed.data.code,
+        codeVerifier: parsed.data.code_verifier,
+        redirectUri: parsed.data.redirect_uri,
+      });
+
+      res.json({
+        access_token: issued.accessToken,
+        refresh_token: issued.refreshToken,
+        token_type: 'Bearer',
+        expires_in: issued.expiresIn,
+        scope: issued.scope,
+      });
+      return;
+    }
+
+    if (grantType === 'refresh_token') {
+      const parsed = tokenRefreshSchema.safeParse(req.body);
+      if (!parsed.success) {
+        sendPublicError(req, res, 400, 'invalid_request', 'Invalid refresh token payload', {
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+
+      const issued = await redeemRefreshToken({
+        clientId: parsed.data.client_id,
+        clientSecret: parsed.data.client_secret,
+        refreshToken: parsed.data.refresh_token,
+      });
+
+      res.json({
+        access_token: issued.accessToken,
+        refresh_token: issued.refreshToken,
+        token_type: 'Bearer',
+        expires_in: issued.expiresIn,
+        scope: issued.scope,
+      });
+      return;
+    }
+
+    if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
+      const parsed = tokenDeviceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        sendPublicError(req, res, 400, 'invalid_request', 'Invalid device token payload', {
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+
+      const result = await pollDeviceToken({
+        clientId: parsed.data.client_id,
+        deviceCode: parsed.data.device_code,
+      });
+
+      if (result.pending) {
+        if (result.slowDown) {
+          res.status(400).json({
+            error: 'slow_down',
+            error_description: 'Polling too frequently',
+          });
+          return;
+        }
+        res.status(400).json({
+          error: 'authorization_pending',
+          error_description: 'Authorization pending',
+        });
+        return;
+      }
+
+      res.json({
+        access_token: result.tokens.accessToken,
+        refresh_token: result.tokens.refreshToken,
+        token_type: 'Bearer',
+        expires_in: result.tokens.expiresIn,
+        scope: result.tokens.scope,
+      });
+      return;
+    }
+
+    sendPublicError(req, res, 400, 'unsupported_grant_type', 'Unsupported grant_type');
   } catch (error) {
     if (error instanceof PublicApiError) {
       sendPublicError(req, res, error.status, error.code, error.message, error.details);

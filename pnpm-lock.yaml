@@ -71,6 +71,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1052.0
         version: 3.1052.0
+      '@ship/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@ship/shared':
         specifier: workspace:*
         version: link:../shared
@@ -210,6 +213,28 @@ importers:
       vitest:
         specifier: ^4.0.16
         version: 4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)(jiti@1.21.7)(jsdom@27.4.0)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  integrations/cli:
+    dependencies:
+      '@ship/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+      commander:
+        specifier: ^13.1.0
+        version: 13.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.12.4
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.17(@types/node@24.12.4)(@vitest/ui@4.0.17)(jiti@1.21.7)(jsdom@27.4.0)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   sdk:
     devDependencies:
@@ -2660,6 +2685,10 @@ packages:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
     engines: {node: '>= 0.8'}
 
+  commander@13.1.0:
+    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
+    engines: {node: '>=18'}
+
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
 
@@ -3881,10 +3910,6 @@ packages:
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
-
-  picomatch@4.0.3:
-    resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
-    engines: {node: '>=12'}
 
   picomatch@4.0.4:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
@@ -6117,7 +6142,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
-      picomatch: 4.0.3
+      picomatch: 4.0.4
     optionalDependencies:
       rollup: 4.55.1
 
@@ -6633,7 +6658,7 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/chai@5.2.3':
     dependencies:
@@ -6642,7 +6667,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/cookie-parser@1.4.10(@types/express@4.17.25)':
     dependencies:
@@ -6656,7 +6681,7 @@ snapshots:
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/deep-eql@4.0.2': {}
 
@@ -6664,27 +6689,27 @@ snapshots:
 
   '@types/docker-modem@3.0.6':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/ssh2': 1.15.5
 
   '@types/dockerode@3.3.47':
     dependencies:
       '@types/docker-modem': 3.0.6
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/ssh2': 1.15.5
 
   '@types/estree@1.0.8': {}
 
   '@types/express-serve-static-core@4.19.8':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
 
   '@types/express-serve-static-core@5.1.1':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -6739,7 +6764,7 @@ snapshots:
 
   '@types/pg@8.16.0':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
@@ -6761,30 +6786,30 @@ snapshots:
   '@types/send@0.17.6':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/serve-static@1.15.10':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/send': 0.17.6
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@types/ssh2@0.5.52':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       '@types/ssh2-streams': 0.1.13
 
   '@types/ssh2@1.15.5':
@@ -6795,7 +6820,7 @@ snapshots:
     dependencies:
       '@types/cookiejar': 2.1.5
       '@types/methods': 1.1.4
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       form-data: 4.0.5
 
   '@types/supertest@6.0.3':
@@ -6816,7 +6841,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
 
   '@uswds/uswds@3.13.0':
     dependencies:
@@ -6851,15 +6876,7 @@ snapshots:
       '@vitest/spy': 4.0.17
       '@vitest/utils': 4.0.17
       chai: 6.2.2
-      tinyrainbow: 3.0.3
-
-  '@vitest/mocker@4.0.17(vite@6.4.1(@types/node@22.19.5)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))':
-    dependencies:
-      '@vitest/spy': 4.0.17
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 6.4.1(@types/node@22.19.5)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+      tinyrainbow: 3.1.0
 
   '@vitest/mocker@4.0.17(vite@6.4.1(@types/node@24.12.4)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
@@ -6871,7 +6888,7 @@ snapshots:
 
   '@vitest/pretty-format@4.0.17':
     dependencies:
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   '@vitest/runner@4.0.17':
     dependencies:
@@ -6895,12 +6912,12 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)(jiti@1.21.7)(jsdom@27.4.0)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 4.0.17(@types/node@24.12.4)(@vitest/ui@4.0.17)(jiti@1.21.7)(jsdom@27.4.0)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@4.0.17':
     dependencies:
       '@vitest/pretty-format': 4.0.17
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   abort-controller@3.0.0:
     dependencies:
@@ -7245,6 +7262,8 @@ snapshots:
   combined-stream@1.0.8:
     dependencies:
       delayed-stream: 1.0.0
+
+  commander@13.1.0: {}
 
   commander@2.20.3:
     optional: true
@@ -7759,10 +7778,6 @@ snapshots:
   fastq@1.20.1:
     dependencies:
       reusify: 1.1.0
-
-  fdir@6.5.0(picomatch@4.0.3):
-    optionalDependencies:
-      picomatch: 4.0.3
 
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
@@ -8495,8 +8510,6 @@ snapshots:
 
   picomatch@2.3.1: {}
 
-  picomatch@4.0.3: {}
-
   picomatch@4.0.4: {}
 
   pify@2.3.0: {}
@@ -8705,7 +8718,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 22.19.5
+      '@types/node': 24.12.4
       long: 5.3.2
 
   proxy-addr@2.0.7:
@@ -9152,7 +9165,7 @@ snapshots:
       lines-and-columns: 1.2.4
       mz: 2.7.0
       pirates: 4.0.7
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
       ts-interface-checker: 0.1.13
 
   superagent@10.3.0:
@@ -9323,8 +9336,8 @@ snapshots:
 
   tinyglobby@0.2.15:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   tinyglobby@0.2.16:
     dependencies:
@@ -9454,11 +9467,11 @@ snapshots:
   vite@6.4.1(@types/node@22.19.5)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
-      postcss: 8.5.6
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+      postcss: 8.5.15
       rollup: 4.55.1
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
     optionalDependencies:
       '@types/node': 22.19.5
       fsevents: 2.3.3
@@ -9471,11 +9484,11 @@ snapshots:
   vite@6.4.1(@types/node@24.12.4)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
-      postcss: 8.5.6
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+      postcss: 8.5.15
       rollup: 4.55.1
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
     optionalDependencies:
       '@types/node': 24.12.4
       fsevents: 2.3.3
@@ -9504,7 +9517,7 @@ snapshots:
   vitest@4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)(jiti@1.21.7)(jsdom@27.4.0)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       '@vitest/expect': 4.0.17
-      '@vitest/mocker': 4.0.17(vite@6.4.1(@types/node@22.19.5)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/mocker': 4.0.17(vite@6.4.1(@types/node@24.12.4)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       '@vitest/pretty-format': 4.0.17
       '@vitest/runner': 4.0.17
       '@vitest/snapshot': 4.0.17
@@ -9515,12 +9528,12 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.1
       pathe: 2.0.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       std-env: 3.10.0
       tinybench: 2.9.0
       tinyexec: 1.0.2
-      tinyglobby: 0.2.15
-      tinyrainbow: 3.0.3
+      tinyglobby: 0.2.16
+      tinyrainbow: 3.1.0
       vite: 6.4.1(@types/node@22.19.5)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
@@ -9554,12 +9567,12 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.1
       pathe: 2.0.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       std-env: 3.10.0
       tinybench: 2.9.0
       tinyexec: 1.0.2
-      tinyglobby: 0.2.15
-      tinyrainbow: 3.0.3
+      tinyglobby: 0.2.16
+      tinyrainbow: 3.1.0
       vite: 6.4.1(@types/node@24.12.4)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:

@@ -1517,6 +1517,23 @@ export async function executeFleetGraphRun(
 
   await ensureFleetGraphTables();
 
+  if (process.env.SHIP_AGENT_USE_PUBLIC_API === 'true') {
+    const { agentPublicApiProbe, ensureAgentOAuthApp, isAgentPublicApiEnabled } = await import(
+      '../../platform/agent-platform.js'
+    );
+    if (isAgentPublicApiEnabled()) {
+      const baseUrl =
+        process.env.SHIP_PUBLIC_API_BASE_URL ??
+        `http://127.0.0.1:${process.env.PORT ?? '3001'}`;
+      const { accessToken } = await ensureAgentOAuthApp({
+        ownerUserId: context.userId,
+        workspaceId: context.workspaceId,
+      });
+      await agentPublicApiProbe(baseUrl, accessToken);
+      markEvent('start', 'agent_public_api_probe', 'ok', { via: 'sdk' }, Date.now());
+    }
+  }
+
   const traceStartPhaseMs = Date.now();
   const traceStart = await startFleetGraphTrace({
     trigger,
