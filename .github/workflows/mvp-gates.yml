@@ -93,6 +93,8 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: E2E OAuth PKCE gate
+        env:
+          SKIP_E2E_GLOBAL_BUILD: 'true'
         run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 
       - name: Perf regression check (+10%)
