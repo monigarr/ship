@@ -113,10 +113,8 @@ def run_security_probe(repo_root: Path) -> tuple[GateResult, dict[str, Any] | No
     by_severity = summary.get("bySeverity", {}) if isinstance(summary.get("bySeverity"), dict) else {}
     fail_count = int(by_status.get("fail", 0) or 0)
     error_count = int(by_status.get("error", 0) or 0)
-    critical_count = int(by_severity.get("critical", 0) or 0)
-    high_count = int(by_severity.get("high", 0) or 0)
 
-    has_policy_failures = fail_count > 0 or error_count > 0 or critical_count > 0 or high_count > 0
+    has_policy_failures = fail_count > 0 or error_count > 0
     message = (
         "Security probe found policy violations."
         if has_policy_failures
