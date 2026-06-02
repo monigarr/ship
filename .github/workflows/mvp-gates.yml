@@ -10,7 +10,7 @@ on:
 jobs:
   mvp-gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16
@@ -72,8 +72,8 @@ jobs:
         env:
           VITE_APP_ENV: test_e2e
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium
 
       - name: E2E OAuth PKCE gate
         run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
