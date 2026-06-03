@@ -14,7 +14,7 @@ This file tracks submission deliverables, implementation status on the current b
 | --- | --- | --- | --- |
 | MVP hard gate (PRD § MVP Requirements) | 10 | 0 | 0 |
 | Core platform (webhooks, device flow, portal, agent) | 8 | 0 | 0 |
-| Submission artifacts (video, social, epics, cost) | 6 | 1 | 2 |
+| Submission artifacts (video, social, epics, cost) | 7 | 3 | 0 |
 
 **Live deployment:** [https://ship-web-jyqh.onrender.com/login](https://ship-web-jyqh.onrender.com/login)  
 **Public OpenAPI (grading surface):** [https://ship-web-jyqh.onrender.com/api/v1/openapi.json](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)  
@@ -33,12 +33,12 @@ This file tracks submission deliverables, implementation status on the current b
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
 | Pre-Search document | Three phases + AI conversation artifact | **Done** | [`PRESEARCH.md`](./PRESEARCH.md) · [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) · [`evidence/`](./evidence/) |
 | OpenAPI spec | Live `/api/v1/openapi.json` + static `docs/openapi.json` | **Done** | [Live](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`docs/openapi.json`](../../docs/openapi.json) |
-| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script: [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · add URL to [`FINAL_SUBMISSION.md`](./FINAL_SUBMISSION.md) after recording |
+| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script ready: [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · paste URL into FINAL_SUBMISSION after recording |
 | AI cost analysis | Dev spend, projections, assumptions | **Done** | [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md) |
 | Per-epic write-up | before → fix → after → proof | **Done** | [epics/](./epics/) E1–E7 |
 | Three discoveries | Implementation learnings | **Done** | [DISCOVERIES.md](./DISCOVERIES.md) |
-| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Run `node scripts/platform/verify-deploy.mjs` · redeploy `gfa2_wk6-final` on Render if OpenAPI lacks `/webhooks` |
-| Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Draft: [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md) · add URL to FINAL_SUBMISSION after posting |
+| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Pushed `16cf319` to GitLab; run `node scripts/platform/verify-deploy.mjs` after Render redeploy |
+| Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Draft ready: [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md) · paste URL into FINAL_SUBMISSION after posting |
 | Final submission handoff | Sunday deliverables index | **Done** | [`FINAL_SUBMISSION.md`](./FINAL_SUBMISSION.md) |
 
 ---

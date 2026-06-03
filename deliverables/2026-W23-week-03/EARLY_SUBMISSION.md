@@ -4,7 +4,7 @@
 
 ## Grader quick path
 
-1. Deployed app: https://ship-web-jyqh.onrender.com/login (redeploy `gfa2_wk6-final` for latest platform routes).
+1. Deployed app: https://ship-web-jyqh.onrender.com/login (ensure Render deploys branch **`gfa2_wk6-final`**, commit `16cf319`+).
 2. Public OpenAPI: https://ship-web-jyqh.onrender.com/api/v1/openapi.json
 3. Developer portal (session): `/developer` after login
 4. Device verify UX: `/oauth/device`
