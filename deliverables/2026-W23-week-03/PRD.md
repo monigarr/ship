@@ -34,25 +34,25 @@ One-week sprint with four deadlines:
 ## MVP Requirements
 Hard gate. All items required to pass:
 
-- [ ] OAuth app registration endpoint working: admin can create an app, receive a client_id, and a
+- [x] OAuth app registration endpoint working: admin can create an app, receive a client_id, and a
 client_secret hashed in the database (raw secret shown exactly once on creation).
-- [ ] Authorization Code + PKCE flow completes end-to-end via a Playwright test: /oauth/authorize → consent
+- [x] Authorization Code + PKCE flow completes end-to-end via a Playwright test: /oauth/authorize → consent
 → /oauth/token → usable access token.
-- [ ] Bearer token middleware validates tokens on every /api/v1/* route; invalid tokens return 401, missing
+- [x] Bearer token middleware validates tokens on every /api/v1/* route; invalid tokens return 401, missing
 tokens return 401, expired tokens return 401 with a distinct error code.
-- [ ] At least one resource (documents) implements GET list, GET by id, and POST. Each route declares its
+- [x] At least one resource (documents) implements GET list, GET by id, and POST. Each route declares its
 required scope via a require(scope) middleware factory.
-- [ ] Consistent ApiError shape ({code, message, details?, request_id}) returned on every public failure,
+- [x] Consistent ApiError shape ({code, message, details?, request_id}) returned on every public failure,
 asserted by a fitness test over all /api/v1 routes.
-- [ ] ScopeRegistry has scopes-as-data; insufficient scope returns 403 with the missing scope named explicitly
+- [x] ScopeRegistry has scopes-as-data; insufficient scope returns 403 with the missing scope named explicitly
 in the error body (no opaque "forbidden").
-- [ ] OpenAPI 3.1 spec served at /api/v1/openapi.json, generated from route metadata (never hand-written),
+- [x] OpenAPI 3.1 spec served at /api/v1/openapi.json, generated from route metadata (never hand-written),
 validating against the OpenAPI schema in a unit test.
-- [ ] SDK skeleton exists in a pnpm workspace package; `new ShipClient({ token }).me()` against a running
+- [x] SDK skeleton exists in a pnpm workspace package; `new ShipClient({ token }).me()` against a running
 server returns the typed authenticated user.
-- [ ] Existing Playwright regression suite passes on main; P95 latency, bundle size, and per-route query counts
+- [x] Existing Playwright regression suite passes on main; P95 latency, bundle size, and per-route query counts
 within +10% of the Part 1 baseline.
-- [ ] Deployed and publicly accessible: deployed Ship + published OpenAPI spec URL + at least one OAuth app
+- [x] Deployed and publicly accessible: deployed Ship + published OpenAPI spec URL + at least one OAuth app
 pre-registered with read-only scopes for graders.
 A small public API that matches its spec beats a sprawling public API that contradicts it.
 ## Core Technical Requirements
@@ -232,13 +232,13 @@ min fails
 Total elapsed 	< 60 s in CI; ≤ 30 min on a clean machine following only the
 published docs
 ## Implement at Least 5 of the Following Integrations / Flows
-- [ ] CLI tool with device flow — ship login, ship docs ls/get/create, ship webhooks tail (must-ship).
+- [x] CLI tool with device flow — ship login, ship docs ls/get/create, ship webhooks tail (must-ship).
 - [ ] Slack integration — receives signed webhooks, posts document.created and issue.assigned to channels
 via Slack OAuth (should-ship).
 - [ ] Browser SDK demo — Authorization Code + PKCE in a single-page app that lists the user's documents.
 - [ ] GitHub integration — links Ship issues to GitHub PRs via webhook + GitHub App.
-- [ ] Refresh-token rotation drill — proves a stolen refresh token, when reused, invalidates the entire family.
-- [ ] Idempotency-Key end-to-end — replay drill that confirms subscribers correctly dedupe on replayed
+- [x] Refresh-token rotation drill — proves a stolen refresh token, when reused, invalidates the entire family.
+- [x] Idempotency-Key end-to-end — replay drill that confirms subscribers correctly dedupe on replayed
 deliveries.
 - [ ] In-process plugin runtime (stretch) — isolated-vm with one hook (document.beforeCreate) and a hard
 CPU/memory cap; explicitly experimental.

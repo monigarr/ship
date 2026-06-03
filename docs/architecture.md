@@ -160,17 +160,17 @@ PRD target: one-time-use rotation + family invalidation on reuse. Schema not mig
 
 ---
 
-## Webhook pipeline (planned)
-
-Target architecture per PRD—**not implemented** on current branch:
+## Webhook pipeline (shipped)
 
 ```text
-Domain write → IEventBus → subscription matcher → HMAC signer
-  → IWebhookDeliverer → retry scheduler (1s,4s,16s,1m,5m,30m)
+Domain write → publishDocumentCreated() → IEventBus → subscription matcher
+  → HMAC signer → WebhookDeliverer → retry scheduler (1s,4s,16s,1m,5m,30m)
   → delivery log → DLQ → POST /webhooks/deliveries/:id/replay
 ```
 
-Signature target: `Ship-Signature: t=<unix>,v1=<hex-hmac-sha256>`; SDK `verifyWebhook()` helper; idempotency key on replay.
+Signature: `Ship-Signature: t=<unix>,v1=<hex-hmac-sha256>`; SDK `verifyWebhook()` in `sdk/src/webhooks.ts`; `Idempotency-Key` preserved on replay.
+
+Implementation: `api/src/platform/webhooks/deliverer.ts`, `events/bus.ts`, `events/publish.ts`.
 
 ---
 
@@ -180,22 +180,25 @@ Signature target: `Ship-Signature: t=<unix>,v1=<hex-hmac-sha256>`; SDK `verifyWe
 | --- | --- | --- |
 | `ShipClient({ token, baseUrl? })` | Shipped | |
 | `client.me()` | Shipped | Typed `ShipMeResponse` |
-| `client.documents.list/getById/create` | Shipped | Cursor via `list({ cursor })` |
-| `client.documents.iterate()` | Planned | Async-iterator pagination |
-| `client.issues / sprints / webhooks` | Stub | Empty objects in `client.ts` |
-| `ShipClient.deviceLogin()` | Planned | Device flow helper |
-| `verifyWebhook()` | Planned | Stripe-style HMAC verifier |
-| Typed error union (`kind: auth \| rate_limit \| …`) | Planned | Currently throws `Error` with message |
+| `client.documents.list/getById/create/iterate()` | Shipped | Async-iterator pagination |
+| `client.webhooks.create/list/listDeliveries/replay()` | Shipped | |
+| `client.issues / sprints` | Deferred | Scopes registered; routes not shipped |
+| `ShipClient.deviceLogin()` | Shipped | RFC 8628 + `ITokenStore` |
+| `ShipClient.authorizationCodeFlow()` | Shipped | PKCE + token exchange |
+| `verifyWebhook()` | Shipped | Stripe-style HMAC verifier |
+| Typed error union (`ShipSdkError`, `kind`) | Shipped | `sdk/src/errors.ts` |
+
+Parity: `api/src/platform/sdk-openapi-parity.test.ts`.
 
 ---
 
-## Agent-as-citizen (planned)
+## Agent-as-citizen (shipped)
 
-**Before (Part 2 today):** FleetGraph agent calls internal services/routes directly.
+**Before (Part 2):** FleetGraph agent calls internal services/routes directly.
 
-**After (Epic 7 target):** First-party OAuth app → `@ship/sdk` → `/api/v1/*` → same domain services, with audit rows showing `client_id` + scopes.
+**After (Epic 7):** `SHIP_AGENT_USE_PUBLIC_API=true` → first-party OAuth app → `@ship/sdk` → `/api/v1/me` probe; audit middleware logs `client_id`.
 
-Migration will run behind a feature flag so Part 2 tests pass with flag on or off.
+Proof: `api/src/platform/agent-platform.test.ts`.
 
 ---
 
@@ -210,8 +213,8 @@ Migration will run behind a feature flag so Part 2 tests pass with flag on or of
 | Unknown `/api/v1` path | `404` `not_found` |
 | Unhandled platform error | `500` `server_error` (no stack in body) |
 | OpenAPI generator throws at boot | Route handlers lazy-generate spec; generator covered by `openapi-schema.test.ts` |
-| Token store corrupted (client) | SDK consumer responsibility; server has no refresh path yet |
-| Webhook deliverer crash | **N/A** — not implemented; PRD targets at-least-once + subscriber dedupe |
+| Token store corrupted (client) | SDK consumer responsibility; use `ITokenStore` |
+| Webhook deliverer crash | At-least-once delivery; subscribers dedupe via `Idempotency-Key`; pending rows retried on restart |
 
 ---
 
@@ -225,8 +228,11 @@ Migration will run behind a feature flag so Part 2 tests pass with flag on or of
 | Public/internal imports | `api/src/platform/public-boundary.test.ts` |
 | PKCE E2E | `e2e/oauth-pkce.spec.ts` |
 | SDK `me()` | `sdk/src/client.test.ts` |
+| SDK/OpenAPI parity | `api/src/platform/sdk-openapi-parity.test.ts` |
+| Webhook retry/DLQ/replay | `api/src/platform/webhooks-deliverer.test.ts` |
+| TTFE drill | `integrations/cli/tests/ttfe.drill.ts` + `scripts/platform/run-ttfe-ci.mjs` |
 | Perf +10% budget | `scripts/mvp/perf-regression-check.mjs` |
-| CI orchestration | `.github/workflows/mvp-gates.yml` |
+| CI orchestration | `.github/workflows/mvp-gates.yml`, `.github/workflows/platform-gates.yml` |
 
 Regenerate static spec: `pnpm --filter @ship/api openapi:generate:public` → `docs/openapi.json`.
 

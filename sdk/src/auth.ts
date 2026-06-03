@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { ShipClient } from './client.js';
 
 export interface ITokenStore {
@@ -119,4 +120,70 @@ export async function deviceLogin(opts: {
   }
 
   throw new Error('Device login timed out');
+}
+
+function base64UrlEncode(buffer: Buffer): string {
+  return buffer.toString('base64url');
+}
+
+export function generatePkcePair(): { codeVerifier: string; codeChallenge: string } {
+  const codeVerifier = base64UrlEncode(crypto.randomBytes(32));
+  const codeChallenge = base64UrlEncode(crypto.createHash('sha256').update(codeVerifier).digest());
+  return { codeVerifier, codeChallenge };
+}
+
+export async function authorizationCodeFlow(opts: {
+  baseUrl: string;
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  scopes?: string[];
+  state?: string;
+  onAuthorizeUrl: (url: string) => void | Promise<void>;
+  getAuthorizationCode: () => Promise<string>;
+  tokenStore?: ITokenStore;
+  fetchFn?: typeof fetch;
+}): Promise<ShipClient> {
+  const fetchFn = opts.fetchFn ?? fetch;
+  const store = opts.tokenStore ?? new MemoryTokenStore();
+  const { codeVerifier, codeChallenge } = generatePkcePair();
+  const scope = opts.scopes?.join(' ') ?? '';
+  const state = opts.state ?? base64UrlEncode(crypto.randomBytes(16));
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: opts.clientId,
+    redirect_uri: opts.redirectUri,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+    state,
+  });
+  if (scope) params.set('scope', scope);
+
+  const authorizeUrl = `${opts.baseUrl}/api/v1/oauth/authorize?${params.toString()}`;
+  await opts.onAuthorizeUrl(authorizeUrl);
+
+  const code = await opts.getAuthorizationCode();
+
+  const tokenRes = await fetchFn(`${opts.baseUrl}/api/v1/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'authorization_code',
+      client_id: opts.clientId,
+      client_secret: opts.clientSecret,
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: opts.redirectUri,
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    const errBody = await tokenRes.json().catch(() => ({}));
+    throw new Error(`Authorization code exchange failed: ${JSON.stringify(errBody)}`);
+  }
+
+  const body = (await tokenRes.json()) as { access_token: string; refresh_token?: string };
+  await store.setTokens({ accessToken: body.access_token, refreshToken: body.refresh_token });
+  return new ShipClient({ baseUrl: opts.baseUrl, token: body.access_token, fetchFn });
 }

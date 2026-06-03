@@ -1,4 +1,4 @@
-import { deviceLogin, type ITokenStore } from './auth.js';
+import { deviceLogin, authorizationCodeFlow, type ITokenStore } from './auth.js';
 import { mapStatusToKind, ShipSdkError } from './errors.js';
 import {
   CreateShipDocumentInput,
@@ -85,6 +85,7 @@ export class ShipClient {
   }
 
   static deviceLogin = deviceLogin;
+  static authorizationCodeFlow = authorizationCodeFlow;
 
   async me(): Promise<ShipMeResponse> {
     const response = await this.fetchFn(`${this.baseUrl}/api/v1/me`, {

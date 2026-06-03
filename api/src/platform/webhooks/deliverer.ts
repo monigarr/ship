@@ -144,8 +144,8 @@ export class WebhookDeliverer {
       [responseStatus, responseExcerpt, latencyMs, nextRetryAt.toISOString(), job.attemptNumber + 1, deliveryId]
     );
 
+    await this.clock.sleep(delayMs);
     if (this.clock === systemClock) {
-      await this.clock.sleep(delayMs);
       await this.processDelivery(deliveryId);
     }
   }

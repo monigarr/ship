@@ -13,7 +13,7 @@ This is a `pnpm` monorepo with:
 - `docs/` - architecture and operational documentation
 - `deliverables/` - client PRD packages, compliance matrices, and reviewable evidence by week
 
-Client reviewers should start at [`deliverables/INDEX.md`](./deliverables/INDEX.md). Current week-two work is on branch `gfa2_wk5`, deployed for review at `https://ship-web-jyqh.onrender.com/login`, and governed by [`deliverables/2026-W22-week-02/PRD.md`](./deliverables/2026-W22-week-02/PRD.md). Generated coverage HTML and deployment archives are kept out of the committed source tree; commit summarized evidence under the relevant weekly deliverable folder when it proves a PRD requirement.
+Client reviewers should start at [`deliverables/INDEX.md`](./deliverables/INDEX.md). Current week-three (PlugForge) work is on branch `gfa2_wk6-final`, deployed for review at `https://ship-web-jyqh.onrender.com/login`, and governed by [`deliverables/2026-W23-week-03/PRD.md`](./deliverables/2026-W23-week-03/PRD.md). Week-two FleetGraph artifacts remain under [`deliverables/2026-W22-week-02/`](./deliverables/2026-W22-week-02/). Generated coverage HTML and deployment archives are kept out of the committed source tree; commit summarized evidence under the relevant weekly deliverable folder when it proves a PRD requirement.
 
 ## Prerequisites
 
