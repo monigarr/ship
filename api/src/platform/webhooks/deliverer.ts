@@ -127,8 +127,10 @@ export class WebhookDeliverer {
       return;
     }
 
-    const delayMs =
+    const baseDelayMs =
       RETRY_DELAYS_MS[job.attemptNumber - 1] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1] ?? 1000;
+    const jitterMs = Math.floor(baseDelayMs * 0.1 * Math.random());
+    const delayMs = baseDelayMs + jitterMs;
     const nextRetryAt = new Date(this.clock.nowMs() + delayMs);
 
     await pool.query(
@@ -227,13 +229,14 @@ export function setWebhookDelivererForTests(deliverer: WebhookDeliverer): void {
 export function wireWebhookEventBus(): void {
   const bus = getPlatformEventBus();
   bus.subscribe(async (event) => {
-    if (event.type !== 'document.created') return;
     const { rows } = await pool.query(
       `SELECT id, app_id, signing_secret, target_url
        FROM webhook_subscriptions
        WHERE event_type = $1 AND active = TRUE`,
       [event.type]
     );
+    if (rows.length === 0) return;
+
     const deliverer = getWebhookDeliverer();
     const eventId = generateOpaqueToken('evt');
     for (const sub of rows) {

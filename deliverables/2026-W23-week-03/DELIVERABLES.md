@@ -13,7 +13,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Track | Done | Partial | Not started |
 | --- | --- | --- | --- |
 | MVP hard gate (PRD § MVP Requirements) | 10 | 0 | 0 |
-| Core platform (webhooks, device flow, portal, agent) | 8 | 0 | 0 |
+| Core platform (webhooks, device flow, portal, agent) | 10 | 0 | 0 |
 | Submission artifacts (video, social, epics, cost) | 7 | 3 | 0 |
 
 **Live deployment:** [https://ship-web-jyqh.onrender.com/login](https://ship-web-jyqh.onrender.com/login)  
@@ -33,12 +33,12 @@ This file tracks submission deliverables, implementation status on the current b
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
 | Pre-Search document | Three phases + AI conversation artifact | **Done** | [`PRESEARCH.md`](./PRESEARCH.md) · [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) · [`evidence/`](./evidence/) |
 | OpenAPI spec | Live `/api/v1/openapi.json` + static `docs/openapi.json` | **Done** | [Live](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`docs/openapi.json`](../../docs/openapi.json) |
-| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script ready: [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · paste URL into FINAL_SUBMISSION after recording |
+| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script: [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) |
 | AI cost analysis | Dev spend, projections, assumptions | **Done** | [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md) |
 | Per-epic write-up | before → fix → after → proof | **Done** | [epics/](./epics/) E1–E7 |
 | Three discoveries | Implementation learnings | **Done** | [DISCOVERIES.md](./DISCOVERIES.md) |
-| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Pushed `16cf319` to GitLab; run `node scripts/platform/verify-deploy.mjs` after Render redeploy |
-| Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Draft ready: [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md) · paste URL into FINAL_SUBMISSION after posting |
+| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Redeploy: [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md) · `node scripts/platform/verify-deploy.mjs` |
+| Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Draft: [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md) · paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) |
 | Final submission handoff | Sunday deliverables index | **Done** | [`FINAL_SUBMISSION.md`](./FINAL_SUBMISSION.md) |
 
 ---
@@ -68,7 +68,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Device Authorization Grant | **Done** |
 | Refresh token rotation + family invalidation | **Done** |
 | Webhooks (events, sign, retry, DLQ, replay) | **Done** |
-| Issues / sprints public routes | **Deferred** (scopes registered only) |
+| Issues / sprints public routes | **Done** | [`issues.ts`](../../api/src/platform/routes/v1/issues.ts), [`sprints.ts`](../../api/src/platform/routes/v1/sprints.ts) |
 | Rate-limit headers on public API | **Done** |
 | Public audit trail | **Done** |
 | Developer portal UI | **Done** (`/developer`, `/oauth/device`) |
@@ -185,12 +185,14 @@ Use before submission. Checkboxes reflect **`gfa2_wk6` as of 2026-06-02**.
 - [x] **Developer portal** — `/developer`, `/oauth/device`
 - [x] **CLI + TTFE drill** — `integrations/cli`, `pnpm drill:ttfe`
 - [x] **≥5 PRD integrations/flows** — CLI, device, refresh drill, replay, TTFE
-- [x] **Agent-as-citizen (Epic 7)** — `SHIP_AGENT_USE_PUBLIC_API`, `agent-platform.test.ts`
+- [x] **Agent-as-citizen (Epic 7)** — `SHIP_AGENT_USE_PUBLIC_API`, SDK fetch path in `fetchContextDocuments`
+- [x] **Issues / sprints public API + SDK clients**
 - [x] **AI cost analysis** — [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md)
 - [x] **Per-epic write-ups** — [epics/](./epics/)
 - [x] **Three discoveries** — [DISCOVERIES.md](./DISCOVERIES.md)
-- [ ] **Demo video** — add URL when recorded ([DEMO_VIDEO_SCRIPT.md](./DEMO_VIDEO_SCRIPT.md))
-- [ ] **Social post** — add URL when posted ([SOCIAL_POST_DRAFT.md](./SOCIAL_POST_DRAFT.md))
+- [ ] **Demo video** — record per script; paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
+- [ ] **Social post** — post per draft; paste URL in SUBMISSION_URLS
+- [ ] **Live deploy verify green** — [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md)
 - [x] **Final evidence packet** — [`evidence/platform-tests-CONFIRM.log`](./evidence/platform-tests-CONFIRM.log)
 - [x] **Final submission handoff** — [FINAL_SUBMISSION.md](./FINAL_SUBMISSION.md)
 

@@ -26,9 +26,11 @@ This document describes the Week 03 public platform layer as implemented on the 
 | Rate-limit headers on public API | **Shipped** (`ratelimit/middleware.ts`) |
 | Public audit trail + developer portal | **Shipped** (`audit/`, `/developer`, `/oauth/device`) |
 | CLI + TTFE drill | **Shipped** (`integrations/cli`, `pnpm drill:ttfe`) |
-| Agent-as-citizen rewire (Epic 7) | **Shipped** (`SHIP_AGENT_USE_PUBLIC_API`, `agent-platform.ts`) |
+| Issues / sprints public routes | **Shipped** (`routes/v1/issues.ts`, `routes/v1/sprints.ts`) |
+| `@ship/sdk` issues + sprints clients | **Shipped** (`sdk/src/client.ts`) |
+| Agent-as-citizen rewire (Epic 7) | **Shipped** (`SHIP_AGENT_USE_PUBLIC_API`, SDK document fetch path) |
 
-**Deployed proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)
+**Deployed proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) — redeploy `gfa2_wk6-final` after merge; run `node scripts/platform/verify-deploy.mjs`.
 
 ---
 
@@ -37,30 +39,45 @@ This document describes the Week 03 public platform layer as implemented on the 
 ```text
 api/src/platform/
 ├── router.ts              # Platform router: request_id, OAuth mount, v1 routes, ApiError handler
-├── oauth.ts               # App registration, PKCE codes, bearer middleware, requireScope()
+├── oauth.ts               # App registration, PKCE codes, bearer middleware, secret rotation
+├── oauth-tokens.ts        # Device grant, refresh rotation, token issuance
 ├── scopes.ts              # Scopes-as-data registry (registerScope / listRegisteredScopes)
 ├── http.ts                # PublicApiError, sendPublicError, request_id middleware
+├── agent-platform.ts      # First-party OAuth app + SDK fetch path for FleetGraph
+├── events/
+│   ├── bus.ts             # IEventBus in-process implementation
+│   ├── registry.ts        # Event types + Zod validation
+│   └── publish.ts         # Domain event publishers (document, issue, sprint)
+├── webhooks/
+│   ├── deliverer.ts       # Retry, DLQ, replay, event-bus wiring (all event types)
+│   └── signer.ts          # HMAC-SHA256 Ship-Signature headers
+├── ratelimit/middleware.ts
+├── audit/middleware.ts
 ├── routes/
-│   ├── oauth.ts           # POST /oauth/apps, GET/POST /oauth/authorize, POST /oauth/token
+│   ├── oauth.ts           # Apps, authorize, token, device, portal-token, rotate-secret
 │   └── v1/
-│       ├── v1.ts          # Mounts me, documents, openapi.json
-│       ├── me.ts          # GET /me (authenticated profile + granted scopes)
-│       ├── documents.ts   # GET/POST /documents, GET /documents/:id
-│       └── openapi.ts     # GET /openapi.json (generated spec)
+│       ├── documents.ts   # GET/POST /documents
+│       ├── issues.ts      # GET/POST /issues
+│       ├── sprints.ts     # GET/POST /sprints, POST /sprints/:id/start
+│       ├── webhooks.ts    # Subscriptions, deliveries, replay
+│       ├── audit.ts       # Public API audit log
+│       └── me.ts          # GET /me
 └── spec/
     ├── route-metadata.ts  # Canonical route list for OpenAPI + fitness tests
     └── openapi.ts         # Zod-driven OpenAPI 3.1 generator
 
 sdk/
-├── src/client.ts          # ShipClient: me(), documents.{list,getById,create}; stub issues/sprints/webhooks
-├── src/types.ts           # Typed request/response shapes for public API
-└── src/index.ts           # Package exports
+├── src/client.ts          # ShipClient: documents, issues, sprints, webhooks, auth helpers
+├── src/auth.ts            # deviceLogin, authorizationCodeFlow, ITokenStore (memory, file, localStorage)
+├── src/webhooks.ts        # verifyWebhook
+└── src/index.ts
 
-api/src/db/migrations/
-└── 047_oauth_public_platform.sql   # oauth_apps, oauth_authorization_codes, oauth_access_tokens
+integrations/cli/          # ship login, docs *, webhooks tail (poll + verifyWebhook)
+
+web/src/pages/
+├── DeveloperPortalPage.tsx  # Apps, rotate secret, portal token, subscriptions, deliveries, audit
+└── OAuthDeviceVerifyPage.tsx
 ```
-
-**Planned modules (PRD, not yet in tree):** `webhooks/`, `events/`, `audit/`, `ratelimit/`, `integrations/cli/`, developer portal routes under `web/`.
 
 ---
 
@@ -70,8 +87,8 @@ api/src/db/migrations/
 | --- | --- |
 | **SRP** | `oauth.ts` owns token lifecycle; `documents.ts` owns HTTP mapping only; domain writes stay in existing `api/src/services/` and `pool` queries—not mixed into OAuth. |
 | **OCP** | `scopes.ts` registers scopes at module load; new scopes do not require editing middleware—only `registerScope()` and route metadata. |
-| **LSP** | PRD targets `IEventBus` / `IWebhookDeliverer` as swappable implementations; in-memory must-ship first, queue-backed drop-in later (**planned**). |
-| **ISP** | `@ship/sdk` exposes resource-segregated clients (`documents`, future `issues`, `webhooks`) rather than one flat API class. |
+| **LSP** | `IEventBus` / `WebhookDeliverer` in `events/bus.ts` and `webhooks/deliverer.ts`; in-memory must-ship, queue-backed drop-in later. |
+| **ISP** | `@ship/sdk` exposes resource-segregated clients (`documents`, `issues`, `sprints`, `webhooks`) rather than one flat API class. |
 | **DIP** | Public routes depend on platform abstractions (`requireBearerToken`, `requireScope`, `sendPublicError`) rather than session/CSRF internals in `app.ts`. |
 
 ---
@@ -94,8 +111,8 @@ Inside `createPlatformRouter()` (`platform/router.ts`):
 
 ```ts
 router.use(publicRequestIdMiddleware);
-router.use('/oauth', oauthRouter);      // registration + authorize + token
-router.use('/', publicV1Router);        // /me, /documents, /openapi.json
+router.use('/oauth', oauthRouter);      // registration + authorize + token + device
+router.use('/', publicV1Router);        // /me, /documents, /issues, /sprints, /webhooks, /audit, /openapi.json
 router.use(/* 404 + PublicApiError handler → ApiError shape */);
 ```
 

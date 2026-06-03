@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { authMiddleware } from '../../middleware/auth.js';
 import { pool } from '../../db/client.js';
 import { PublicApiError, sendPublicError } from '../http.js';
-import { createAuthorizationCode, insertOAuthApp, redeemAuthorizationCode } from '../oauth.js';
+import { createAuthorizationCode, insertOAuthApp, redeemAuthorizationCode, rotateOAuthAppSecret } from '../oauth.js';
 import {
   createDeviceAuthorization,
+  issueAccessAndRefreshTokens,
   pollDeviceToken,
   redeemRefreshToken,
   verifyDeviceUserCode,
@@ -80,6 +81,24 @@ registerPublicRoute({
   tags: ['OAuth'],
   requestBodySchemaName: 'OAuthAppRegistrationRequest',
   responseSchemaName: 'OAuthAppRegistrationResponse',
+});
+
+registerPublicRoute({
+  method: 'post',
+  path: '/oauth/apps/{id}/rotate-secret',
+  summary: 'Rotate OAuth app client secret',
+  operationId: 'rotateOAuthAppSecret',
+  tags: ['OAuth'],
+  responseSchemaName: 'OAuthAppSecretRotationResponse',
+});
+
+registerPublicRoute({
+  method: 'post',
+  path: '/oauth/apps/{clientId}/portal-token',
+  summary: 'Issue portal bearer token for an owned OAuth app',
+  operationId: 'issuePortalAccessToken',
+  tags: ['OAuth'],
+  responseSchemaName: 'OAuthPortalTokenResponse',
 });
 
 registerPublicRoute({
@@ -231,6 +250,73 @@ router.post('/apps', authMiddleware, async (req: Request, res: Response) => {
     });
   } catch (error) {
     sendPublicError(req, res, 500, 'server_error', 'Failed to create OAuth app');
+  }
+});
+
+router.post('/apps/:id/rotate-secret', authMiddleware, async (req: Request, res: Response) => {
+  if (!req.userId) {
+    sendPublicError(req, res, 401, 'unauthorized', 'Login required');
+    return;
+  }
+
+  try {
+    const rotated = await rotateOAuthAppSecret({
+      appId: req.params.id as string,
+      ownerUserId: req.userId,
+    });
+    res.json({
+      client_secret: rotated.clientSecret,
+      note: 'Client secret is shown exactly once. Store it securely now.',
+    });
+  } catch (error) {
+    if (error instanceof PublicApiError) {
+      sendPublicError(req, res, error.status, error.code, error.message, error.details);
+      return;
+    }
+    sendPublicError(req, res, 500, 'server_error', 'Failed to rotate client secret');
+  }
+});
+
+router.post('/apps/:clientId/portal-token', authMiddleware, async (req: Request, res: Response) => {
+  if (!req.userId || !req.workspaceId) {
+    sendPublicError(req, res, 401, 'unauthorized', 'Login required');
+    return;
+  }
+
+  try {
+    const app = await loadOAuthApp(req.params.clientId as string);
+    if (app.revoked_at) {
+      throw new PublicApiError(400, 'invalid_client', 'OAuth app is revoked');
+    }
+
+    const owner = await pool.query(
+      `SELECT owner_user_id FROM oauth_apps WHERE id = $1`,
+      [app.id]
+    );
+    if (owner.rows[0]?.owner_user_id !== req.userId && !req.isSuperAdmin) {
+      sendPublicError(req, res, 403, 'forbidden', 'Not app owner');
+      return;
+    }
+
+    const tokens = await issueAccessAndRefreshTokens({
+      appId: app.id,
+      userId: req.userId,
+      workspaceId: req.workspaceId,
+      scopes: app.requested_scopes,
+    });
+
+    res.json({
+      access_token: tokens.accessToken,
+      token_type: 'Bearer',
+      expires_in: tokens.expiresIn,
+      scope: tokens.scope,
+    });
+  } catch (error) {
+    if (error instanceof PublicApiError) {
+      sendPublicError(req, res, error.status, error.code, error.message, error.details);
+      return;
+    }
+    sendPublicError(req, res, 500, 'server_error', 'Failed to issue portal token');
   }
 });
 

@@ -17,6 +17,13 @@ const SDK_OPERATION_MAP: Record<string, string> = {
   createWebhookSubscription: 'client.webhooks.create()',
   listWebhookDeliveries: 'client.webhooks.listDeliveries()',
   replayWebhookDelivery: 'client.webhooks.replay()',
+  listIssues: 'client.issues.list()',
+  getIssueById: 'client.issues.getById()',
+  createIssue: 'client.issues.create()',
+  listSprints: 'client.sprints.list()',
+  getSprintById: 'client.sprints.getById()',
+  createSprint: 'client.sprints.create()',
+  startSprint: 'client.sprints.start()',
   listPlatformAuditLog: 'portal-only (not SDK)',
   getPublicOpenApiSpec: 'GET /api/v1/openapi.json (meta)',
 };

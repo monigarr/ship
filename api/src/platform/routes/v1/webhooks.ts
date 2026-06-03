@@ -133,6 +133,7 @@ router.get(
               d.response_status,
               d.response_excerpt,
               d.latency_ms,
+              d.payload,
               d.created_at,
               d.updated_at
        FROM webhook_deliveries d

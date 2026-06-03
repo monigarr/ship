@@ -52,6 +52,38 @@ export class FileTokenStore implements ITokenStore {
   }
 }
 
+/** Browser localStorage-backed token store (SPA / demo apps). */
+export class LocalStorageTokenStore implements ITokenStore {
+  constructor(private readonly storageKey = 'ship.tokens') {}
+
+  private read(): { accessToken?: string; refreshToken?: string } {
+    if (typeof globalThis.localStorage === 'undefined') {
+      return {};
+    }
+    try {
+      const raw = globalThis.localStorage.getItem(this.storageKey);
+      return raw ? (JSON.parse(raw) as { accessToken?: string; refreshToken?: string }) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private write(data: { accessToken: string; refreshToken?: string }): void {
+    if (typeof globalThis.localStorage === 'undefined') {
+      throw new Error('localStorage is not available in this environment');
+    }
+    globalThis.localStorage.setItem(this.storageKey, JSON.stringify(data));
+  }
+
+  async getAccessToken(): Promise<string | null> {
+    return this.read().accessToken ?? null;
+  }
+
+  async setTokens(tokens: { accessToken: string; refreshToken?: string }): Promise<void> {
+    this.write(tokens);
+  }
+}
+
 export async function deviceLogin(opts: {
   baseUrl: string;
   clientId: string;

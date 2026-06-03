@@ -16,15 +16,21 @@ Redeploy Render from `gfa2_wk6-final` if post-MVP OpenAPI paths (`/webhooks`, `/
 
 ## Demo video (3–5 min)
 
-**Script:** [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md)
-
-**URL:** _Add after recording (YouTube/Loom unlisted)_
+**Script:** [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md)  
+**URL:** Paste after recording → [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) (then copy into this file)
 
 ## Social post
 
-**Draft:** [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md)
+**Draft:** [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md)  
+**URL:** Paste after posting → [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
 
-**URL:** _Add after posting (@GauntletAI + webhook tail screenshot)_
+## Deploy (post-implementation)
+
+Redeploy Render from `gfa2_wk6-final` per [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md), then:
+
+```bash
+node scripts/platform/verify-deploy.mjs
+```
 
 ## Evidence
 

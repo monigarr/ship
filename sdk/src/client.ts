@@ -2,10 +2,16 @@ import { deviceLogin, authorizationCodeFlow, type ITokenStore } from './auth.js'
 import { mapStatusToKind, ShipSdkError } from './errors.js';
 import {
   CreateShipDocumentInput,
+  CreateShipIssueInput,
+  CreateShipSprintInput,
   ShipDocument,
   ShipDocumentListResponse,
+  ShipIssue,
+  ShipIssueListResponse,
   ShipMeResponse,
   ShipSdkOptions,
+  ShipSprint,
+  ShipSprintListResponse,
 } from './types.js';
 
 async function parseJsonOrThrow<T>(response: Response): Promise<T> {
@@ -46,8 +52,20 @@ export class ShipClient {
     iterate: () => AsyncGenerator<ShipDocument, void, unknown>;
   };
 
-  readonly issues: Record<string, never>;
-  readonly sprints: Record<string, never>;
+  readonly issues: {
+    list: (params?: { cursor?: string; limit?: number }) => Promise<ShipIssueListResponse>;
+    getById: (id: string) => Promise<ShipIssue>;
+    create: (input: CreateShipIssueInput) => Promise<ShipIssue>;
+    iterate: () => AsyncGenerator<ShipIssue, void, unknown>;
+  };
+
+  readonly sprints: {
+    list: (params?: { cursor?: string; limit?: number }) => Promise<ShipSprintListResponse>;
+    getById: (id: string) => Promise<ShipSprint>;
+    create: (input: CreateShipSprintInput) => Promise<ShipSprint>;
+    start: (id: string) => Promise<ShipSprint>;
+    iterate: () => AsyncGenerator<ShipSprint, void, unknown>;
+  };
 
   readonly webhooks: {
     create: (input: { event: string; target_url: string }) => Promise<{
@@ -73,8 +91,20 @@ export class ShipClient {
       iterate: () => this.iterateDocuments(),
     };
 
-    this.issues = {};
-    this.sprints = {};
+    this.issues = {
+      list: (params) => this.listIssues(params),
+      getById: (id) => this.getIssueById(id),
+      create: (input) => this.createIssue(input),
+      iterate: () => this.iterateIssues(),
+    };
+
+    this.sprints = {
+      list: (params) => this.listSprints(params),
+      getById: (id) => this.getSprintById(id),
+      create: (input) => this.createSprint(input),
+      start: (id) => this.startSprint(id),
+      iterate: () => this.iterateSprints(),
+    };
 
     this.webhooks = {
       create: (input) => this.createWebhook(input),
@@ -182,6 +212,94 @@ export class ShipClient {
       headers: { Authorization: `Bearer ${this.token}` },
     });
     return parseJsonOrThrow<{ replayed: boolean; delivery_id: string }>(response);
+  }
+
+  private async listIssues(params?: { cursor?: string; limit?: number }): Promise<ShipIssueListResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/issues`);
+    if (params?.cursor) url.searchParams.set('cursor', params.cursor);
+    if (params?.limit) url.searchParams.set('limit', String(params.limit));
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    return parseJsonOrThrow<ShipIssueListResponse>(response);
+  }
+
+  private async *iterateIssues(): AsyncGenerator<ShipIssue, void, unknown> {
+    let cursor: string | undefined;
+    do {
+      const page = await this.listIssues({ cursor, limit: 25 });
+      for (const row of page.data) yield row;
+      cursor = page.next_cursor ?? undefined;
+    } while (cursor);
+  }
+
+  private async getIssueById(id: string): Promise<ShipIssue> {
+    const response = await this.fetchFn(`${this.baseUrl}/api/v1/issues/${id}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    return parseJsonOrThrow<ShipIssue>(response);
+  }
+
+  private async createIssue(input: CreateShipIssueInput): Promise<ShipIssue> {
+    const response = await this.fetchFn(`${this.baseUrl}/api/v1/issues`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+    return parseJsonOrThrow<ShipIssue>(response);
+  }
+
+  private async listSprints(params?: { cursor?: string; limit?: number }): Promise<ShipSprintListResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/sprints`);
+    if (params?.cursor) url.searchParams.set('cursor', params.cursor);
+    if (params?.limit) url.searchParams.set('limit', String(params.limit));
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    return parseJsonOrThrow<ShipSprintListResponse>(response);
+  }
+
+  private async *iterateSprints(): AsyncGenerator<ShipSprint, void, unknown> {
+    let cursor: string | undefined;
+    do {
+      const page = await this.listSprints({ cursor, limit: 25 });
+      for (const row of page.data) yield row;
+      cursor = page.next_cursor ?? undefined;
+    } while (cursor);
+  }
+
+  private async getSprintById(id: string): Promise<ShipSprint> {
+    const response = await this.fetchFn(`${this.baseUrl}/api/v1/sprints/${id}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    return parseJsonOrThrow<ShipSprint>(response);
+  }
+
+  private async createSprint(input: CreateShipSprintInput): Promise<ShipSprint> {
+    const response = await this.fetchFn(`${this.baseUrl}/api/v1/sprints`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+    return parseJsonOrThrow<ShipSprint>(response);
+  }
+
+  private async startSprint(id: string): Promise<ShipSprint> {
+    const response = await this.fetchFn(`${this.baseUrl}/api/v1/sprints/${id}/start`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    return parseJsonOrThrow<ShipSprint>(response);
   }
 }
 

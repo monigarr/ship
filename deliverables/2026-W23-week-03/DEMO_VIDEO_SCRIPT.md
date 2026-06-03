@@ -1,5 +1,63 @@
 # Early Submission Demo Video Script — SPEAK / SHOW ON SCREEN
 
+## Voice tool copy-paste (2–4 min)
+
+**Speak length:** ~430 words → about **2:50–3:30** at normal pace (stays under 4:00).
+
+Copy everything between the lines below into your voice generator. Match video to each **SHOW** line.
+
+---
+
+SPEAK:
+I'm Monica. This is PlugForge, Week 03 on Ship. We added a developer platform on top of Ship: a versioned public API at api v1, OAuth with authorization code plus PKCE for web apps and device login for the CLI, HMAC webhooks with exponential backoff and dead-letter replay, the typed Ship SDK, an in-app developer portal, and a reference CLI.
+
+The rubric is Time-to-First-Event. Can a stranger go from pnpm install at-ship-sdk to a verified signed webhook in the terminal, using only published docs? The grade is contract proof, not endpoint count.
+
+The deployed app is on Render at ship-web-jyqh. Log in, then open the live OpenAPI spec. MVP gates are done: bearer tokens on every public route, a consistent ApiError shape, scope checks that name the missing scope, and documents with cursor pagination. OpenAPI is generated from route metadata, and CI fitness tests stop spec drift.
+
+Here is the five-line demo. Set SHIP_API_URL and SHIP_CLIENT_ID. Install the workspace, build the CLI, and run ship login. The terminal prints a user code. In the browser, open the device verify page, enter the code, and approve scopes.
+
+Run ship docs create with title hello. That creates a document through the SDK and the public API.
+
+In a second terminal, run ship webhooks tail. Create another document. A document.created event arrives. Point at the Ship-Signature header with timestamp and HMAC. The CLI shows verified. Hold on verified for the screenshot.
+
+Open the developer portal. Show OAuth apps, webhook subscriptions, and the delivery log. Click Replay on one delivery so reviewers see retry and idempotency.
+
+The Part 2 agent uses the same OAuth and SDK path behind a feature flag. The platform itself does not call an LLM; only user agent turns do.
+
+Proof lives in the repo: docs architecture, MVP and platform CI workflows, and the week three deliverables folder with pre-search, cost analysis, epics, and three discoveries. Branch gfa2 wk6 final.
+
+A small API that matches its spec beats a big API that contradicts it. Proof over promises. Thanks for watching.
+
+SHOW ON SCREEN:
+Title card: PlugForge · Week 03
+
+Subtitle: Time-to-First-Event (TTFE)
+
+Browser: https://ship-web-jyqh.onrender.com/login then /api/v1/openapi.json
+
+Terminal:
+export SHIP_API_URL=https://ship-web-jyqh.onrender.com
+export SHIP_CLIENT_ID=<your_client_id>
+pnpm install && pnpm --filter @ship/cli build
+ship login
+
+Browser: https://ship-web-jyqh.onrender.com/oauth/device (enter user code)
+
+Terminal: ship docs create --title "hello"
+
+Terminal 2: ship webhooks tail — then create another doc — highlight verified
+
+Browser: https://ship-web-jyqh.onrender.com/developer — delivery log — Replay
+
+Text: SHIP_AGENT_USE_PUBLIC_API · deliverables/2026-W23-week-03/
+
+End card: ship-web-jyqh.onrender.com · gfa2_wk6-final
+
+---
+
+## Full script (5 min, detailed)
+
 **Checkpoint:** Early Submission (Friday) per [`PRD.md`](./PRD.md)  
 **Grader path:** [`EARLY_SUBMISSION.md`](./EARLY_SUBMISSION.md) · **Tracker:** [`DELIVERABLES.md`](./DELIVERABLES.md)  
 **Target length:** 3–5 minutes (PRD demo video spec; same story proves Early + Final)  
