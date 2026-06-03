@@ -1,7 +1,7 @@
 # Week 03 Deliverables
 
 **Source of truth:** [`PRD.md`](./PRD.md)  
-**Dev branch:** `gfa2_wk6-final` (Early/Final) · **`gfa2_wk6`:** MVP slice preserved · **Last updated:** 2026-06-02
+**Dev branch:** `gfa2_wk6-final` (Early/Final) · **`gfa2_wk6`:** MVP slice preserved · **Last updated:** 2026-06-03
 **Architecture doc (PRD path):** [`docs/architecture.md`](../../docs/architecture.md)
 
 This file tracks submission deliverables, implementation status on the current branch, and reviewer proof URLs. Status keys: **Done** · **Partial** · **Not started**.
@@ -55,7 +55,7 @@ This file tracks submission deliverables, implementation status on the current b
 | ScopeRegistry; 403 names missing scope | **Done** | [`scopes.ts`](../../api/src/platform/scopes.ts) · MVP test |
 | OpenAPI 3.1 generated, schema unit test | **Done** | [Live spec](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`openapi-schema.test.ts`](../../api/src/platform/openapi-schema.test.ts) |
 | SDK skeleton; `ShipClient({ token }).me()` | **Done** | [`sdk/src/client.ts`](../../sdk/src/client.ts) · [`client.test.ts`](../../sdk/src/client.test.ts) |
-| Regression P95 / bundle / queries within +10% | **Done** | [`scripts/mvp/capture-perf-metrics.mjs`](../../scripts/mvp/capture-perf-metrics.mjs) · [`artifacts/perf/current-metrics.json`](../../artifacts/perf/current-metrics.json) · [`evidence/perf-regression-2026-06-02.log`](./evidence/perf-regression-2026-06-02.log) |
+| Regression P95 / bundle / queries within +10% | **Done** | [`scripts/mvp/run-perf-probe.mjs`](../../scripts/mvp/run-perf-probe.mjs) · [`capture-perf-metrics.mjs`](../../scripts/mvp/capture-perf-metrics.mjs) · [`artifacts/perf/current-metrics.json`](../../artifacts/perf/current-metrics.json) · [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) (measured `queryCountPerRoute=4` via `PERF_PROBE_URL` + `QUERY_COUNT_METRICS=1`) |
 | Existing Playwright **full** regression suite passes | **Done** | Confirming run [`evidence/e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log): **854 passed**, **0 failed**, 7 flaky, 9 skipped, exit 0 (~56m, `PLAYWRIGHT_WORKERS=1`) |
 | Deployed + OpenAPI URL + grader OAuth app | **Done** | Deploy + OpenAPI live; pre-registered app documented in [`README`](../../README.md) § Week 03 (`client_id` + portal secret handoff) |
 
@@ -98,6 +98,7 @@ pnpm --filter @ship/api test
 pnpm --filter @ship/sdk type-check
 pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 PLAYWRIGHT_WORKERS=1 pnpm test:e2e   # full regression (~1.3h; see evidence log)
+node scripts/mvp/run-perf-probe.mjs
 node scripts/mvp/perf-regression-check.mjs
 pnpm --filter @ship/api openapi:generate:public
 ```
@@ -140,7 +141,7 @@ pnpm --filter @ship/api openapi:generate:public
 
 ## Grader checklist
 
-Use before submission. Checkboxes reflect **`gfa2_wk6` as of 2026-06-02**.
+Use before submission. Checkboxes reflect **`gfa2_wk6-final` as of 2026-06-03**.
 
 ### Checkpoints and docs
 
@@ -173,7 +174,7 @@ Use before submission. Checkboxes reflect **`gfa2_wk6` as of 2026-06-02**.
 - [x] **SDK package + `me()`** — [`sdk/`](../../sdk/)
 - [x] **Route/spec fitness tests** — [`public-api-fitness.test.ts`](../../api/src/platform/public-api-fitness.test.ts)
 - [x] **Playwright PKCE E2E** — [`oauth-pkce.spec.ts`](../../e2e/oauth-pkce.spec.ts)
-- [x] **Perf budget CI** — [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) · [`evidence/perf-regression-2026-06-02.log`](./evidence/perf-regression-2026-06-02.log) (capture + check passed)
+- [x] **Perf budget CI** — [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) runs `run-perf-probe.mjs` (live `PERF_PROBE_URL` + measured query count) then `perf-regression-check.mjs` · [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)
 - [x] **Full Playwright regression suite** — [`evidence/e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed / 0 failed / 7 flaky / exit 0)
 - [x] **Pre-registered grader OAuth app in README** — [`README`](../../README.md) § Week 03; `client_id` `ship_9ba67d9391c53a610558563b93627298`; secret via Gauntlet portal
 

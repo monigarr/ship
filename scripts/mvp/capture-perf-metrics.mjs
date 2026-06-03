@@ -2,8 +2,11 @@
  * Capture MVP perf metrics for scripts/mvp/perf-regression-check.mjs
  *
  * Usage (from repo root):
- *   node scripts/mvp/capture-perf-metrics.mjs
+ *   node scripts/mvp/run-perf-probe.mjs
  *   node scripts/mvp/perf-regression-check.mjs
+ *
+ * Or manually:
+ *   node scripts/mvp/capture-perf-metrics.mjs
  *
  * Optional: PERF_PROBE_URL=http://127.0.0.1:3001 node scripts/mvp/capture-perf-metrics.mjs
  *   (adds live /health P95 samples; requires API running with QUERY_COUNT_METRICS=1 for query probe)

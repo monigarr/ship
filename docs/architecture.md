@@ -248,7 +248,7 @@ Proof: `api/src/platform/agent-platform.test.ts`.
 | SDK/OpenAPI parity | `api/src/platform/sdk-openapi-parity.test.ts` |
 | Webhook retry/DLQ/replay | `api/src/platform/webhooks-deliverer.test.ts` |
 | TTFE drill | `integrations/cli/tests/ttfe.drill.ts` + `scripts/platform/run-ttfe-ci.mjs` |
-| Perf +10% budget | `scripts/mvp/perf-regression-check.mjs` |
+| Perf +10% budget | `scripts/mvp/run-perf-probe.mjs` · `scripts/mvp/perf-regression-check.mjs` |
 | CI orchestration | `.github/workflows/mvp-gates.yml`, `.github/workflows/platform-gates.yml` |
 
 Regenerate static spec: `pnpm --filter @ship/api openapi:generate:public` → `docs/openapi.json`.

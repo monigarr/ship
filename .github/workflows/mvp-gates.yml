@@ -97,5 +97,13 @@ jobs:
           SKIP_E2E_GLOBAL_BUILD: 'true'
         run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 
+      - name: Seed database for perf probe
+        run: pnpm --filter @ship/api db:seed
+
+      - name: Capture perf metrics (live probe)
+        run: node scripts/mvp/run-perf-probe.mjs
+        env:
+          SKIP_PERF_SEED: '1'
+
       - name: Perf regression check (+10%)
         run: node scripts/mvp/perf-regression-check.mjs

@@ -140,7 +140,7 @@ Raw Cursor agent transcripts (JSONL) remain on the author machine under the Curs
 | SDK | Hand-written `@ship/sdk`; expand with routes | Partial — `me()` + `documents` |
 | Webhooks / CLI / TTFE | PRD must-ship for final week; not MVP hard gate | Not started |
 | FleetGraph | Intent routing before template selection | Yes — `runtime.ts` + paired test |
-| CI MVP gates | Unit tests, OpenAPI generate, OAuth E2E grep, perf script | Yes — `mvp-gates.yml` |
+| CI MVP gates | Unit tests, OpenAPI generate, OAuth E2E grep, live perf probe + regression | Yes — `mvp-gates.yml`, `run-perf-probe.mjs` |
 
 ---
 
@@ -180,6 +180,22 @@ Committed under [`deliverables/2026-W23-week-03/evidence/`](./evidence/):
 | [`perf-regression-2026-06-01.log`](./evidence/perf-regression-2026-06-01.log) | `node scripts/mvp/perf-regression-check.mjs` | Skipped — missing current metrics file |
 
 **Recommended before claiming MVP item 9 complete:** Full suite was run 2026-06-01; remaining 12 failures are pre-existing spec flakes/timeouts (not Week 03 OAuth/API). Re-run failed specs with `--last-failed` after resource cleanup if a fully green log is required for strict interpretation of “passes.”
+
+---
+
+## Remediation (2026-06-03) — measured query counts
+
+**Reviewer feedback:** Wire `PERF_PROBE_URL` so query-count is measured, not estimated.
+
+| Change | Proof |
+| --- | --- |
+| [`scripts/mvp/run-perf-probe.mjs`](../../scripts/mvp/run-perf-probe.mjs) | Seeds DB, starts API with `QUERY_COUNT_METRICS=1`, CSRF login, runs capture with `PERF_PROBE_URL` |
+| [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) | CI runs `run-perf-probe.mjs` then `perf-regression-check.mjs` |
+| [`perf-regression-check.mjs`](../../scripts/mvp/perf-regression-check.mjs) | Fails if `notes.queryCount` still says `estimate` |
+| [`artifacts/perf/current-metrics.json`](../../artifacts/perf/current-metrics.json) | `queryCountPerRoute: 4` (measured); baseline cap 132 (+10% of 120) |
+| [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) | Live probe + regression check passed |
+
+Prior log [`perf-regression-2026-06-02.log`](./evidence/perf-regression-2026-06-02.log) used estimated `queryCountPerRoute=95` when `PERF_PROBE_URL` was unset — superseded by 2026-06-03 evidence.
 
 ---
 

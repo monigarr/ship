@@ -24,6 +24,17 @@
 node scripts/platform/verify-deploy.mjs
 ```
 
+## Perf regression (PRD MVP item 9)
+
+```bash
+pnpm build:api && pnpm build:web
+pnpm --filter @ship/api db:migrate && pnpm --filter @ship/api db:seed
+node scripts/mvp/run-perf-probe.mjs
+node scripts/mvp/perf-regression-check.mjs
+```
+
+Evidence: [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) · measured `queryCountPerRoute=4` via live `PERF_PROBE_URL` probe.
+
 ## CLI five-line story
 
 ```bash

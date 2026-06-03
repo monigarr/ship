@@ -1,6 +1,6 @@
 # Final Submission — Week 03 (PlugForge)
 
-**Branch:** `gfa2_wk6-final` · **Date:** 2026-06-02 · **Commit:** `16cf319e351c35b4f0cf1f33c504a0f17850f490`
+**Branch:** `gfa2_wk6-final` · **Date:** 2026-06-03 · **Commit:** `24d964b47d63ec81425a28112c25873db5ab5cea`
 
 ## Deploy
 
@@ -38,7 +38,7 @@ node scripts/platform/verify-deploy.mjs
 | --- | --- |
 | Full E2E regression | [`evidence/e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) |
 | Platform unit tests | [`evidence/platform-tests-CONFIRM.log`](./evidence/platform-tests-CONFIRM.log) |
-| Perf regression | [`evidence/perf-regression-2026-06-02.log`](./evidence/perf-regression-2026-06-02.log) |
+| Perf regression | [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) (measured query count via `run-perf-probe.mjs`) |
 | Deploy verification | [`evidence/deploy-verify-2026-06-02.log`](./evidence/deploy-verify-2026-06-02.log) |
 | CI workflows | [`.github/workflows/mvp-gates.yml`](../../.github/workflows/mvp-gates.yml), [`.github/workflows/platform-gates.yml`](../../.github/workflows/platform-gates.yml) |
 
