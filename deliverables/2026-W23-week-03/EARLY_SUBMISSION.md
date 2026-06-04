@@ -1,10 +1,10 @@
 # Early Submission — Week 03 (PlugForge)
 
-**Branch:** `gfa2_wk6-final` · **Date:** 2026-06-02
+**Branch:** `gfa2_wk6-final` · **Date:** 2026-06-03
 
 ## Grader quick path
 
-1. Deployed app: https://ship-web-jyqh.onrender.com/login (ensure Render deploys branch **`gfa2_wk6-final`**, commit `16cf319`+).
+1. Deployed app: https://ship-web-jyqh.onrender.com/login (ensure Render deploys branch **`gfa2_wk6-final`**, commit `1a23ea8`+ for measured perf probe).
 2. Public OpenAPI: https://ship-web-jyqh.onrender.com/api/v1/openapi.json
 3. Developer portal (session): `/developer` after login
 4. Device verify UX: `/oauth/device`
@@ -20,7 +20,8 @@ ship docs create --title "hello"
 ship webhooks tail
 ```
 
-6. CI: `.github/workflows/platform-gates.yml` + `mvp-gates.yml`
+6. CI: `.github/workflows/platform-gates.yml` + `mvp-gates.yml` (perf probe after build, before Playwright)
+7. Perf: `node scripts/mvp/run-perf-probe.mjs` → [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)
 
 ## Evidence
 

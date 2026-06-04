@@ -32,6 +32,10 @@ Redeploy Render from `gfa2_wk6-final` per [`scripts/platform/DEPLOY_RENDER.md`](
 node scripts/platform/verify-deploy.mjs
 ```
 
+## Human code review (early submission)
+
+**Pass** with follow-up resolved 2026-06-03: wire `PERF_PROBE_URL` for measured query counts — [`run-perf-probe.mjs`](../../scripts/mvp/run-perf-probe.mjs) · [PR #3](https://github.com/monigarr/ship/pull/3).
+
 ## Evidence
 
 | Artifact | Location |

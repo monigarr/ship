@@ -72,6 +72,17 @@ pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 
 **Full regression (MVP gate):** `pnpm test:e2e` (requires Docker for isolated DB). Evidence log: `deliverables/2026-W23-week-03/evidence/e2e-full-run-CONFIRM.log`.
 
+**Perf regression (PRD MVP item 9):**
+
+```bash
+pnpm build:api && pnpm build:web
+pnpm --filter @ship/api db:migrate && pnpm --filter @ship/api db:seed
+node scripts/mvp/run-perf-probe.mjs
+node scripts/mvp/perf-regression-check.mjs
+```
+
+Evidence: `deliverables/2026-W23-week-03/evidence/perf-regression-2026-06-03.log` (measured `queryCountPerRoute=4`). Use `run-perf-probe.mjs`, not `capture-perf-metrics.mjs` alone.
+
 #### CLI + Time-to-First-Event (Early/Final)
 
 ```bash

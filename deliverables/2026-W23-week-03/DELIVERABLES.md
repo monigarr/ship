@@ -27,7 +27,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Deliverable | PRD requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | Architectural Defense | Monday checkpoint | **Done** | [`ARCHITECTURE_DEFENSE.md`](./ARCHITECTURE_DEFENSE.md) |
-| MVP checkpoint | Tuesday hard gates | **Done** | MVP hard gates + confirming E2E/perf evidence (2026-06-02) |
+| MVP checkpoint | Tuesday hard gates | **Done** | MVP hard gates + measured perf evidence ([`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)) · human review pass with query-count remediation |
 | Early / Final submission | Friday / Sunday | **Done** (code) | [EARLY_SUBMISSION.md](./EARLY_SUBMISSION.md) · redeploy Render from `gfa2_wk6-final` |
 | GitHub / GitLab repository | Public, slice branches, PR mapping | **Done** | [GitLab repo](https://labs.gauntletai.com/monicapeters/ship) · [GitHub repo](https://github.com/monigarr/ship) · slice `gfa2_wk6` preserved · [GitHub PR #1](https://github.com/monigarr/ship/pull/1) · [GitLab MR `gfa2_wk6`→`master`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) (redirects to open MR) · merged to `master` |
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
@@ -86,7 +86,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Action | URL / file |
 | --- | --- |
 | Week 03 deliverable folder | [tree `gfa2_wk6`](https://labs.gauntletai.com/monicapeters/ship/-/tree/gfa2_wk6/deliverables/2026-W23-week-03) |
-| GitHub PR (Week 03 MVP slice) | [PR #1 `gfa2_wk6`→`master`](https://github.com/monigarr/ship/pull/1) |
+| GitHub PR (Week 03 MVP slice) | [PR #1](https://github.com/monigarr/ship/pull/1) · [PR #3 perf probe](https://github.com/monigarr/ship/pull/3) |
 | GitLab MR (Week 03 MVP slice) | [MR `gfa2_wk6`→`master`](https://labs.gauntletai.com/monicapeters/ship/-/merge_requests/new?merge_request%5Bsource_branch%5D=gfa2_wk6) |
 | `master` after merge | [tree `master`](https://labs.gauntletai.com/monicapeters/ship/-/tree/master/deliverables/2026-W23-week-03) |
 | MVP CI workflow | [`.github/workflows/mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) |
@@ -174,7 +174,7 @@ Use before submission. Checkboxes reflect **`gfa2_wk6-final` as of 2026-06-03**.
 - [x] **SDK package + `me()`** — [`sdk/`](../../sdk/)
 - [x] **Route/spec fitness tests** — [`public-api-fitness.test.ts`](../../api/src/platform/public-api-fitness.test.ts)
 - [x] **Playwright PKCE E2E** — [`oauth-pkce.spec.ts`](../../e2e/oauth-pkce.spec.ts)
-- [x] **Perf budget CI** — [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) runs `run-perf-probe.mjs` (live `PERF_PROBE_URL` + measured query count) then `perf-regression-check.mjs` · [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)
+- [x] **Perf budget CI** — [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) runs `run-perf-probe.mjs` after `build:web` (before Playwright; rejects estimated query counts) then `perf-regression-check.mjs` · [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)
 - [x] **Full Playwright regression suite** — [`evidence/e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed / 0 failed / 7 flaky / exit 0)
 - [x] **Pre-registered grader OAuth app in README** — [`README`](../../README.md) § Week 03; `client_id` `ship_9ba67d9391c53a610558563b93627298`; secret via Gauntlet portal
 

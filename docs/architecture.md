@@ -1,6 +1,6 @@
 # PlugForge Platform Architecture
 
-**Branch:** `gfa2_wk6-final` · **Last updated:** 2026-06-02  
+**Branch:** `gfa2_wk6-final` · **Last updated:** 2026-06-03  
 **Source of truth:** [`deliverables/2026-W23-week-03/PRD.md`](../deliverables/2026-W23-week-03/PRD.md)
 
 This document describes the Week 03 public platform layer as implemented on the dev branch, what remains planned per the PRD, and how the pieces connect.
@@ -9,7 +9,7 @@ This document describes the Week 03 public platform layer as implemented on the 
 
 ## Current implementation snapshot
 
-| Area | Status on `gfa2_wk6` |
+| Area | Status on `gfa2_wk6-final` |
 | --- | --- |
 | OAuth app registration + hashed secrets | **Shipped** |
 | Authorization Code + PKCE | **Shipped** (Playwright + unit tests) |
@@ -19,7 +19,7 @@ This document describes the Week 03 public platform layer as implemented on the 
 | Generated OpenAPI 3.1 at `/api/v1/openapi.json` | **Shipped** (live + static copy) |
 | `@ship/sdk` skeleton (`me()`, `documents.*`) | **Shipped** |
 | Public/internal import boundary test | **Shipped** |
-| CI MVP gates (unit, OpenAPI, PKCE E2E, perf) | **Shipped** |
+| CI MVP gates (unit, OpenAPI, measured perf, PKCE E2E) | **Shipped** |
 | Device Authorization Grant | **Shipped** (`oauth-tokens.ts`, `/oauth/device/*`) |
 | Refresh tokens + rotation | **Shipped** (family revoke on reuse) |
 | Webhooks (sign, retry, DLQ, replay) | **Shipped** (`platform/webhooks/`, `events/`) |
@@ -30,7 +30,7 @@ This document describes the Week 03 public platform layer as implemented on the 
 | `@ship/sdk` issues + sprints clients | **Shipped** (`sdk/src/client.ts`) |
 | Agent-as-citizen rewire (Epic 7) | **Shipped** (`SHIP_AGENT_USE_PUBLIC_API`, SDK document fetch path) |
 
-**Deployed proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) — redeploy `gfa2_wk6-final` after merge; run `node scripts/platform/verify-deploy.mjs`.
+**Deployed proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) â€” redeploy `gfa2_wk6-final` after merge; run `node scripts/platform/verify-deploy.mjs`.
 
 ---
 
@@ -38,45 +38,45 @@ This document describes the Week 03 public platform layer as implemented on the 
 
 ```text
 api/src/platform/
-├── router.ts              # Platform router: request_id, OAuth mount, v1 routes, ApiError handler
-├── oauth.ts               # App registration, PKCE codes, bearer middleware, secret rotation
-├── oauth-tokens.ts        # Device grant, refresh rotation, token issuance
-├── scopes.ts              # Scopes-as-data registry (registerScope / listRegisteredScopes)
-├── http.ts                # PublicApiError, sendPublicError, request_id middleware
-├── agent-platform.ts      # First-party OAuth app + SDK fetch path for FleetGraph
-├── events/
-│   ├── bus.ts             # IEventBus in-process implementation
-│   ├── registry.ts        # Event types + Zod validation
-│   └── publish.ts         # Domain event publishers (document, issue, sprint)
-├── webhooks/
-│   ├── deliverer.ts       # Retry, DLQ, replay, event-bus wiring (all event types)
-│   └── signer.ts          # HMAC-SHA256 Ship-Signature headers
-├── ratelimit/middleware.ts
-├── audit/middleware.ts
-├── routes/
-│   ├── oauth.ts           # Apps, authorize, token, device, portal-token, rotate-secret
-│   └── v1/
-│       ├── documents.ts   # GET/POST /documents
-│       ├── issues.ts      # GET/POST /issues
-│       ├── sprints.ts     # GET/POST /sprints, POST /sprints/:id/start
-│       ├── webhooks.ts    # Subscriptions, deliveries, replay
-│       ├── audit.ts       # Public API audit log
-│       └── me.ts          # GET /me
-└── spec/
-    ├── route-metadata.ts  # Canonical route list for OpenAPI + fitness tests
-    └── openapi.ts         # Zod-driven OpenAPI 3.1 generator
+â”œâ”€â”€ router.ts              # Platform router: request_id, OAuth mount, v1 routes, ApiError handler
+â”œâ”€â”€ oauth.ts               # App registration, PKCE codes, bearer middleware, secret rotation
+â”œâ”€â”€ oauth-tokens.ts        # Device grant, refresh rotation, token issuance
+â”œâ”€â”€ scopes.ts              # Scopes-as-data registry (registerScope / listRegisteredScopes)
+â”œâ”€â”€ http.ts                # PublicApiError, sendPublicError, request_id middleware
+â”œâ”€â”€ agent-platform.ts      # First-party OAuth app + SDK fetch path for FleetGraph
+â”œâ”€â”€ events/
+â”‚   â”œâ”€â”€ bus.ts             # IEventBus in-process implementation
+â”‚   â”œâ”€â”€ registry.ts        # Event types + Zod validation
+â”‚   â””â”€â”€ publish.ts         # Domain event publishers (document, issue, sprint)
+â”œâ”€â”€ webhooks/
+â”‚   â”œâ”€â”€ deliverer.ts       # Retry, DLQ, replay, event-bus wiring (all event types)
+â”‚   â””â”€â”€ signer.ts          # HMAC-SHA256 Ship-Signature headers
+â”œâ”€â”€ ratelimit/middleware.ts
+â”œâ”€â”€ audit/middleware.ts
+â”œâ”€â”€ routes/
+â”‚   â”œâ”€â”€ oauth.ts           # Apps, authorize, token, device, portal-token, rotate-secret
+â”‚   â””â”€â”€ v1/
+â”‚       â”œâ”€â”€ documents.ts   # GET/POST /documents
+â”‚       â”œâ”€â”€ issues.ts      # GET/POST /issues
+â”‚       â”œâ”€â”€ sprints.ts     # GET/POST /sprints, POST /sprints/:id/start
+â”‚       â”œâ”€â”€ webhooks.ts    # Subscriptions, deliveries, replay
+â”‚       â”œâ”€â”€ audit.ts       # Public API audit log
+â”‚       â””â”€â”€ me.ts          # GET /me
+â””â”€â”€ spec/
+    â”œâ”€â”€ route-metadata.ts  # Canonical route list for OpenAPI + fitness tests
+    â””â”€â”€ openapi.ts         # Zod-driven OpenAPI 3.1 generator
 
 sdk/
-├── src/client.ts          # ShipClient: documents, issues, sprints, webhooks, auth helpers
-├── src/auth.ts            # deviceLogin, authorizationCodeFlow, ITokenStore (memory, file, localStorage)
-├── src/webhooks.ts        # verifyWebhook
-└── src/index.ts
+â”œâ”€â”€ src/client.ts          # ShipClient: documents, issues, sprints, webhooks, auth helpers
+â”œâ”€â”€ src/auth.ts            # deviceLogin, authorizationCodeFlow, ITokenStore (memory, file, localStorage)
+â”œâ”€â”€ src/webhooks.ts        # verifyWebhook
+â””â”€â”€ src/index.ts
 
 integrations/cli/          # ship login, docs *, webhooks tail (poll + verifyWebhook)
 
 web/src/pages/
-├── DeveloperPortalPage.tsx  # Apps, rotate secret, portal token, subscriptions, deliveries, audit
-└── OAuthDeviceVerifyPage.tsx
+â”œâ”€â”€ DeveloperPortalPage.tsx  # Apps, rotate secret, portal token, subscriptions, deliveries, audit
+â””â”€â”€ OAuthDeviceVerifyPage.tsx
 ```
 
 ---
@@ -85,8 +85,8 @@ web/src/pages/
 
 | Principle | Where it appears |
 | --- | --- |
-| **SRP** | `oauth.ts` owns token lifecycle; `documents.ts` owns HTTP mapping only; domain writes stay in existing `api/src/services/` and `pool` queries—not mixed into OAuth. |
-| **OCP** | `scopes.ts` registers scopes at module load; new scopes do not require editing middleware—only `registerScope()` and route metadata. |
+| **SRP** | `oauth.ts` owns token lifecycle; `documents.ts` owns HTTP mapping only; domain writes stay in existing `api/src/services/` and `pool` queriesâ€”not mixed into OAuth. |
+| **OCP** | `scopes.ts` registers scopes at module load; new scopes do not require editing middlewareâ€”only `registerScope()` and route metadata. |
 | **LSP** | `IEventBus` / `WebhookDeliverer` in `events/bus.ts` and `webhooks/deliverer.ts`; in-memory must-ship, queue-backed drop-in later. |
 | **ISP** | `@ship/sdk` exposes resource-segregated clients (`documents`, `issues`, `sprints`, `webhooks`) rather than one flat API class. |
 | **DIP** | Public routes depend on platform abstractions (`requireBearerToken`, `requireScope`, `sendPublicError`) rather than session/CSRF internals in `app.ts`. |
@@ -103,7 +103,7 @@ app.use('/api/auth', conditionalCsrf, authRoutes);
 app.use('/api/documents', conditionalCsrf, documentsRoutes);
 // ... other internal routers ...
 
-// Public platform boundary — separate middleware stack, OAuth bearer semantics
+// Public platform boundary â€” separate middleware stack, OAuth bearer semantics
 app.use('/api/v1', createPlatformRouter());
 ```
 
@@ -113,7 +113,7 @@ Inside `createPlatformRouter()` (`platform/router.ts`):
 router.use(publicRequestIdMiddleware);
 router.use('/oauth', oauthRouter);      // registration + authorize + token + device
 router.use('/', publicV1Router);        // /me, /documents, /issues, /sprints, /webhooks, /audit, /openapi.json
-router.use(/* 404 + PublicApiError handler → ApiError shape */);
+router.use(/* 404 + PublicApiError handler ->’ ApiError shape */);
 ```
 
 **Test wiring:** Vitest uses `createApp()` with the same composition; MVP tests seed workspace/user/OAuth app via direct DB inserts (`public-api-mvp.test.ts`).
@@ -163,9 +163,9 @@ sequenceDiagram
   Ship-->>App: access_token (Bearer)
 ```
 
-- PKCE mismatch → `400` with `code: invalid_grant` (Playwright + `public-api-mvp.test.ts`).
+- PKCE mismatch ->’ `400` with `code: invalid_grant` (Playwright + `public-api-mvp.test.ts`).
 - Access tokens: opaque, SHA-256 hashed at rest, 1 h TTL (`oauth.ts`).
-- Expired token → `401` with `code: token_expired` (distinct from generic `unauthorized`).
+- Expired token ->’ `401` with `code: token_expired` (distinct from generic `unauthorized`).
 
 ### Device Authorization Grant (planned)
 
@@ -180,9 +180,9 @@ PRD target: one-time-use rotation + family invalidation on reuse. Schema not mig
 ## Webhook pipeline (shipped)
 
 ```text
-Domain write → publishDocumentCreated() → IEventBus → subscription matcher
-  → HMAC signer → WebhookDeliverer → retry scheduler (1s,4s,16s,1m,5m,30m)
-  → delivery log → DLQ → POST /webhooks/deliveries/:id/replay
+Domain write ->’ publishDocumentCreated() ->’ IEventBus ->’ subscription matcher
+  ->’ HMAC signer ->’ WebhookDeliverer ->’ retry scheduler (1s,4s,16s,1m,5m,30m)
+  ->’ delivery log ->’ DLQ ->’ POST /webhooks/deliveries/:id/replay
 ```
 
 Signature: `Ship-Signature: t=<unix>,v1=<hex-hmac-sha256>`; SDK `verifyWebhook()` in `sdk/src/webhooks.ts`; `Idempotency-Key` preserved on replay.
@@ -213,7 +213,7 @@ Parity: `api/src/platform/sdk-openapi-parity.test.ts`.
 
 **Before (Part 2):** FleetGraph agent calls internal services/routes directly.
 
-**After (Epic 7):** `SHIP_AGENT_USE_PUBLIC_API=true` → first-party OAuth app → `@ship/sdk` → `/api/v1/me` probe; audit middleware logs `client_id`.
+**After (Epic 7):** `SHIP_AGENT_USE_PUBLIC_API=true` ->’ first-party OAuth app ->’ `@ship/sdk` ->’ `/api/v1/me` probe; audit middleware logs `client_id`.
 
 Proof: `api/src/platform/agent-platform.test.ts`.
 
@@ -248,10 +248,33 @@ Proof: `api/src/platform/agent-platform.test.ts`.
 | SDK/OpenAPI parity | `api/src/platform/sdk-openapi-parity.test.ts` |
 | Webhook retry/DLQ/replay | `api/src/platform/webhooks-deliverer.test.ts` |
 | TTFE drill | `integrations/cli/tests/ttfe.drill.ts` + `scripts/platform/run-ttfe-ci.mjs` |
-| Perf +10% budget | `scripts/mvp/run-perf-probe.mjs` · `scripts/mvp/perf-regression-check.mjs` |
+| Perf +10% budget | `scripts/mvp/run-perf-probe.mjs` · `scripts/mvp/capture-perf-metrics.mjs` · `scripts/mvp/perf-regression-check.mjs` |
 | CI orchestration | `.github/workflows/mvp-gates.yml`, `.github/workflows/platform-gates.yml` |
 
-Regenerate static spec: `pnpm --filter @ship/api openapi:generate:public` → `docs/openapi.json`.
+### Performance regression (PRD § Performance Targets)
+
+MVP gate #9 enforces <= +10% vs Part 1 baseline ([`perf-baseline.json`](../deliverables/2026-W23-week-03/perf-baseline.json)) on P95 latency, bundle size, and **measured** per-route query counts.
+
+| Metric | How captured | Baseline | Current (2026-06-03) |
+| --- | --- | --- | --- |
+| `latency_p95_ms` | Max of Week 01 C3 route envelope + live `/health` P95 when probed | 2500 | 471 |
+| `bundleSizeKb` | Gzip sum of `web/dist/assets/*.js` | 1800 | 679 |
+| `queryCountPerRoute` | Live probe: `QUERY_COUNT_METRICS=1` ->’ reset counter ->’ authenticated `GET /api/documents` ->’ read `/api/_metrics/query-count` | 120 | 4 (measured) |
+
+**Canonical local/CI flow:**
+
+```bash
+pnpm build:api && pnpm build:web
+pnpm --filter @ship/api db:migrate && pnpm --filter @ship/api db:seed
+node scripts/mvp/run-perf-probe.mjs    # sets PERF_PROBE_URL + PERF_PROBE_COOKIE
+node scripts/mvp/perf-regression-check.mjs
+```
+
+CI ([`mvp-gates.yml`](../.github/workflows/mvp-gates.yml)) runs the perf probe **after** `build:web` and **before** Playwright install so measured query counts are captured even if E2E steps time out. `perf-regression-check.mjs` fails if `notes.queryCount` contains `estimate`.
+
+Evidence: [`deliverables/2026-W23-week-03/evidence/perf-regression-2026-06-03.log`](../deliverables/2026-W23-week-03/evidence/perf-regression-2026-06-03.log) · artifact [`artifacts/perf/current-metrics.json`](../artifacts/perf/current-metrics.json).
+
+Regenerate static spec: `pnpm --filter @ship/api openapi:generate:public` ->’ `docs/openapi.json`.
 
 ---
 

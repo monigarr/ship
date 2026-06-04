@@ -134,13 +134,13 @@ Raw Cursor agent transcripts (JSONL) remain on the author machine under the Curs
 | Public boundary | `/api/v1` only; separate from session/CSRF `/api/*` | Yes — `app.ts`, `public-boundary.test.ts` |
 | OpenAPI | Generated from `route-metadata.ts`; static `docs/openapi.json` | Yes |
 | OAuth MVP | Authorization Code + PKCE; negative `invalid_grant` | Yes — E2E + unit tests |
-| Device flow / refresh | Deferred post-MVP slice | Planned |
+| Device flow / refresh | On `gfa2_wk6-final` | **Done** |
 | Secrets | `client_secret` once; SHA-256 at rest | Yes — `oauth.ts` |
 | Scopes | Data-driven; `403` + `details.missing_scope` | Yes — `scopes.ts` |
 | SDK | Hand-written `@ship/sdk`; expand with routes | Partial — `me()` + `documents` |
-| Webhooks / CLI / TTFE | PRD must-ship for final week; not MVP hard gate | Not started |
+| Webhooks / CLI / TTFE | Post-MVP on `gfa2_wk6-final` | **Done** |
 | FleetGraph | Intent routing before template selection | Yes — `runtime.ts` + paired test |
-| CI MVP gates | Unit tests, OpenAPI generate, OAuth E2E grep, live perf probe + regression | Yes — `mvp-gates.yml`, `run-perf-probe.mjs` |
+| CI MVP gates | Unit tests, OpenAPI generate, measured perf probe (before Playwright), OAuth E2E grep | Yes — `mvp-gates.yml`, `run-perf-probe.mjs` |
 
 ---
 
@@ -158,10 +158,10 @@ Raw Cursor agent transcripts (JSONL) remain on the author machine under the Curs
 | 6 | ScopeRegistry; explicit 403 | **Done** | [`scopes.ts`](../../api/src/platform/scopes.ts) |
 | 7 | OpenAPI 3.1 generated + schema test | **Done** | [Live OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json), [`openapi-schema.test.ts`](../../api/src/platform/openapi-schema.test.ts) |
 | 8 | SDK skeleton; `ShipClient({ token }).me()` | **Done** | [`sdk/src/client.test.ts`](../../sdk/src/client.test.ts) |
-| 9 | Playwright regression + perf +10% | **Partial** | Full suite run: [`evidence/e2e-full-run-2026-06-01.log`](./evidence/e2e-full-run-2026-06-01.log) — 793 passed, 12 failed (exit 1). OAuth PKCE isolated: [`e2e-oauth-pkce-2026-06-01.log`](./evidence/e2e-oauth-pkce-2026-06-01.log) (1 passed). Perf CI in `mvp-gates.yml`. |
+| 9 | Playwright regression + perf +10% | **Done** | Confirming suite: [`e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed, exit 0). Measured perf: [`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) (`queryCountPerRoute=4` via `run-perf-probe.mjs`). |
 | 10 | Deployed + OpenAPI + grader OAuth app | **Done** | [Live deploy](https://ship-web-jyqh.onrender.com/login) · [OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`README`](../../README.md) § Week 03 grader OAuth (`client_id` + portal secret handoff) |
 
-**MVP checkpoint verdict:** Suitable for **Tuesday MVP hard-gate submission** — grader OAuth app pre-registered and documented in README; full Playwright suite executed with committed evidence log. Full suite is not 100% green (12 failures, mostly pre-existing specs); OAuth PKCE passes in isolation and in CI grep. Not equivalent to **full Week 03 PRD** or **Sunday final submission**.
+**MVP checkpoint verdict (2026-06-03):** **Pass** — human early-submission review; measured perf probe closed reviewer follow-up. Confirming E2E: [`e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed, exit 0). Post-MVP scope shipped on `gfa2_wk6-final`; partial: demo video URL, social post URL.
 
 ---
 
@@ -179,7 +179,7 @@ Committed under [`deliverables/2026-W23-week-03/evidence/`](./evidence/):
 | [`docker-postgres-2026-06-01.log`](./evidence/docker-postgres-2026-06-01.log) | `docker compose up -d postgres` | Container started |
 | [`perf-regression-2026-06-01.log`](./evidence/perf-regression-2026-06-01.log) | `node scripts/mvp/perf-regression-check.mjs` | Skipped — missing current metrics file |
 
-**Recommended before claiming MVP item 9 complete:** Full suite was run 2026-06-01; remaining 12 failures are pre-existing spec flakes/timeouts (not Week 03 OAuth/API). Re-run failed specs with `--last-failed` after resource cleanup if a fully green log is required for strict interpretation of “passes.”
+**MVP item 9 closed 2026-06-03:** Confirming suite [`e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed, exit 0). Measured perf [`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log). Supersedes 2026-06-01 partial run.
 
 ---
 
@@ -190,7 +190,7 @@ Committed under [`deliverables/2026-W23-week-03/evidence/`](./evidence/):
 | Change | Proof |
 | --- | --- |
 | [`scripts/mvp/run-perf-probe.mjs`](../../scripts/mvp/run-perf-probe.mjs) | Seeds DB, starts API with `QUERY_COUNT_METRICS=1`, CSRF login, runs capture with `PERF_PROBE_URL` |
-| [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) | CI runs `run-perf-probe.mjs` then `perf-regression-check.mjs` |
+| [`mvp-gates.yml`](../../.github/workflows/mvp-gates.yml) | CI runs `run-perf-probe.mjs` after `build:web` (before Playwright), then `perf-regression-check.mjs` |
 | [`perf-regression-check.mjs`](../../scripts/mvp/perf-regression-check.mjs) | Fails if `notes.queryCount` still says `estimate` |
 | [`artifacts/perf/current-metrics.json`](../../artifacts/perf/current-metrics.json) | `queryCountPerRoute: 4` (measured); baseline cap 132 (+10% of 120) |
 | [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) | Live probe + regression check passed |

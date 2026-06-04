@@ -7,7 +7,7 @@
 | Item | Estimate | Notes |
 | --- | --- | --- |
 | Epic 7 agent rewire validation | $0 incremental | Platform layer remains LLM-free; agent probe uses public API only |
-| CI — MVP gates | ~8 min/PR | Unit + OpenAPI + PKCE grep + perf |
+| CI — MVP gates | ~8 min/PR | Unit + OpenAPI + measured perf probe + PKCE grep |
 | CI — platform gates | ~12 min/PR | Added OAuth/webhook tests + CLI type-check |
 | TTFE drill (CI) | ~2 min/PR | `platform-gates.yml` runs `scripts/platform/run-ttfe-ci.mjs` |
 | OAuth Playwright | ~3 min/PR | PKCE spec in mvp-gates |
