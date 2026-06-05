@@ -1,6 +1,6 @@
 # Final Submission — Week 03 (PlugForge)
 
-**Branch:** `gfa2_wk6-final` · **Date:** 2026-06-03 · **Commit:** `1a23ea82088d0cbe0fca1d2295180b8c3c89fe6c`
+**Branch:** `gfa2_wk6-final` / `master` (PR #3 merged) · **Date:** 2026-06-04 · **Commit:** `a928807` (merge PR #3)
 
 ## Deploy
 
@@ -12,25 +12,26 @@
 | Verify script | `node scripts/platform/verify-deploy.mjs` |
 | Grader OAuth app | README § Week 03 (`client_id` + portal secret handoff) |
 
-Redeploy Render from `gfa2_wk6-final` if post-MVP OpenAPI paths (`/webhooks`, `/oauth/device/*`) are missing on live.
+Render redeployed 2026-06-04 (GitLab `master` push → auto-deploy). Post-MVP OpenAPI paths verified green.
 
 ## Demo video (3–5 min)
 
 **Script:** [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md)  
-**URL:** Paste after recording → [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) (then copy into this file)
+**URL:** _Pending — record after `node scripts/platform/verify-deploy.mjs` passes (green 2026-06-04)_ → paste in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
 
 ## Social post
 
 **Draft:** [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md)  
 **URL:** Paste after posting → [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
 
-## Deploy (post-implementation)
-
-Redeploy Render from `gfa2_wk6-final` per [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md), then:
+## Deploy (verified 2026-06-04)
 
 ```bash
 node scripts/platform/verify-deploy.mjs
+node scripts/platform/run-prod-ttfe-smoke.mjs
 ```
+
+Evidence: [`deploy-verify-2026-06-04.log`](./evidence/deploy-verify-2026-06-04.log) · [`prod-ttfe-smoke-2026-06-04.log`](./evidence/prod-ttfe-smoke-2026-06-04.log)
 
 ## Human code review (early submission)
 
@@ -43,7 +44,8 @@ node scripts/platform/verify-deploy.mjs
 | Full E2E regression | [`evidence/e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) |
 | Platform unit tests | [`evidence/platform-tests-CONFIRM.log`](./evidence/platform-tests-CONFIRM.log) |
 | Perf regression | [`evidence/perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) (measured query count via `run-perf-probe.mjs`) |
-| Deploy verification | [`evidence/deploy-verify-2026-06-02.log`](./evidence/deploy-verify-2026-06-02.log) |
+| Deploy verification | [`evidence/deploy-verify-2026-06-04.log`](./evidence/deploy-verify-2026-06-04.log) |
+| Production TTFE smoke | [`evidence/prod-ttfe-smoke-2026-06-04.log`](./evidence/prod-ttfe-smoke-2026-06-04.log) |
 | CI workflows | [`.github/workflows/mvp-gates.yml`](../../.github/workflows/mvp-gates.yml), [`.github/workflows/platform-gates.yml`](../../.github/workflows/platform-gates.yml) |
 
 ## Written deliverables

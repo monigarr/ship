@@ -1,7 +1,7 @@
 # Week 03 Deliverables
 
 **Source of truth:** [`PRD.md`](./PRD.md)  
-**Dev branch:** `gfa2_wk6-final` (Early/Final) · **`gfa2_wk6`:** MVP slice preserved · **Last updated:** 2026-06-03
+**Dev branch:** `gfa2_wk6-final` (Early/Final) · **`gfa2_wk6`:** MVP slice preserved · **Last updated:** 2026-06-04
 **Architecture doc (PRD path):** [`docs/architecture.md`](../../docs/architecture.md)
 
 This file tracks submission deliverables, implementation status on the current branch, and reviewer proof URLs. Status keys: **Done** · **Partial** · **Not started**.
@@ -14,7 +14,7 @@ This file tracks submission deliverables, implementation status on the current b
 | --- | --- | --- | --- |
 | MVP hard gate (PRD § MVP Requirements) | 10 | 0 | 0 |
 | Core platform (webhooks, device flow, portal, agent) | 10 | 0 | 0 |
-| Submission artifacts (video, social, epics, cost) | 7 | 3 | 0 |
+| Submission artifacts (video, social, epics, cost) | 8 | 2 | 0 |
 
 **Live deployment:** [https://ship-web-jyqh.onrender.com/login](https://ship-web-jyqh.onrender.com/login)  
 **Public OpenAPI (grading surface):** [https://ship-web-jyqh.onrender.com/api/v1/openapi.json](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)  
@@ -37,7 +37,7 @@ This file tracks submission deliverables, implementation status on the current b
 | AI cost analysis | Dev spend, projections, assumptions | **Done** | [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md) |
 | Per-epic write-up | before → fix → after → proof | **Done** | [epics/](./epics/) E1–E7 |
 | Three discoveries | Implementation learnings | **Done** | [DISCOVERIES.md](./DISCOVERIES.md) |
-| Deployed application | Public URL + grader OAuth app + portal | **Partial** | Redeploy: [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md) · `node scripts/platform/verify-deploy.mjs` |
+| Deployed application | Public URL + grader OAuth app + portal | **Done** | [`deploy-verify-2026-06-04.log`](./evidence/deploy-verify-2026-06-04.log) · [`prod-ttfe-smoke-2026-06-04.log`](./evidence/prod-ttfe-smoke-2026-06-04.log) · [Login](https://ship-web-jyqh.onrender.com/login) |
 | Social post | `@GauntletAI` + webhook tail screenshot | **Partial** | Draft: [`SOCIAL_POST_DRAFT.md`](./SOCIAL_POST_DRAFT.md) · paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) |
 | Final submission handoff | Sunday deliverables index | **Done** | [`FINAL_SUBMISSION.md`](./FINAL_SUBMISSION.md) |
 
@@ -193,7 +193,7 @@ Use before submission. Checkboxes reflect **`gfa2_wk6-final` as of 2026-06-03**.
 - [x] **Three discoveries** — [DISCOVERIES.md](./DISCOVERIES.md)
 - [ ] **Demo video** — record per script; paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
 - [ ] **Social post** — post per draft; paste URL in SUBMISSION_URLS
-- [ ] **Live deploy verify green** — [`scripts/platform/DEPLOY_RENDER.md`](../../scripts/platform/DEPLOY_RENDER.md)
+- [x] **Live deploy verify green** — [`deploy-verify-2026-06-04.log`](./evidence/deploy-verify-2026-06-04.log) · [`prod-ttfe-smoke-2026-06-04.log`](./evidence/prod-ttfe-smoke-2026-06-04.log)
 - [x] **Final evidence packet** — [`evidence/platform-tests-CONFIRM.log`](./evidence/platform-tests-CONFIRM.log)
 - [x] **Final submission handoff** — [FINAL_SUBMISSION.md](./FINAL_SUBMISSION.md)
 
