@@ -72,6 +72,17 @@ jobs:
         env:
           VITE_APP_ENV: test_e2e
 
+      - name: Seed database for perf probe
+        run: pnpm --filter @ship/api db:seed
+
+      - name: Capture perf metrics (live probe)
+        run: node scripts/mvp/run-perf-probe.mjs
+        env:
+          SKIP_PERF_SEED: '1'
+
+      - name: Perf regression check (+10%)
+        run: node scripts/mvp/perf-regression-check.mjs
+
       - name: Get Playwright version
         id: playwright-version
         run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
@@ -93,7 +104,6 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: E2E OAuth PKCE gate
+        env:
+          SKIP_E2E_GLOBAL_BUILD: 'true'
         run: pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
-
-      - name: Perf regression check (+10%)
-        run: node scripts/mvp/perf-regression-check.mjs

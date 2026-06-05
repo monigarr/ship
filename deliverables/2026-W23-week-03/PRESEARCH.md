@@ -1,14 +1,21 @@
 # PRESEARCH — Week 03 (PlugForge)
 
 **Source of truth:** [`PRD.md`](./PRD.md)  
-**Dev branch:** `gfa2_wk6` · **Last updated:** 2026-06-01  
+**Dev branch:** `gfa2_wk6-final` (MVP slice: `gfa2_wk6`) · **Last updated:** 2026-06-03  
 **Architecture:** [`docs/architecture.md`](../../docs/architecture.md) · **Evidence tracker:** [`DELIVERABLES.md`](./DELIVERABLES.md)
 
 This document captures pre-build decisions (Phases 1–3) and records **what is implemented vs planned** on the current branch. When code and pre-search diverge, update both—pre-search describes intent; `DELIVERABLES.md` tracks proof.
 
 **AI conversation artifact (PRD attachment):** [`deliverables/2026-W23-week-03/AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) — session index, Pre-Search phase mapping, architecture decisions, MVP hard-gate status, and [`evidence/`](./evidence/) test logs from June 1, 2026.
 
----
+
+## Current status snapshot (2026-06-03)
+
+See [`DELIVERABLES.md`](./DELIVERABLES.md) for proof links. On `gfa2_wk6-final`: all PRD MVP hard gates **Done**; post-MVP platform scope **Done**; partial submission URLs (video, social).
+
+Human early-submission review: **Pass** — query-count remediation via `run-perf-probe.mjs` / `PERF_PROBE_URL` ([`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log)).
+
+Phase sections below are pre-build decisions; status tables marked `gfa2_wk6` are historical unless updated in the snapshot above.
 
 ## Phase 1: Define constraints and must-ship scope
 
@@ -25,7 +32,7 @@ This document captures pre-build decisions (Phases 1–3) and records **what is 
 | Consistent `ApiError` envelope | **Done** | `api/src/platform/http.ts`, fitness tests |
 | OpenAPI 3.1 at `/api/v1/openapi.json` | **Done** | Live: https://ship-web-jyqh.onrender.com/api/v1/openapi.json |
 | SDK skeleton + typed `me()` | **Done** | `sdk/src/client.ts` |
-| Regression within +10% baseline | **Done** | `.github/workflows/mvp-gates.yml`, `perf-baseline.json` |
+| Regression within +10% baseline | **Done** | `run-perf-probe.mjs` (measured `PERF_PROBE_URL`) · [`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) |
 
 **Non-negotiable architecture commitments:**
 
@@ -55,7 +62,7 @@ This document captures pre-build decisions (Phases 1–3) and records **what is 
 
 **Must-ship for passing grade (PRD):** MVP hard gate + CLI + TTFE + webhooks + dev portal + agent rewire + submission artifacts.
 
-**Current branch reality:** MVP platform slice is in place; remaining work is the majority of the PRD surface area.
+**Current branch reality (`gfa2_wk6-final`):** MVP hard gate and post-MVP platform scope implemented; partial: demo video URL, social URL, live deploy re-verify.
 
 **Kill criterion for developer portal:** Minimum viable = read-only app list + delivery log viewer + replay button (no full subscription CRUD UI on day one if time-constrained).
 
@@ -158,16 +165,11 @@ This document captures pre-build decisions (Phases 1–3) and records **what is 
 | OpenAPI 3.1 schema validation | `openapi-schema.test.ts` |
 | Public/internal import boundary | `public-boundary.test.ts` |
 
-**Not yet implemented (PRD testing scenarios):**
-
-- Device flow + slow-down + `/api/v1/me`
-- Webhook sign/tamper/retry/DLQ/replay
-- SDK/spec method parity for full surface
-- TTFE drill (`pnpm drill ttfe`) in CI
+**Post-MVP scenarios (done on `gfa2_wk6-final`):** device flow, webhooks, SDK/spec parity, TTFE in CI — see DELIVERABLES.
 
 ### 3.2 Cost and performance guardrails
 
-- **Performance:** MVP perf gate enforces +10% on P95 latency, bundle size, query counts vs `perf-baseline.json`.
+- **Performance:** MVP perf gate enforces +10% on P95, bundle, and **measured** query counts vs `perf-baseline.json` via `run-perf-probe.mjs` + `QUERY_COUNT_METRICS=1`.
 - **Platform AI cost:** $0 for platform layer; LLM only on user-initiated agent turns (unchanged from Part 2).
 - **Production projection table:** Required in final submission `AI cost analysis` artifact—not yet written for Week 03.
 
@@ -181,11 +183,7 @@ This document captures pre-build decisions (Phases 1–3) and records **what is 
 | Public OpenAPI | https://ship-web-jyqh.onrender.com/api/v1/openapi.json |
 | Static spec in repo | `docs/openapi.json` |
 
-**Not ready:**
-
-- Pre-registered grader OAuth app with credentials in README (manual admin registration documented in `README.md` / `DEPLOYMENT.md`)
-- Developer portal
-- Five-line demo loop (install SDK → device login → create doc → webhook tail)
+**Ready on `gfa2_wk6-final`:** grader OAuth app (README § Week 03), developer portal, five-line CLI demo — see README.
 
 **Grader one-command local verify:**
 
@@ -232,9 +230,9 @@ pnpm test:e2e --grep "OAuth Authorization Code + PKCE"
 ## MVP submit readiness (summary)
 
 **Can `gfa2_wk6` be submitted as-is for the PRD § MVP hard gate?**  
-**Yes, with caveats.** All ten MVP bullets are addressed in code/CI/deploy: grader read-only OAuth app is pre-registered and documented in [`README`](../../README.md) (`client_id` + portal secret handoff); full Playwright regression was run and logged ([`evidence/e2e-full-run-2026-06-01.log`](./evidence/e2e-full-run-2026-06-01.log)). The full suite is not 100% green (793/870 passed, 12 failed — mostly pre-existing specs; OAuth PKCE passes in isolation). Details: [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) § MVP submission readiness.
+**Yes (2026-06-03).** All ten MVP bullets are addressed on `gfa2_wk6-final` with proof in DELIVERABLES: confirming regression [`e2e-full-run-CONFIRM.log`](./evidence/e2e-full-run-CONFIRM.log) (854 passed, exit 0); measured perf [`perf-regression-2026-06-03.log`](./evidence/perf-regression-2026-06-03.log) (`queryCountPerRoute=4` via `PERF_PROBE_URL`). Human early-submission review: **Pass**.
 
-**Full Week 03 PRD / final submission** (webhooks, CLI, TTFE, portal, video, social, cost analysis, epics) is **not** complete on this branch.
+**Full Week 03 PRD code** is complete on `gfa2_wk6-final`; partial submission artifacts: demo video URL, social post URL.
 
 ---
 

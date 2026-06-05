@@ -1,0 +1,15 @@
+﻿Verifying deployment: https://ship-web-jyqh.onrender.com
+
+node : FAIL health: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+At line:1 char:45
++ ... ve\GitHub\ship"; node scripts/platform/verify-deploy.mjs 2>&1 | Out-F ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL health: Un... not valid JSON:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+FAIL public OpenAPI: missing path /oauth/device/code ΓÇö redeploy gfa2_wk6-final required
+OK  SPA /developer route
+OK  SPA /oauth/device route
+OK  bearer enforcement /api/v1/me
+
+Some checks failed ΓÇö redeploy from gfa2_wk6-final.

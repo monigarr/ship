@@ -23,6 +23,15 @@ if (!fs.existsSync(currentPath)) {
 const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
 const current = JSON.parse(fs.readFileSync(currentPath, 'utf8'));
 
+const queryCountNote = current.notes?.queryCount ?? '';
+if (queryCountNote.includes('estimate')) {
+  console.error(
+    'Performance regression check failed: queryCountPerRoute is estimated, not measured. ' +
+      'Run node scripts/mvp/run-perf-probe.mjs (sets PERF_PROBE_URL + QUERY_COUNT_METRICS=1).'
+  );
+  process.exit(1);
+}
+
 const checks = [
   { metric: 'latency_p95_ms', label: 'P95 latency' },
   { metric: 'bundleSizeKb', label: 'bundle size' },

@@ -16,7 +16,7 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
     ];
     const security = publicOAuthPaths.includes(route.path)
       ? []
-      : route.path === '/oauth/apps'
+      : route.path.startsWith('/oauth/apps')
         ? [{ cookieAuth: [] }]
         : [{ bearerAuth: [] }];
 
@@ -179,6 +179,126 @@ export function generatePublicOpenApiSpec(req: Request): OpenAPIObject {
             document_type: { type: 'string' },
             properties: { type: 'object', additionalProperties: true },
             content: {},
+          },
+        },
+        Issue: {
+          type: 'object',
+          required: ['id', 'workspace_id', 'document_type', 'title', 'created_at', 'updated_at'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            workspace_id: { type: 'string', format: 'uuid' },
+            document_type: { type: 'string' },
+            title: { type: 'string' },
+            properties: { type: 'object', additionalProperties: true },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        IssueListResponse: {
+          type: 'object',
+          required: ['data', 'next_cursor'],
+          properties: {
+            data: { type: 'array', items: { $ref: '#/components/schemas/Issue' } },
+            next_cursor: { type: 'string', nullable: true } as { type: 'string'; nullable: boolean },
+          },
+        },
+        CreateIssueRequest: {
+          type: 'object',
+          required: ['title'],
+          properties: {
+            title: { type: 'string' },
+            properties: { type: 'object', additionalProperties: true },
+          },
+        },
+        Sprint: {
+          type: 'object',
+          required: ['id', 'workspace_id', 'document_type', 'title', 'created_at', 'updated_at'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            workspace_id: { type: 'string', format: 'uuid' },
+            document_type: { type: 'string' },
+            title: { type: 'string' },
+            properties: { type: 'object', additionalProperties: true },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        SprintListResponse: {
+          type: 'object',
+          required: ['data', 'next_cursor'],
+          properties: {
+            data: { type: 'array', items: { $ref: '#/components/schemas/Sprint' } },
+            next_cursor: { type: 'string', nullable: true } as { type: 'string'; nullable: boolean },
+          },
+        },
+        CreateSprintRequest: {
+          type: 'object',
+          required: ['title'],
+          properties: {
+            title: { type: 'string' },
+            properties: { type: 'object', additionalProperties: true },
+          },
+        },
+        OAuthAppSecretRotationResponse: {
+          type: 'object',
+          required: ['client_secret'],
+          properties: {
+            client_secret: { type: 'string' },
+            note: { type: 'string' },
+          },
+        },
+        OAuthPortalTokenResponse: {
+          type: 'object',
+          required: ['access_token', 'token_type', 'expires_in'],
+          properties: {
+            access_token: { type: 'string' },
+            token_type: { type: 'string' },
+            expires_in: { type: 'integer' },
+            scope: { type: 'string' },
+          },
+        },
+        CreateWebhookSubscriptionRequest: {
+          type: 'object',
+          required: ['event', 'target_url'],
+          properties: {
+            event: { type: 'string' },
+            target_url: { type: 'string', format: 'uri' },
+          },
+        },
+        WebhookSubscriptionResponse: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            event: { type: 'string' },
+            target_url: { type: 'string', format: 'uri' },
+            signing_secret: { type: 'string' },
+          },
+        },
+        WebhookSubscriptionListResponse: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: { type: 'object' } },
+          },
+        },
+        WebhookDeliveryListResponse: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: { type: 'object' } },
+            next_cursor: { type: 'string', nullable: true } as { type: 'string'; nullable: boolean },
+          },
+        },
+        WebhookReplayResponse: {
+          type: 'object',
+          properties: {
+            replayed: { type: 'boolean' },
+            delivery_id: { type: 'string', format: 'uuid' },
+          },
+        },
+        PlatformAuditListResponse: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: { type: 'object' } },
+            next_cursor: { type: 'string', nullable: true } as { type: 'string'; nullable: boolean },
           },
         },
         OAuthAppRegistrationRequest: {

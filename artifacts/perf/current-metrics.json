@@ -1,11 +1,11 @@
 {
-  "capturedAt": "2026-06-02T14:43:11.375Z",
+  "capturedAt": "2026-06-03T16:28:58.695Z",
   "bundleSizeKb": 679,
   "latency_p95_ms": 471,
-  "queryCountPerRoute": 95,
+  "queryCountPerRoute": 4,
   "notes": {
     "bundle": "gzip sum of web/dist/assets/*.js",
-    "latency": "max C3 internal-route P95 from Week 01 evidence",
-    "queryCount": "estimate when PERF_PROBE_URL unset"
+    "latency": "max(C3 internal-route P95 envelope, live /health P95)",
+    "queryCount": "pool.query count after GET /api/documents with QUERY_COUNT_METRICS=1"
   }
 }

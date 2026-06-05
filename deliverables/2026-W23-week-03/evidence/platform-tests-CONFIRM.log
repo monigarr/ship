@@ -1,0 +1,38 @@
+﻿
+ RUN  v4.0.17 D:/GFA_Cohort_5/Week_Five/GitHub/ship/api
+
+ Γ£ô src/platform/webhooks-deliverer.test.ts (7 tests) 1336ms
+stdout | src/platform/oauth-device.test.ts
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/oauth-device.test.ts (1 test) 8307ms
+     Γ£ô completes device flow with slow_down honored  6309ms
+stdout | src/platform/public-api-mvp.test.ts
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/public-api-mvp.test.ts (7 tests) 2641ms
+stdout | src/platform/oauth-refresh.test.ts
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/oauth-refresh.test.ts (2 tests) 1789ms
+stdout | src/platform/agent-platform.test.ts > agent-as-citizen public API probe > issues agent OAuth app token and reads /me via public API
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/agent-platform.test.ts (1 test) 1602ms
+ Γ£ô src/platform/openapi-schema.test.ts (1 test) 1212ms
+stdout | src/platform/sdk-openapi-parity.test.ts
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/sdk-openapi-parity.test.ts (1 test) 1039ms
+stdout | src/platform/public-api-fitness.test.ts
+CAIA not configured, skipping initialization
+
+ Γ£ô src/platform/public-api-fitness.test.ts (3 tests) 1045ms
+ Γ£ô src/platform/integrations-boundary.test.ts (1 test) 912ms
+ Γ£ô src/platform/public-boundary.test.ts (1 test) 908ms
+
+ Test Files  10 passed (10)
+      Tests  25 passed (25)
+   Start at  08:44:36
+   Duration  53.07s (transform 5.36s, setup 1.45s, import 26.11s, tests 20.79s, environment 3ms)
+

@@ -1112,6 +1112,22 @@ async function fetchRelatedGraphDocuments(
 }
 
 async function fetchContextDocuments(context: FleetGraphContext): Promise<DocumentRow[]> {
+  if (process.env.SHIP_AGENT_USE_PUBLIC_API === 'true') {
+    const { fetchAgentContextDocumentsViaPublicApi } = await import('../../platform/agent-platform.js');
+    const baseUrl =
+      process.env.SHIP_PUBLIC_API_BASE_URL ??
+      `http://127.0.0.1:${process.env.PORT ?? '3001'}`;
+    const viaSdk = await fetchAgentContextDocumentsViaPublicApi(context, baseUrl);
+    return viaSdk.map((row) => ({
+      id: row.id,
+      title: row.title,
+      document_type: row.document_type,
+      content: row.content,
+      properties: row.properties,
+      updated_at: row.updated_at,
+    }));
+  }
+
   if (context.documentId) {
     const related = await fetchRelatedGraphDocuments(
       context.workspaceId,

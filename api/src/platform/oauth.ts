@@ -64,6 +64,27 @@ export async function insertOAuthApp(input: {
   };
 }
 
+export async function rotateOAuthAppSecret(input: {
+  appId: string;
+  ownerUserId: string;
+}): Promise<{ clientSecret: string }> {
+  const clientSecret = createClientSecret();
+  const clientSecretHash = hashSecret(clientSecret);
+
+  const { rowCount } = await pool.query(
+    `UPDATE oauth_apps
+     SET client_secret_hash = $1, updated_at = NOW()
+     WHERE id = $2 AND owner_user_id = $3 AND revoked_at IS NULL`,
+    [clientSecretHash, input.appId, input.ownerUserId]
+  );
+
+  if (!rowCount) {
+    throw new PublicApiError(404, 'not_found', 'OAuth app not found');
+  }
+
+  return { clientSecret };
+}
+
 export async function createAuthorizationCode(input: {
   appId: string;
   userId: string;

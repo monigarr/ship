@@ -1,6 +1,6 @@
 # PlugForge Architecture Defense
 
-**Dev branch:** `gfa2_wk6` · **Last updated:** 2026-06-01  
+**Dev branch:** `gfa2_wk6-final` · **Last updated:** 2026-06-02  
 **Canonical architecture:** [`docs/architecture.md`](../../docs/architecture.md)  
 **Evidence tracker:** [`DELIVERABLES.md`](./DELIVERABLES.md) · **Pre-search:** [`PRESEARCH.md`](./PRESEARCH.md)  
 **Source of truth:** [`PRD.md`](./PRD.md)
@@ -10,13 +10,13 @@
 ## 60-Second Thesis
 
 PlugForge is a contract-first platform layer over Ship—not a loose collection of endpoints.  
-On `gfa2_wk6`, the MVP slice is **shipped**: `/api/v1` as the only public boundary, OAuth 2.0 with Authorization Code + PKCE, scopes-as-data, generated OpenAPI 3.1, and a typed `@ship/sdk` skeleton. Remaining PRD work—device flow, webhooks, CLI, TTFE drill, developer portal, and agent-as-citizen—is **planned** and documented in [`docs/architecture.md`](../../docs/architecture.md).
+On `gfa2_wk6-final`, the full Week 03 platform is **shipped**: `/api/v1` public boundary, OAuth (PKCE + device + refresh), webhooks (sign/retry/DLQ/replay), `@ship/sdk`, CLI + TTFE drill, developer portal, and agent-as-citizen behind `SHIP_AGENT_USE_PUBLIC_API`. See [`docs/architecture.md`](../../docs/architecture.md) and [`DELIVERABLES.md`](./DELIVERABLES.md).
 
 **Live proof:** [Login](https://ship-web-jyqh.onrender.com/login) · [Public OpenAPI](https://ship-web-jyqh.onrender.com/api/v1/openapi.json)
 
 ---
 
-## Implementation status (`gfa2_wk6`)
+## Implementation status (`gfa2_wk6-final`)
 
 | Area | Status |
 | --- | --- |
@@ -26,16 +26,16 @@ On `gfa2_wk6`, the MVP slice is **shipped**: `/api/v1` as the only public bounda
 | `/api/v1` documents + cursor pagination | **Shipped** |
 | `ApiError` + fitness tests | **Shipped** |
 | OpenAPI 3.1 (live + `docs/openapi.json`) | **Shipped** |
-| `@ship/sdk` (`me()`, `documents.*`) | **Shipped** |
+| `@ship/sdk` (documents, webhooks, auth helpers) | **Shipped** |
 | Public/internal import boundary test | **Shipped** |
-| CI MVP gates | **Shipped** |
-| Grader OAuth app pre-seeded in README | **Partial** — manual admin registration |
-| Device Authorization Grant | **Planned** |
-| Refresh tokens + rotation | **Planned** |
-| Webhooks (sign, retry, DLQ, replay) | **Planned** |
-| Developer portal | **Planned** |
-| CLI + TTFE drill | **Planned** |
-| Agent-as-citizen (Epic 7) | **Planned** |
+| CI MVP + platform gates (incl. TTFE drill) | **Shipped** |
+| Grader OAuth app pre-seeded in README | **Shipped** |
+| Device Authorization Grant | **Shipped** |
+| Refresh tokens + rotation | **Shipped** |
+| Webhooks (sign, retry, DLQ, replay) | **Shipped** |
+| Developer portal | **Shipped** |
+| CLI + TTFE drill | **Shipped** |
+| Agent-as-citizen (Epic 7) | **Shipped** |
 
 ---
 
@@ -173,17 +173,17 @@ Aligned with [`DELIVERABLES.md`](./DELIVERABLES.md) grader checklist.
 
 ---
 
-## Post-MVP defense targets (not yet demonstrable)
+## Post-MVP defense targets
 
-- [ ] Device Authorization Grant + refresh rotation
-- [ ] Webhooks end-to-end (sign, retry, DLQ, replay)
-- [ ] Developer portal (dogfoods public API)
-- [ ] CLI + TTFE drill in CI
-- [ ] ≥5 PRD integration/flow items
-- [ ] Agent-as-citizen with audit-log proof
+- [x] Device Authorization Grant + refresh rotation — `oauth-device.test.ts`, `oauth-refresh.test.ts`
+- [x] Webhooks end-to-end (sign, retry, DLQ, replay) — `webhooks-deliverer.test.ts`
+- [x] Developer portal (dogfoods public API) — `/developer`, `/oauth/device`
+- [x] CLI + TTFE drill in CI — `platform-gates.yml`, `scripts/platform/run-ttfe-ci.mjs`
+- [x] ≥5 PRD integration/flow items — CLI, device, refresh drill, replay, TTFE
+- [x] Agent-as-citizen with audit-log proof — `agent-platform.test.ts`
 
 ---
 
 ## Closing Statement
 
-This architecture favors verifiable contracts over ad hoc speed. On `gfa2_wk6`, that discipline is **already visible** in the MVP slice: live OpenAPI, passing PKCE gates, and a enforced public boundary. The remaining PRD surface—webhooks, CLI, TTFE, portal, and agent rewire—is the same architecture extended, not a different plan. Depth over breadth; proof over promises—and today’s proof is in [`docs/architecture.md`](../../docs/architecture.md), tests, and the deployed URLs above.
+This architecture favors verifiable contracts over ad hoc speed. On `gfa2_wk6-final`, that discipline is visible end-to-end: live OpenAPI, PKCE + device OAuth, signed webhooks, TTFE drill in CI, and the agent rewire behind a feature flag. Proof lives in [`docs/architecture.md`](../../docs/architecture.md), platform tests, and the deployed URLs above.

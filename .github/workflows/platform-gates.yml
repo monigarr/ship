@@ -64,3 +64,6 @@ jobs:
 
       - name: CLI type-check
         run: pnpm --filter @ship/cli type-check
+
+      - name: TTFE drill (Signature Challenge)
+        run: pnpm --filter @ship/api exec vitest run src/platform/ttfe-ci.test.ts

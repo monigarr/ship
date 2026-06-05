@@ -5,7 +5,8 @@ This directory is the client-verifiable audit trail for weekly PRD work. Product
 | Week | Folder | Purpose |
 | --- | --- | --- |
 | 2026-W21 | [`2026-W21-week-01`](./2026-W21-week-01/) | Week-one PRD, audit, remediation, compliance, and evidence bundle formerly stored at `prd_dev_branch_one/`. |
-| 2026-W22 | [`2026-W22-week-02`](./2026-W22-week-02/) | Current FleetGraph PRD, MVP/early-final/final deliverables, and current-week evidence. |
+| 2026-W22 | [`2026-W22-week-02`](./2026-W22-week-02/) | FleetGraph PRD, MVP/early-final/final deliverables, and Week 02 evidence. |
+| 2026-W23 | [`2026-W23-week-03`](./2026-W23-week-03/) | PlugForge platform layer: OAuth, public API, webhooks, SDK, CLI, TTFE drill. |
 
 ## Operating Rules
 

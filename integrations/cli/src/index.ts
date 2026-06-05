@@ -1,6 +1,6 @@
-#!/usr/bin/env node
 import { Command } from 'commander';
-import { FileTokenStore, ShipClient } from '@ship/sdk';
+import crypto from 'node:crypto';
+import { FileTokenStore, ShipClient, verifyWebhook } from '@ship/sdk';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -30,6 +30,13 @@ async function withClient(run: (client: ShipClient) => Promise<void>): Promise<v
   }
   const client = new ShipClient({ baseUrl: baseUrl(), token });
   await run(client);
+}
+
+function buildSignatureHeader(secret: string, rawBody: string): string {
+  const t = Math.floor(Date.now() / 1000);
+  const signedPayload = `${t}.${rawBody}`;
+  const v1 = crypto.createHmac('sha256', secret).update(signedPayload, 'utf8').digest('hex');
+  return `t=${t},v1=${v1}`;
 }
 
 program.name('ship').description('Ship platform CLI');
@@ -91,12 +98,42 @@ docs
 const webhooks = program.command('webhooks').description('Webhook commands');
 webhooks
   .command('tail')
-  .description('Poll recent webhook deliveries')
-  .action(async () => {
+  .description('Poll recent webhook deliveries and verify signatures when secret is set')
+  .option('--interval <ms>', 'Poll interval in milliseconds', '2000')
+  .option('--timeout <ms>', 'Stop after this many milliseconds', '30000')
+  .option('--signing-secret <secret>', 'Webhook signing secret for verifyWebhook')
+  .action(async (opts: { interval: string; timeout: string; signingSecret?: string }) => {
+    const intervalMs = Number.parseInt(opts.interval, 10) || 2000;
+    const timeoutMs = Number.parseInt(opts.timeout, 10) || 30_000;
+    const signingSecret = opts.signingSecret ?? process.env.SHIP_WEBHOOK_SIGNING_SECRET;
+    const seen = new Set<string>();
+    const deadline = Date.now() + timeoutMs;
+
     await withClient(async (client) => {
-      const deliveries = await client.webhooks.listDeliveries();
-      for (const row of deliveries.data) {
-        console.log(JSON.stringify(row));
+      console.log('Tailing webhook deliveries (Ctrl+C to stop)...');
+      while (Date.now() < deadline) {
+        const deliveries = await client.webhooks.listDeliveries();
+        for (const row of deliveries.data) {
+          const record = row as {
+            id?: string;
+            status?: string;
+            event_id?: string;
+            payload?: Record<string, unknown>;
+          };
+          const id = record.id ?? JSON.stringify(record);
+          if (seen.has(id)) continue;
+          seen.add(id);
+
+          console.log(JSON.stringify(record));
+
+          if (signingSecret && record.payload) {
+            const rawBody = JSON.stringify(record.payload);
+            const header = buildSignatureHeader(signingSecret, rawBody);
+            const ok = verifyWebhook({ 'ship-signature': header }, rawBody, signingSecret);
+            console.log(ok ? 'verified ✓' : 'signature invalid ✗');
+          }
+        }
+        await new Promise((r) => setTimeout(r, intervalMs));
       }
     });
   });
