@@ -40,7 +40,7 @@ import { OrgChartPage } from '@/pages/OrgChartPage';
 import { FleetGraphTracePage } from '@/pages/FleetGraphTracePage';
 import { FleetGraphTracesPage } from '@/pages/FleetGraphTracesPage';
 import { ReviewQueueProvider } from '@/contexts/ReviewQueueContext';
-import { DeveloperPortalPage } from '@/pages/DeveloperPortalPage';
+import { DeveloperPage } from '@/pages/DeveloperPage';
 import { OAuthDeviceVerifyPage } from '@/pages/OAuthDeviceVerifyPage';
 
 import { InviteAcceptPage } from '@/pages/InviteAccept';
@@ -257,7 +257,7 @@ function AppRoutes() {
         <Route path="feedback/:id" element={<FeedbackEditorPage />} />
         <Route path="settings" element={<WorkspaceSettingsPage />} />
         <Route path="settings/conversions" element={<ConvertedDocumentsPage />} />
-        <Route path="developer" element={<DeveloperPortalPage />} />
+        <Route path="developer" element={<DeveloperPage />} />
       </Route>
     </Routes>
   );

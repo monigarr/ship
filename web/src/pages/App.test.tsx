@@ -177,6 +177,25 @@ vi.mock('@/components/sidebars/FleetGraphAssistant', () => ({
   ),
 }));
 
+vi.mock('@/hooks/useDeveloperPortal', () => ({
+  DeveloperPortalProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useDeveloperPortal: () => ({
+    apps: [],
+    appsLoading: false,
+    selectedClientId: '',
+    setSelectedClientId: vi.fn(),
+    portalToken: '',
+    portalConnected: false,
+    loadApps: vi.fn(async () => undefined),
+    issuePortalToken: vi.fn(async () => null),
+    clearPortalToken: vi.fn(),
+    bearerFetch: vi.fn(),
+    callApi: vi.fn(),
+    registerApp: vi.fn(),
+    rotateSecret: vi.fn(),
+  }),
+}));
+
 function renderApp(route: string) {
   const client = new QueryClient({
     defaultOptions: {
@@ -199,6 +218,7 @@ function renderApp(route: string) {
             <Route path="programs" element={<div>Programs Route</div>} />
             <Route path="team" element={<div>Teams Route</div>} />
             <Route path="settings" element={<div>Settings Route</div>} />
+            <Route path="developer" element={<div>Developer Route</div>} />
             <Route path="documents/:id" element={<div>Document Route</div>} />
           </Route>
         </Routes>
@@ -234,6 +254,9 @@ describe('AppLayout left rail navigation', () => {
     fireEvent.click(screen.getByLabelText('Settings'));
     expect(await screen.findByText('Settings Route')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByLabelText('Developer'));
+    expect(await screen.findByText('Developer Route')).toBeInTheDocument();
+
     fireEvent.click(screen.getByLabelText('Dashboard'));
     expect(await screen.findByText('My Week Route')).toBeInTheDocument();
   });
@@ -267,6 +290,13 @@ describe('AppLayout left rail navigation', () => {
 
     expect(await screen.findByText('FleetGraph Assistant (context-aware)')).toBeInTheDocument();
     expect(screen.getByTestId('fleetgraph-assistant-mock')).toBeInTheDocument();
+  });
+
+  it('highlights developer mode when on /developer route', async () => {
+    renderApp('/developer?tab=apps');
+
+    expect(await screen.findByText('Developer Route')).toBeInTheDocument();
+    expect(screen.getByText('Developer')).toBeInTheDocument();
   });
 
   it('renders external LangSmith traces link on the rail', () => {

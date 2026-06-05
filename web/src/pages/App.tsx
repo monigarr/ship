@@ -37,8 +37,10 @@ import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
 import { FleetGraphAssistant } from '@/components/sidebars/FleetGraphAssistant';
+import { DeveloperSidebar } from '@/components/developer/DeveloperSidebar';
+import { DeveloperPortalProvider } from '@/hooks/useDeveloperPortal';
 
-type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'settings' | 'dashboard' | 'project-context';
+type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'fleetgraph' | 'developer' | 'settings' | 'dashboard' | 'project-context';
 const DEFAULT_LANGSMITH_TRACES_URL =
   'https://smith.langchain.com/o/53ea29ad-725a-449d-8454-a5e5b940ea6c/projects/p/94ee9aa8-6f2b-42b6-80d5-d5c18af5729d?runview=traces';
 const DEFAULT_INTERNAL_TRACES_URL = 'https://ship-web-jyqh.onrender.com/fleetgraph/traces/';
@@ -185,6 +187,7 @@ export function AppLayout() {
     if (location.pathname.startsWith('/programs') || location.pathname.startsWith('/feedback')) return 'programs';
     if (location.pathname.startsWith('/team')) return 'team';
     if (location.pathname.startsWith('/fleetgraph')) return 'fleetgraph';
+    if (location.pathname.startsWith('/developer')) return 'developer';
     if (location.pathname.startsWith('/settings')) return 'settings';
     return 'dashboard';
   };
@@ -253,6 +256,7 @@ export function AppLayout() {
       case 'sprints': navigate('/sprints'); break;
       case 'team': navigate('/team'); break;
       case 'fleetgraph': navigate('/fleetgraph/traces'); break;
+      case 'developer': navigate('/developer?tab=apps'); break;
       case 'settings': navigate('/settings'); break;
     }
   };
@@ -267,6 +271,7 @@ export function AppLayout() {
       case 'sprints': return 'Weeks';
       case 'team': return 'Teams';
       case 'fleetgraph': return 'FleetGraph traces';
+      case 'developer': return 'Developer';
       case 'settings': return 'Settings';
       case 'project-context': return 'Project';
       default: return 'Current view';
@@ -317,6 +322,7 @@ export function AppLayout() {
   };
 
   return (
+    <DeveloperPortalProvider>
     <TooltipProvider delayDuration={300}>
     <SelectionPersistenceProvider>
     <div className="relative flex h-screen flex-col overflow-hidden bg-background">
@@ -489,6 +495,12 @@ export function AppLayout() {
           {/* User avatar & settings at bottom */}
           <div className="flex flex-col items-center gap-2">
             <RailIcon
+              icon={<DeveloperIcon />}
+              label="Developer"
+              active={activeMode === 'developer'}
+              onClick={() => handleModeClick('developer')}
+            />
+            <RailIcon
               icon={<SettingsIcon />}
               label="Settings"
               active={activeMode === 'settings'}
@@ -544,11 +556,13 @@ export function AppLayout() {
                                 ? 'Teams'
                                 : activeMode === 'fleetgraph'
                                   ? 'FleetGraph'
-                                  : activeMode === 'settings'
-                                    ? 'Settings'
-                                    : activeMode === 'project-context'
-                                      ? 'Project'
-                                      : 'Sidebar'}
+                                  : activeMode === 'developer'
+                                    ? 'Developer'
+                                    : activeMode === 'settings'
+                                      ? 'Settings'
+                                      : activeMode === 'project-context'
+                                        ? 'Project'
+                                        : 'Sidebar'}
               </h2>
               <div className="flex items-center gap-1">
                 {activeMode === 'docs' && (
@@ -644,6 +658,9 @@ export function AppLayout() {
               {!fleetGraphDrawerOpen && activeMode === 'team' && (
                 <TeamSidebar />
               )}
+              {!fleetGraphDrawerOpen && activeMode === 'developer' && (
+                <DeveloperSidebar />
+              )}
               {!fleetGraphDrawerOpen && activeMode === 'settings' && (
                 <div className="px-3 py-2 text-sm text-muted">Settings</div>
               )}
@@ -702,6 +719,7 @@ export function AppLayout() {
     </div>
     </SelectionPersistenceProvider>
     </TooltipProvider>
+    </DeveloperPortalProvider>
   );
 }
 
@@ -1990,6 +2008,14 @@ function LangSmithIcon() {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 6v9.5a2.5 2.5 0 01-2.5 2.5H14" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 4l4 4-4 4" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 20l-4-4 4-4" />
+    </svg>
+  );
+}
+
+function DeveloperIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
     </svg>
   );
 }
