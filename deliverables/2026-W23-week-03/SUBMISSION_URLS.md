@@ -4,13 +4,21 @@
 
 | Artifact | URL |
 | --- | --- |
-| Demo video (3–5 min, unlisted) | _paste YouTube/Loom URL after recording_ |
-| Social post (@GauntletAI + webhook tail screenshot) | _paste X/Twitter post URL after posting_ |
+| MVP Demo Video (3–5 min, unlisted) | https://youtu.be/dK-g6Xt87OQ |
+| MVP Demo  | https://ship-web-jyqh.onrender.com/ |
+| MVP GitLab| https://labs.gauntletai.com/monicapeters/ship/-/tree/gfa2_wk6 |
+| Early Submission Demo Video (3–5 min, unlisted) | https://youtu.be/YODvib3PQEA |
+| Early Submission Demo  | https://ship-web-jyqh.onrender.com/login |
+| Early Submission GitLab| https://labs.gauntletai.com/monicapeters/ship/-/tree/gfa2_wk6 |
+| Final Demo Video (3–5 min, unlisted) | https://youtu.be/mGZZyx9YvNI |
+| Final Demo   | https://ship-web-jyqh.onrender.com |
+| Final GitLab | https://labs.gauntletai.com/monicapeters/ship/-/tree/gfa2_wk6-final?ref_type=heads |
+| Final Social post (@GauntletAI + webhook tail screenshot) | https://x.com/3DTechArtist/status/2063413912419103031  |
 
 ## Recording checklist (production ready)
 
 1. Confirm deploy: `node scripts/platform/verify-deploy.mjs` (all OK).
-2. Follow [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) — five-line story + portal replay.
+2. Follow [`FINAL_DEMO_VIDEO_SCRIPT.md`](./FINAL_DEMO_VIDEO_SCRIPT.md) for the final 3–4 min narration (Elon/Anduril/Treasury framing over the same demo visuals) or the early [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) as a shorter grader cut.
 3. Register a CLI OAuth app (super admin) with `documents:write` + `webhooks:manage`, or use an existing app:
 
 ```bash

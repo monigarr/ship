@@ -3,9 +3,17 @@
 **Date:** 2026-06-02 · **Author:** Monica Peters
 
 ## Development spend (tracked)
-
+May 31st to June 6th 2026
 | Item | Estimate | Notes |
 | --- | --- | --- |
+| Cursor Usage | Tokens: 356.5 Million Cost: $190.40 | grok-build-0.1, default, premium, Bugbot, gpt-5.5-medium, composer-2.5-fast, grok-4.3, composer-2.5 |
+| Codex Usage | Tokens: Cost: | Extension (VSCode), Desktop |
+| Leaderboard Experiment | Tokens: 59.4M	Cost: $49.78 | MoniGarr Usage https://tokenburn.nayanbhut.dev/?period=weekly |
+| OpenAI | --- | --- |
+| ChatGPT | --- | --- |
+| DeepSeek | --- | --- |
+| OpenRouter | --- | --- |
+| LocalAI | Memory Usage $22.90 | Railway Hosted: https://localai-production-0a66.up.railway.app/ |
 | Epic 7 agent rewire validation | $0 incremental | Platform layer remains LLM-free; agent probe uses public API only |
 | CI — MVP gates | ~8 min/PR | Unit + OpenAPI + measured perf probe + PKCE grep |
 | CI — platform gates | ~12 min/PR | Added OAuth/webhook tests + CLI type-check |

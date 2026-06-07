@@ -16,7 +16,7 @@ Render redeployed 2026-06-04 (GitLab `master` push → auto-deploy). Post-MVP Op
 
 ## Demo video (3–5 min)
 
-**Script:** [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md)  
+**Script:** [`FINAL_DEMO_VIDEO_SCRIPT.md`](./FINAL_DEMO_VIDEO_SCRIPT.md) (final-audience framing) · early reference [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) 
 **URL:** _Pending — record after `node scripts/platform/verify-deploy.mjs` passes (green 2026-06-04)_ → paste in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
 
 ## Social post

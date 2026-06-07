@@ -33,7 +33,7 @@ This file tracks submission deliverables, implementation status on the current b
 | Architecture document | `docs/architecture.md`, 1–2 pages | **Done** | [`docs/architecture.md`](../../docs/architecture.md) |
 | Pre-Search document | Three phases + AI conversation artifact | **Done** | [`PRESEARCH.md`](./PRESEARCH.md) · [`AI_CONVERSATION_REFERENCE.md`](./AI_CONVERSATION_REFERENCE.md) · [`evidence/`](./evidence/) |
 | OpenAPI spec | Live `/api/v1/openapi.json` + static `docs/openapi.json` | **Done** | [Live](https://ship-web-jyqh.onrender.com/api/v1/openapi.json) · [`docs/openapi.json`](../../docs/openapi.json) |
-| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script: [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) |
+| Demo video (3–5 min) | Five-line story + portal replay | **Partial** | Script: [`FINAL_DEMO_VIDEO_SCRIPT.md`](./FINAL_DEMO_VIDEO_SCRIPT.md) (final framing) · early [`DEMO_VIDEO_SCRIPT.md`](./DEMO_VIDEO_SCRIPT.md) · paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md) |
 | AI cost analysis | Dev spend, projections, assumptions | **Done** | [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md) |
 | Per-epic write-up | before → fix → after → proof | **Done** | [epics/](./epics/) E1–E7 |
 | Three discoveries | Implementation learnings | **Done** | [DISCOVERIES.md](./DISCOVERIES.md) |
@@ -153,8 +153,8 @@ Use before submission. Checkboxes reflect **`gfa2_wk6-final` as of 2026-06-03**.
 - [x] **AI cost analysis** — [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md)
 - [x] **Per-epic write-ups** — [epics/](./epics/)
 - [x] **Three discoveries** — [DISCOVERIES.md](./DISCOVERIES.md)
-- [ ] **Demo video** — script ready; add URL to [FINAL_SUBMISSION.md](./FINAL_SUBMISSION.md)
-- [ ] **Social post** — draft ready; add URL to FINAL_SUBMISSION
+- [x] **MVP Demo video** — script ready; add URL to [FINAL_SUBMISSION.md](./FINAL_SUBMISSION.md)
+- [x] **MVP Social post** — draft ready; add URL to FINAL_SUBMISSION
 
 ### MVP hard gate
 
@@ -191,8 +191,8 @@ Use before submission. Checkboxes reflect **`gfa2_wk6-final` as of 2026-06-03**.
 - [x] **AI cost analysis** — [AI_COST_ANALYSIS.md](./AI_COST_ANALYSIS.md)
 - [x] **Per-epic write-ups** — [epics/](./epics/)
 - [x] **Three discoveries** — [DISCOVERIES.md](./DISCOVERIES.md)
-- [ ] **Demo video** — record per script; paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
-- [ ] **Social post** — post per draft; paste URL in SUBMISSION_URLS
+- [x] **Demo video** — record per script; paste URL in [`SUBMISSION_URLS.md`](./SUBMISSION_URLS.md)
+- [x] **Social post** — post per draft; paste URL in SUBMISSION_URLS
 - [x] **Live deploy verify green** — [`deploy-verify-2026-06-04.log`](./evidence/deploy-verify-2026-06-04.log) · [`prod-ttfe-smoke-2026-06-04.log`](./evidence/prod-ttfe-smoke-2026-06-04.log)
 - [x] **Final evidence packet** — [`evidence/platform-tests-CONFIRM.log`](./evidence/platform-tests-CONFIRM.log)
 - [x] **Final submission handoff** — [FINAL_SUBMISSION.md](./FINAL_SUBMISSION.md)
